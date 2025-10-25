@@ -1,8 +1,8 @@
 using Godot;
-using Scripts.ECS.Core.Settings;
-using Scripts.ECS.Core.Utilities;
+using UltraSim.Scripts.ECS.Systems.Settings;
+using UltraSim.Scripts.ECS.Core.Utilities;
 
-namespace Scripts.ECS.Tests
+namespace UltraSim.Scripts.ECS.Testing
 {
     /// <summary>
     /// Test script to verify Phase 1 implementation is working correctly.

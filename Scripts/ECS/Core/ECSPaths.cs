@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Godot;
 
-namespace Scripts.ECS.Core.Utilities
+namespace UltraSim.Scripts.ECS.Core.Utilities
 {
     public static class ECSPaths
     {

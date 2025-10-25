@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Godot;
 
-namespace Scripts.ECS.Core.Settings
+namespace UltraSim.Scripts.ECS.Systems.Settings
 {
     public class EnumSetting<T> : ISetting where T : struct, Enum
     {

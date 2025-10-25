@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace Scripts.ECS.Core.Settings
+namespace UltraSim.Scripts.ECS.Systems.Settings
 {
     public class BoolSetting : ISetting
     {

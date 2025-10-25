@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-namespace Scripts.ECS.Core.Settings
+namespace UltraSim.Scripts.ECS.Systems.Settings
 {
     public abstract class BaseSettings
     {
