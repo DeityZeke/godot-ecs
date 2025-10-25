@@ -3,7 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+
 using Godot;
+
+using UltraSim.Scripts.ECS.Core.Utilities;
+using UltraSim.ECS.Examples;
 
 namespace UltraSim.ECS
 {
@@ -16,28 +20,94 @@ namespace UltraSim.ECS
         private List<List<BaseSystem>> _cachedBatches = new();
         private readonly Dictionary<Type, BaseSystem> _systemMap = new();
 
+
+        #region Settings Management
+
+        /// <summary>
+        /// Call this during initialization (before registering systems).
+        /// </summary>
+        public void InitializeSettings()
+        {
+            ECSPaths.EnsureDirectoriesExist();
+        }
+
+        public void LoadSystemSettings(BaseSystem system)
+        {
+            system.LoadSettings();
+        }
+
+        public void SaveSystemSettings(BaseSystem system)
+        {
+            system.SaveSettings();
+        }
+
+public void SaveAllSettings()
+{
+    int savedCount = 0;
+    
+    foreach (var system in _systems)
+    {
+        if (system.GetSettings() != null)
+        {
+            system.SaveSettings();
+            savedCount++;
+        }
+    }
+
+#if USE_DEBUG
+    GD.Print($"[SystemManager] Saved settings for {savedCount} systems");
+#endif
+}
+
+/// <summary>
+/// Saves master ECS settings (currently just a stub for future use).
+/// </summary>
+public void SaveMasterSettings()
+{
+    // Future: Save global ECS configuration
+    // For now, individual systems handle their own settings
+}
+
+private float _autoSaveTimer = 0f;
+
+/// <summary>
+/// Handles auto-save logic based on SaveSystem settings.
+/// Call this every frame from World.Tick().
+/// </summary>
+public void UpdateAutoSave(float delta)
+{
+    // Get SaveSystem to check if auto-save is enabled
+    var saveSystem = (SaveSystem)GetSystem<SaveSystem>();
+    if (saveSystem == null)
+        return;
+    
+    // Check if auto-save is enabled
+    bool autoSaveEnabled = saveSystem.SystemSettings.AutoSaveEnabled.Value;
+    if (!autoSaveEnabled)
+        return;
+
+    float autoSaveInterval = saveSystem.SystemSettings.AutoSaveInterval.Value;
+    
+    _autoSaveTimer += delta;
+    
+    if (_autoSaveTimer >= autoSaveInterval)
+    {
+        // Trigger manual save
+        saveSystem.Update(World.Current!, delta);
+        _autoSaveTimer = 0f;
+        
+        GD.Print($"[SystemManager] Auto-save triggered (interval: {autoSaveInterval}s)");
+    }
+}
+
+        #endregion
+
+
         public IReadOnlyList<BaseSystem> Systems => _systems;
         public ReadOnlySpan<BaseSystem> SystemsSpan => CollectionsMarshal.AsSpan(_systems);
 
         #region Registration
 
-        /*
-                public void Register(BaseSystem system)
-                {
-                    var type = system.GetType();
-                    if (_systemMap.ContainsKey(type))
-                    {
-                        GD.PrintErr($"[SystemManager] Attempted to register duplicate system: {type.Name}");
-                        return;
-                    }
-
-                    _systems.Add(system);
-                    _systemMap[type] = system;
-                    ComputeBatches(); // Recompute batching after adding
-
-                    GD.Print($"[SystemManager] Registered system: {type.Name}");
-                }
-        */
         public void Register(BaseSystem system)
         {
             var type = system.GetType();
@@ -52,33 +122,22 @@ namespace UltraSim.ECS
 
             // NEW: Register with tick scheduling system
             RegisterSystemTickScheduling(system);
+            LoadSystemSettings(system);
 
             ComputeBatches(); // Recompute batching after adding
 
             GD.Print($"[SystemManager] Registered system: {type.Name}");
         }
 
-
-        /*
         public void Unregister(BaseSystem system)
         {
             var type = system.GetType();
             if (!_systemMap.ContainsKey(type))
                 return;
 
-            _systems.Remove(system);
-            _systemMap.Remove(type);
-            ComputeBatches(); // Recompute batching after removal
-
-            GD.Print($"[SystemManager] Unregistered system: {type.Name}");
-        }
-        */
-
-        public void Unregister(BaseSystem system)
-        {
-            var type = system.GetType();
-            if (!_systemMap.ContainsKey(type))
-                return;
+            // Save settings before unregistering
+            if (system.GetSettings() != null)
+                SaveSystemSettings(system);
 
             // NEW: Unregister from tick scheduling system
             UnregisterSystemTickScheduling(system);
@@ -142,9 +201,6 @@ namespace UltraSim.ECS
             if (system.IsEnabled)
             {
                 system.Disable();
-
-                //if (system.SkipBatching)
-
                 GD.Print($"[SystemManager] Disabled system: {system.Name}");
             }
         }
@@ -186,7 +242,7 @@ namespace UltraSim.ECS
         {
             return _systemMap.ContainsKey(typeof(T));
         }
-        
+
         /// <summary>
         /// Gets all registered systems for GUI display and statistics.
         /// </summary>
@@ -215,7 +271,9 @@ namespace UltraSim.ECS
 
             foreach (ref var sys in sysSpan)
             {
-                //if (!sys.IsEnabled && sys.SkipBatching) continue; // Skip disabled systems
+                //Skip Manual Activation Systems
+                if (sys.Rate == TickRate.Manual)
+                    continue;
 
                 bool placed = false;
                 var batchSpan = CollectionsMarshal.AsSpan(batches);

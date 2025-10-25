@@ -3,7 +3,10 @@
 using System;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+
 using Godot;
+
+using UltraSim.Scripts.ECS.Systems.Settings;
 
 namespace UltraSim.ECS.Systems
 {
@@ -13,28 +16,67 @@ namespace UltraSim.ECS.Systems
     /// </summary>
     public sealed class OptimizedMovementSystem : BaseSystem
     {
+
+        #region Settings
+
+        public class Settings : BaseSettings
+        {
+            public FloatSetting GlobalSpeedMultiplier { get; private set; }
+            public BoolSetting FreezeMovement { get; private set; }
+
+            public Settings()
+            {
+                GlobalSpeedMultiplier = RegisterFloat("Global Speed Multiplier", 1.0f, 0.0f, 10.0f, 0.1f,
+                    tooltip: "Multiplier applied to all movement (0 = frozen, 1 = normal, 2 = double speed)");
+
+                FreezeMovement = RegisterBool("Freeze Movement", false,
+                    tooltip: "Completely freeze all movement (useful for debugging)");
+            }
+        }
+
+        public Settings SystemSettings { get; } = new();
+        public override BaseSettings? GetSettings() => SystemSettings;
+
+        #endregion
+
+
         public override string Name => "OptimizedMovementSystem";
         public override int SystemId => typeof(OptimizedMovementSystem).GetHashCode();
         public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(Velocity) };
         public override Type[] WriteSet { get; } = new[] { typeof(Position) };
         private const int CHUNK_SIZE = 65536;
 
-            private static readonly int PosId = ComponentTypeRegistry.GetId<Position>();
-    private static readonly int VelId = ComponentTypeRegistry.GetId<Velocity>();
+        private static readonly int PosId = ComponentTypeRegistry.GetId<Position>();
+        private static readonly int VelId = ComponentTypeRegistry.GetId<Velocity>();
 
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
 
         public override void OnInitialize(World world)
         {
             _cachedQuery = world.Query(typeof(Position), typeof(Velocity));
+
+            LoadSettings();
+
 #if USE_DEBUG
             GD.Print("[ManualThreadPoolMovementSystem] Initialized.");
+                        GD.Print($"[MovementSystem] Settings - Speed: {SystemSettings.GlobalSpeedMultiplier.Value}, " +
+                     $"Frozen: {SystemSettings.FreezeMovement.Value}");
 #endif
         }
 
         public override void Update(World world, double delta)
         {
+            if (SystemSettings.FreezeMovement.Value)
+                return;
+
             float deltaF = (float)delta;
+
+            // Read speed multiplier
+            float speedMultiplier = SystemSettings.GlobalSpeedMultiplier.Value;
+
+            // If speed is zero or negative, don't process
+            if (speedMultiplier <= 0.0f)
+                return;
 
             foreach (var arch in _cachedQuery!)
             {
@@ -52,6 +94,8 @@ namespace UltraSim.ECS.Systems
                 int count = Math.Min(posList.Count, velList.Count);
                 int numChunks = (count + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
+                float adjustedDelta = (float)delta * speedMultiplier;
+
                 _threadPool.ParallelFor(numChunks, chunkIndex =>
                 {
                     Span<Position> posSpan = CollectionsMarshal.AsSpan(posList);
@@ -62,9 +106,9 @@ namespace UltraSim.ECS.Systems
 
                     for (int i = start; i < end; i++)
                     {
-                        posSpan[i].X += velSpan[i].X * deltaF;
-                        posSpan[i].Y += velSpan[i].Y * deltaF;
-                        posSpan[i].Z += velSpan[i].Z * deltaF;
+                        posSpan[i].X += velSpan[i].X * adjustedDelta;
+                        posSpan[i].Y += velSpan[i].Y * adjustedDelta;
+                        posSpan[i].Z += velSpan[i].Z * adjustedDelta;
                     }
                 });
             }

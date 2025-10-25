@@ -44,6 +44,7 @@ namespace UltraSim.ECS
         public static World? Current { get; private set; }
 
         public SystemManager Systems => _systems;
+        private bool _settingsInitialized = false;
 
         public World()
         {
@@ -80,6 +81,13 @@ namespace UltraSim.ECS
         /// </summary>
         public void Tick(double delta)
         {
+            // Initialize settings on first tick
+            if (!_settingsInitialized)
+            {
+                _settingsInitialized = true;
+                _systems.InitializeSettings();
+            }
+
             // Phase 1: Disable & Destroy
             ProcessSystemDisableQueue();
             ProcessSystemDestructionQueue();
@@ -107,14 +115,8 @@ namespace UltraSim.ECS
 
             // Phase 5: Rendering
             ProcessRenderQueue();
-
-            if (tickCount > 1 && printTickSchedule)
-            {
-                GD.Print(_systems.GetTickSchedulingInfo());
-                printTickSchedule = false;
-            }
-
-            tickCount++;
+            
+            _systems.UpdateAutoSave((float)delta); //Save at the end of frame, just in case
 
             // Phase 6: Events
             OnSystemsUpdated?.Invoke();

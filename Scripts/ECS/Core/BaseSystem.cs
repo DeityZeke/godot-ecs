@@ -3,7 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+
 using Godot;
+
+using UltraSim.Scripts.ECS.Systems.Settings;
+using UltraSim.Scripts.ECS.Core.Utilities;
 
 namespace UltraSim.ECS
 {
@@ -90,6 +94,74 @@ namespace UltraSim.ECS
         // Only allocate stopwatch if statistics enabled
         private Stopwatch? _updateTimer;
 #endif
+
+
+
+        #region Settings Support
+
+        /// <summary>
+        /// Override this to return your system's settings instance.
+        /// Return null if your system has no settings.
+        /// </summary>
+        public virtual BaseSettings? GetSettings() => null;
+
+        /// <summary>
+        /// Saves this system's settings to disk.
+        /// </summary>
+        public void SaveSettings()
+        {
+            if (GetSettings() is not BaseSettings settings)
+                return;
+
+            var config = new ConfigFile();
+            settings.Serialize(config, Name);
+
+            var path = ECSPaths.GetSystemSettingsPath(Name);
+            var error = config.Save(path);
+
+            if (error != Error.Ok)
+                GD.PushError($"[BaseSystem] Failed to save settings for {Name}: {error}");
+#if USE_DEBUG
+    else
+        GD.Print($"[BaseSystem] Saved settings for {Name} to {path}");
+#endif
+        }
+
+        /// <summary>
+        /// Loads this system's settings from disk.
+        /// </summary>
+        public void LoadSettings()
+        {
+            if (GetSettings() is not BaseSettings settings)
+                return;
+
+            var path = ECSPaths.GetSystemSettingsPath(Name);
+            if (!FileAccess.FileExists(path))
+            {
+#if USE_DEBUG
+        GD.Print($"[BaseSystem] No settings file found for {Name}, using defaults");
+#endif
+                return;
+            }
+
+            var config = new ConfigFile();
+            var error = config.Load(path);
+
+            if (error != Error.Ok)
+            {
+                GD.PushError($"[BaseSystem] Failed to load settings for {Name}: {error}");
+                return;
+            }
+
+            settings.Deserialize(config, Name);
+#if USE_DEBUG
+    GD.Print($"[BaseSystem] Loaded settings for {Name} from {path}");
+#endif
+        }
+
+        #endregion
+
+
 
         /// <summary>
         /// Called once when the system is first added to the world.
