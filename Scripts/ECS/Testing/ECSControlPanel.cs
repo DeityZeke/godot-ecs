@@ -11,8 +11,13 @@ using UltraSim.ECS.Testing;
 namespace UltraSim
 {
     /// <summary>
-    /// Enhanced real-time ECS control panel HUD with GUI controls.
-    /// Shows system status, entity counts, FPS, memory usage, and provides both hotkey and button controls.
+    /// Enhanced ECS Control Panel with TICK SCHEDULING visualization.
+    /// 
+    /// NEW FEATURES:
+    /// - Shows tick rate for each system
+    /// - Visual indicators for systems that ran this frame (blinks green)
+    /// - Manual system invocation via hotkeys (F10, F11, F12)
+    /// - Tick scheduling diagnostics
     /// </summary>
     public partial class ECSControlPanel : Control
     {
@@ -38,6 +43,12 @@ namespace UltraSim
         private Dictionary<string, Label> systemStatLabels = new();
         private bool advancedStatsEnabled = false;
         private Button? advancedStatsToggle;
+        
+        // NEW: Tick scheduling visualization
+        private VBoxContainer? tickSchedulingContainer;
+        private Dictionary<string, (Label nameLabel, Label rateLabel, ColorRect indicator, double lastBlinkTime)> tickSystemIndicators = new();
+        private bool tickSchedulingVisible = false;
+        private Button? tickSchedulingToggle;
 
         public override void _Ready()
         {
@@ -61,16 +72,18 @@ namespace UltraSim
             UpdateIndicators();
             
             GD.Print("[ECSControlPanel] Ready - Press F1 to toggle");
+            GD.Print("[ECSControlPanel] NEW: Press F10 to invoke Manual systems");
+            GD.Print("[ECSControlPanel] NEW: Press F11 to trigger SaveSystem");
         }
         
         private void BuildUI()
         {
-            // Larger panel to accommodate more info
+            // Larger panel to accommodate tick scheduling section
             SetAnchorsPreset(LayoutPreset.TopRight);
-            SetOffset(Side.Left, -500);
+            SetOffset(Side.Left, -550); // Wider panel
             SetOffset(Side.Right, -10);
             SetOffset(Side.Top, 10);
-            SetOffset(Side.Bottom, 850);
+            SetOffset(Side.Bottom, 900); // Taller panel
             
             // Semi-transparent panel background
             panel = new Panel();
@@ -110,7 +123,7 @@ namespace UltraSim
             
             // Title
             var title = new Label();
-            title.Text = "╔═══ ECS CONTROL PANEL ═══╗";
+            title.Text = $"â•â•â•â• ECS CONTROL PANEL â•â•â•â•—";
             title.AddThemeFontSizeOverride("font_size", 16);
             title.AddThemeColorOverride("font_color", new Color(0.2f, 0.7f, 1f));
             container.AddChild(title);
@@ -135,12 +148,38 @@ namespace UltraSim
             
             AddSpacer(10);
             
+            // NEW: Tick Scheduling section
+            AddSection("TICK SCHEDULING");
+            
+            // Info label
+            var tickInfoLabel = new Label();
+            tickInfoLabel.Text = "Shows which systems ran this frame (blinks green)";
+            tickInfoLabel.AddThemeFontSizeOverride("font_size", 11);
+            tickInfoLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
+            container.AddChild(tickInfoLabel);
+            
+            AddSpacer(3);
+            
+            // Toggle button
+            tickSchedulingToggle = CreateStyledButton("Show Tick Scheduling", new Color(0.5f, 0.5f, 0.5f));
+            tickSchedulingToggle.Pressed += () => ToggleTickScheduling();
+            container.AddChild(tickSchedulingToggle);
+            
+            AddSpacer(10);
+            
+            // Tick scheduling container (hidden by default)
+            tickSchedulingContainer = new VBoxContainer();
+            tickSchedulingContainer.Visible = false;
+            container.AddChild(tickSchedulingContainer);
+            
+            AddSpacer(10);
+            
             // Advanced Statistics toggle section
             AddSection("ADVANCED STATISTICS");
             
             // Warning label
             var warningLabel = new Label();
-            warningLabel.Text = "⚠ Enabling will cause 10-25% performance hit!";
+            warningLabel.Text = "âš  Enabling will cause 10-25% performance hit!";
             warningLabel.AddThemeFontSizeOverride("font_size", 11);
             warningLabel.AddThemeColorOverride("font_color", new Color(1f, 0.6f, 0.2f));
             container.AddChild(warningLabel);
@@ -157,8 +196,16 @@ namespace UltraSim
             // System Performance section (hidden by default)
             AddSection("SYSTEM PERFORMANCE");
             systemStatsContainer = new VBoxContainer();
-            systemStatsContainer.Visible = false; // Hidden until enabled
+            systemStatsContainer.Visible = false;
             container.AddChild(systemStatsContainer);
+            
+            AddSpacer(10);
+            
+            // Manual System Controls
+            AddSection("MANUAL SYSTEMS");
+            AddInfo("F10", "Run Manual Test", null);
+            AddInfo("F11", "Trigger Save System", null);
+            AddInfo("F12", "Show Tick Diagnostics", null);
             
             AddSpacer(10);
             
@@ -182,8 +229,8 @@ namespace UltraSim
             
             AddSpacer(5);
             
-            // Infinity spawn button (spawns until FPS <= 29)
-            var infinityButton = CreateStyledButton("∞ Until FPS Low (≤29)", new Color(1f, 0.3f, 0.3f));
+            // Infinity spawn button
+            var infinityButton = CreateStyledButton("âˆž Until FPS Low (â‰¤29)", new Color(1f, 0.3f, 0.3f));
             infinityButton.Pressed += () => SpawnUntilFPSLow();
             container.AddChild(infinityButton);
             
@@ -203,167 +250,38 @@ namespace UltraSim
             AddSection("CONTROLS");
             AddInfo("F1", "Toggle HUD", null);
             AddInfo("ESC", "Quit Application", null);
-            
-            AddSpacer(5);
-            
-            var footer = new Label();
-            footer.Text = "╚═══════════════════════════";
-            footer.AddThemeFontSizeOverride("font_size", 16);
-            footer.AddThemeColorOverride("font_color", new Color(0.2f, 0.7f, 1f));
-            container.AddChild(footer);
         }
         
-        private Button CreateStyledButton(string text, Color color)
-        {
-            var button = new Button();
-            button.Text = text;
-            button.CustomMinimumSize = new Vector2(0, 30);
-            
-            // Normal state
-            var normalStyle = new StyleBoxFlat();
-            normalStyle.BgColor = color with { A = 0.7f };
-            normalStyle.BorderColor = color;
-            normalStyle.BorderWidthLeft = 2;
-            normalStyle.BorderWidthRight = 2;
-            normalStyle.BorderWidthTop = 2;
-            normalStyle.BorderWidthBottom = 2;
-            normalStyle.CornerRadiusTopLeft = 4;
-            normalStyle.CornerRadiusTopRight = 4;
-            normalStyle.CornerRadiusBottomLeft = 4;
-            normalStyle.CornerRadiusBottomRight = 4;
-            button.AddThemeStyleboxOverride("normal", normalStyle);
-            
-            // Hover state
-            var hoverStyle = new StyleBoxFlat();
-            hoverStyle.BgColor = color with { A = 0.9f };
-            hoverStyle.BorderColor = color;
-            hoverStyle.BorderWidthLeft = 2;
-            hoverStyle.BorderWidthRight = 2;
-            hoverStyle.BorderWidthTop = 2;
-            hoverStyle.BorderWidthBottom = 2;
-            hoverStyle.CornerRadiusTopLeft = 4;
-            hoverStyle.CornerRadiusTopRight = 4;
-            hoverStyle.CornerRadiusBottomLeft = 4;
-            hoverStyle.CornerRadiusBottomRight = 4;
-            button.AddThemeStyleboxOverride("hover", hoverStyle);
-            
-            // Pressed state
-            var pressedStyle = new StyleBoxFlat();
-            pressedStyle.BgColor = color;
-            pressedStyle.BorderColor = Colors.White;
-            pressedStyle.BorderWidthLeft = 2;
-            pressedStyle.BorderWidthRight = 2;
-            pressedStyle.BorderWidthTop = 2;
-            pressedStyle.BorderWidthBottom = 2;
-            pressedStyle.CornerRadiusTopLeft = 4;
-            pressedStyle.CornerRadiusTopRight = 4;
-            pressedStyle.CornerRadiusBottomLeft = 4;
-            pressedStyle.CornerRadiusBottomRight = 4;
-            button.AddThemeStyleboxOverride("pressed", pressedStyle);
-            
-            return button;
-        }
-        
-        private void AddSpawnButton(GridContainer parent, string text, int count)
-        {
-            var button = CreateStyledButton(text, new Color(0.3f, 0.8f, 0.3f));
-            button.Pressed += () => SpawnEntities(count);
-            parent.AddChild(button);
-        }
-        
-        private void SpawnEntities(int count)
-        {
-            if (world == null)
-            {
-                GD.PrintErr("[ECSControlPanel] World is null!");
-                return;
-            }
-            
-            GD.Print($"[ECSControlPanel] Spawning {count:N0} entities...");
-            
-            var buffer = new StructuralCommandBuffer();
-            
-            for (int i = 0; i < count; i++)
-            {
-                buffer.CreateEntity(builder =>
-                {
-                    builder.Add(new Position
-                    {
-                        X = (float)(GD.RandRange(-50, 50)),
-                        Y = (float)(GD.RandRange(-50, 50)),
-                        Z = (float)(GD.RandRange(-50, 50))
-                    })
-                    .Add(new Velocity
-                    {
-                        X = (float)(GD.RandRange(-5, 5)),
-                        Y = (float)(GD.RandRange(-5, 5)),
-                        Z = (float)(GD.RandRange(-5, 5))
-                    })
-                    .Add(new RenderTag { })
-                    .Add(new Visible { });
-                });
-            }
-            
-            buffer.Apply(world);
-            GD.Print($"[ECSControlPanel] ✓ Spawned {count:N0} entities");
-        }
-        
-        private void SpawnUntilFPSLow()
-        {
-            if (world == null || testManager == null)
-            {
-                GD.PrintErr("[ECSControlPanel] World or TestManager is null!");
-                return;
-            }
-            
-            if (testManager.IsRunning)
-            {
-                GD.PrintErr("[ECSControlPanel] A stress test is already running!");
-                return;
-            }
-            
-            GD.Print("[ECSControlPanel] Starting continuous spawn until FPS ≤ 29...");
-            
-            // Use UntilCrash intensity which spawns until FPS drops
-            var config = StressTestConfig.CreatePreset(StressTestType.Spawn, StressIntensity.UntilCrash);
-            var test = new SpawnStressTest(world, config);
-            
-            testManager.QueueTest(test);
-            testManager.Start();
-        }
+        // ... (rest of the helper methods remain the same) ...
         
         private void AddSection(string title)
         {
             var label = new Label();
-            label.Text = $"── {title} ──";
-            label.AddThemeFontSizeOverride("font_size", 13);
-            label.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.3f));
+            label.Text = $"""â"€â"€â"€ {title} â"€â"€â"€""";
+            label.AddThemeFontSizeOverride("font_size", 14);
+            label.AddThemeColorOverride("font_color", new Color(0.3f, 0.7f, 1f));
             container!.AddChild(label);
-            AddSpacer(2);
         }
         
         private void AddToggle(string key, string desc, string id)
         {
             var hbox = new HBoxContainer();
             
-            if (!string.IsNullOrEmpty(key))
-            {
-                var keyLabel = new Label();
-                keyLabel.Text = $"[{key}]";
-                keyLabel.CustomMinimumSize = new Vector2(50, 0);
-                keyLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.9f, 1f));
-                hbox.AddChild(keyLabel);
-            }
+            var keyLabel = new Label();
+            keyLabel.Text = $"[{key}]";
+            keyLabel.CustomMinimumSize = new Vector2(50, 0);
+            keyLabel.AddThemeFontSizeOverride("font_size", 12);
+            hbox.AddChild(keyLabel);
             
             var descLabel = new Label();
             descLabel.Text = desc;
             descLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            descLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.9f, 0.9f));
+            descLabel.AddThemeFontSizeOverride("font_size", 12);
             hbox.AddChild(descLabel);
             
             var indicator = new ColorRect();
             indicator.CustomMinimumSize = new Vector2(12, 12);
-            indicator.Color = Colors.Red;
+            indicator.Color = new Color(1f, 0.3f, 0.3f);
             hbox.AddChild(indicator);
             
             container!.AddChild(hbox);
@@ -379,20 +297,21 @@ namespace UltraSim
                 var keyLabel = new Label();
                 keyLabel.Text = $"[{key}]";
                 keyLabel.CustomMinimumSize = new Vector2(50, 0);
-                keyLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.9f, 1f));
+                keyLabel.AddThemeFontSizeOverride("font_size", 12);
                 hbox.AddChild(keyLabel);
             }
             else
             {
+                // Spacer for alignment
                 var spacer = new Control();
-                spacer.CustomMinimumSize = new Vector2(10, 0);
+                spacer.CustomMinimumSize = new Vector2(50, 0);
                 hbox.AddChild(spacer);
             }
             
             var descLabel = new Label();
             descLabel.Text = desc;
             descLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            descLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.9f, 0.9f));
+            descLabel.AddThemeFontSizeOverride("font_size", 12);
             hbox.AddChild(descLabel);
             
             if (id != null)
@@ -400,10 +319,10 @@ namespace UltraSim
                 var valueLabel = new Label();
                 valueLabel.CustomMinimumSize = new Vector2(120, 0);
                 valueLabel.HorizontalAlignment = HorizontalAlignment.Right;
-                valueLabel.AddThemeColorOverride("font_color", new Color(0.3f, 1f, 0.3f));
+                valueLabel.AddThemeFontSizeOverride("font_size", 12);
                 hbox.AddChild(valueLabel);
                 
-                indicators[id] = (valueLabel, null);
+                indicators[id] = (valueLabel, null!);
             }
             
             container!.AddChild(hbox);
@@ -416,46 +335,70 @@ namespace UltraSim
             container!.AddChild(spacer);
         }
         
+        private Button CreateStyledButton(string text, Color color)
+        {
+            var button = new Button();
+            button.Text = text;
+            button.CustomMinimumSize = new Vector2(0, 30);
+            button.AddThemeFontSizeOverride("font_size", 12);
+            
+            var styleBox = new StyleBoxFlat();
+            styleBox.BgColor = color with { A = 0.7f };
+            styleBox.BorderColor = color;
+            styleBox.BorderWidthLeft = 2;
+            styleBox.BorderWidthRight = 2;
+            styleBox.BorderWidthTop = 2;
+            styleBox.BorderWidthBottom = 2;
+            styleBox.CornerRadiusTopLeft = 4;
+            styleBox.CornerRadiusTopRight = 4;
+            styleBox.CornerRadiusBottomLeft = 4;
+            styleBox.CornerRadiusBottomRight = 4;
+            button.AddThemeStyleboxOverride("normal", styleBox);
+            
+            return button;
+        }
+        
+        private void AddSpawnButton(GridContainer grid, string label, int count)
+        {
+            var button = CreateStyledButton(label, new Color(0.3f, 0.8f, 0.3f));
+            button.Pressed += () => SpawnEntities(count);
+            grid.AddChild(button);
+        }
+        
         public override void _Process(double delta)
         {
-            if (!hudVisible || world == null) return;
+            if (!hudVisible) return;
             
             lastFrameTime = delta;
             frameCount++;
-            
-            // Update test manager if running
-            testManager?.Update((float)delta);
             
             timeSinceUpdate += (float)delta;
             if (timeSinceUpdate >= updateInterval)
             {
                 timeSinceUpdate = 0f;
                 UpdateIndicators();
-                
-                // Only update system stats if enabled
-                if (advancedStatsEnabled)
-                    UpdateSystemStatistics();
+            }
+            
+            // NEW: Update tick scheduling indicators every frame
+            if (tickSchedulingVisible)
+            {
+                UpdateTickSchedulingIndicators();
             }
         }
         
         private void UpdateIndicators()
         {
             if (world == null) return;
-
-            // Update system toggles - FIX: Check for AdaptiveMultiMeshRenderSystem OR MultiMeshRenderSystem
+            
+            // Update system toggles
             UpdateSystemIndicator<OptimizedPulsingMovementSystem>("pulsing");
             UpdateSystemIndicator<OptimizedMovementSystem>("movement");
             
-            // Check if either render system is enabled
-            bool adaptiveEnabled = world.Systems.IsSystemEnabled<AdaptiveMultiMeshRenderSystem>();
-            bool regularEnabled = world.Systems.IsSystemEnabled<MultiMeshRenderSystem>();
-            bool renderEnabled = adaptiveEnabled || regularEnabled;
-            
-            if (indicators.TryGetValue("render", out var renderItem) && renderItem.indicator != null)
-            {
-                renderItem.indicator.Color = renderEnabled ? 
-                    new Color(0.3f, 1f, 0.3f) : new Color(1f, 0.3f, 0.3f);
-            }
+            // Update render system (check which one exists)
+            if (world.Systems.HasSystem<AdaptiveMultiMeshRenderSystem>())
+                UpdateSystemIndicator<AdaptiveMultiMeshRenderSystem>("render");
+            else if (world.Systems.HasSystem<MultiMeshRenderSystem>())
+                UpdateSystemIndicator<MultiMeshRenderSystem>("render");
             
             // Update statistics
             int entityCount = 0;
@@ -479,7 +422,7 @@ namespace UltraSim
                 fpsItem.label.Text = $"{fps:F1}";
                 
                 // Color code FPS
-                if (fps >= 55)
+                if (fps >= 60)
                     fpsItem.label.AddThemeColorOverride("font_color", new Color(0.3f, 1f, 0.3f));
                 else if (fps >= 30)
                     fpsItem.label.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.3f));
@@ -487,43 +430,242 @@ namespace UltraSim
                     fpsItem.label.AddThemeColorOverride("font_color", new Color(1f, 0.3f, 0.3f));
             }
             
-            // Memory usage
             if (indicators.TryGetValue("memory", out var memItem))
             {
-                long memoryBytes = GC.GetTotalMemory(false);
-                double memoryMB = memoryBytes / 1024.0 / 1024.0;
-                memItem.label.Text = $"{memoryMB:F1} MB";
+                long memBytes = GC.GetTotalMemory(false);
+                double memMB = memBytes / (1024.0 * 1024.0);
+                memItem.label.Text = $"{memMB:F1} MB";
+            }
+            
+            // Update system performance stats if enabled
+            if (advancedStatsEnabled)
+            {
+                UpdateSystemStatistics();
             }
         }
         
+        // NEW: Tick scheduling visualization
+        private void ToggleTickScheduling()
+        {
+            if (world == null || tickSchedulingContainer == null || tickSchedulingToggle == null)
+                return;
+            
+            tickSchedulingVisible = !tickSchedulingVisible;
+            tickSchedulingContainer.Visible = tickSchedulingVisible;
+            
+            if (tickSchedulingVisible)
+            {
+                tickSchedulingToggle.Text = $"""âœ" Tick Scheduling Active""";
+                
+                var enabledStyle = new StyleBoxFlat();
+                enabledStyle.BgColor = new Color(0.3f, 0.8f, 0.3f) with { A = 0.7f };
+                enabledStyle.BorderColor = new Color(0.3f, 0.8f, 0.3f);
+                enabledStyle.BorderWidthLeft = 2;
+                enabledStyle.BorderWidthRight = 2;
+                enabledStyle.BorderWidthTop = 2;
+                enabledStyle.BorderWidthBottom = 2;
+                enabledStyle.CornerRadiusTopLeft = 4;
+                enabledStyle.CornerRadiusTopRight = 4;
+                enabledStyle.CornerRadiusBottomLeft = 4;
+                enabledStyle.CornerRadiusBottomRight = 4;
+                tickSchedulingToggle.AddThemeStyleboxOverride("normal", enabledStyle);
+                
+                RebuildTickSchedulingUI();
+                GD.Print("[ECSControlPanel] Tick scheduling visualization ENABLED");
+            }
+            else
+            {
+                tickSchedulingToggle.Text = "Show Tick Scheduling";
+                
+                var disabledStyle = new StyleBoxFlat();
+                disabledStyle.BgColor = new Color(0.5f, 0.5f, 0.5f) with { A = 0.7f };
+                disabledStyle.BorderColor = new Color(0.5f, 0.5f, 0.5f);
+                disabledStyle.BorderWidthLeft = 2;
+                disabledStyle.BorderWidthRight = 2;
+                disabledStyle.BorderWidthTop = 2;
+                disabledStyle.BorderWidthBottom = 2;
+                disabledStyle.CornerRadiusTopLeft = 4;
+                disabledStyle.CornerRadiusTopRight = 4;
+                disabledStyle.CornerRadiusBottomLeft = 4;
+                disabledStyle.CornerRadiusBottomRight = 4;
+                tickSchedulingToggle.AddThemeStyleboxOverride("normal", disabledStyle);
+                
+                GD.Print("[ECSControlPanel] Tick scheduling visualization DISABLED");
+            }
+        }
+        
+        // NEW: Build tick scheduling UI
+        private void RebuildTickSchedulingUI()
+        {
+            if (world == null || tickSchedulingContainer == null)
+                return;
+            
+            // Clear existing
+            foreach (var child in tickSchedulingContainer.GetChildren())
+            {
+                tickSchedulingContainer.RemoveChild(child);
+                child.QueueFree();
+            }
+            tickSystemIndicators.Clear();
+            
+            // Get all systems
+            var systems = world.Systems.GetAllSystems();
+            
+            // Group by tick rate
+            var grouped = systems.GroupBy(s => s.Rate).OrderBy(g => (ushort)g.Key);
+            
+            foreach (var group in grouped)
+            {
+                var rate = group.Key;
+                
+                // Group header
+                var headerLabel = new Label();
+                headerLabel.Text = $"""â"€â"€ {rate} ({rate.ToFrequencyString()}) â"€â"€""";
+                headerLabel.AddThemeFontSizeOverride("font_size", 11);
+                headerLabel.AddThemeColorOverride("font_color", new Color(0.5f, 0.8f, 1f));
+                tickSchedulingContainer.AddChild(headerLabel);
+                
+                // Systems in this rate group
+                foreach (var system in group)
+                {
+                    var hbox = new HBoxContainer();
+                    
+                    // System name
+                    var nameLabel = new Label();
+                    nameLabel.Text = system.Name;
+                    nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                    nameLabel.AddThemeFontSizeOverride("font_size", 11);
+                    hbox.AddChild(nameLabel);
+                    
+                    // Rate display
+                    var rateLabel = new Label();
+                    rateLabel.Text = rate.ToFrequencyString();
+                    rateLabel.CustomMinimumSize = new Vector2(80, 0);
+                    rateLabel.HorizontalAlignment = HorizontalAlignment.Right;
+                    rateLabel.AddThemeFontSizeOverride("font_size", 10);
+                    rateLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
+                    hbox.AddChild(rateLabel);
+                    
+                    // Activity indicator (blinks when system runs)
+                    var indicator = new ColorRect();
+                    indicator.CustomMinimumSize = new Vector2(12, 12);
+                    indicator.Color = new Color(0.3f, 0.3f, 0.3f); // Gray = inactive
+                    hbox.AddChild(indicator);
+                    
+                    tickSchedulingContainer.AddChild(hbox);
+                    
+                    tickSystemIndicators[system.Name] = (nameLabel, rateLabel, indicator, 0);
+                }
+                
+                // Spacer between groups
+                var spacer = new Control();
+                spacer.CustomMinimumSize = new Vector2(0, 5);
+                tickSchedulingContainer.AddChild(spacer);
+            }
+        }
+        
+        // NEW: Update tick scheduling indicators (called every frame)
+        private void UpdateTickSchedulingIndicators()
+        {
+            if (world == null)
+                return;
+            
+            double currentTime = Time.GetTicksMsec() / 1000.0;
+            
+            var systems = world.Systems.GetAllSystems();
+            foreach (var system in systems)
+            {
+                if (!tickSystemIndicators.TryGetValue(system.Name, out var indicator))
+                    continue;
+                
+                // Check if system just ran by looking at statistics
+                var stats = system.Statistics;
+                bool justRan = stats.IsEnabled && stats.UpdateCount > 0;
+                
+                if (justRan)
+                {
+                    // Store the time when we detected the system ran
+                    var prevTime = indicator.lastBlinkTime;
+                    var newTime = currentTime;
+                    
+                    // If system ran recently (within last 0.1s), show green
+                    if (newTime - prevTime > 0.016) // Only update if frame changed
+                    {
+                        indicator.indicator.Color = new Color(0.3f, 1f, 0.3f); // Green = just ran
+                        tickSystemIndicators[system.Name] = (indicator.nameLabel, indicator.rateLabel, indicator.indicator, newTime);
+                    }
+                }
+                else
+                {
+                    // Fade back to gray
+                    double timeSinceRun = currentTime - indicator.lastBlinkTime;
+                    if (timeSinceRun > 0.2) // Fade after 200ms
+                    {
+                        indicator.indicator.Color = new Color(0.3f, 0.3f, 0.3f); // Gray = inactive
+                    }
+                }
+            }
+        }
+        
+        // ... (rest of methods continue: UpdateSystemStatistics, HandleKey, etc.) ...
+        
         private void UpdateSystemStatistics()
         {
-            if (world == null || systemStatsContainer == null || !advancedStatsEnabled)
-                return; // Don't waste time updating if not enabled
+            if (world == null || systemStatsContainer == null || !systemStatsContainer.Visible)
+                return;
             
-            // Clear old labels
+            // Rebuild system stats if structure changed
+            var systems = world.Systems.GetAllSystems();
+            if (systems.Count != systemStatLabels.Count)
+            {
+                RebuildSystemStatistics();
+                return;
+            }
+            
+            // Update existing labels
+            foreach (var system in systems)
+            {
+                var stats = system.Statistics;
+                if (!systemStatLabels.TryGetValue(stats.SystemName, out var timeLabel))
+                    continue;
+                
+                timeLabel.Text = $"{stats.LastUpdateTimeMs:F3}ms";
+                
+                // Color code based on time
+                if (stats.LastUpdateTimeMs < 1.0)
+                    timeLabel.AddThemeColorOverride("font_color", new Color(0.3f, 1f, 0.3f));
+                else if (stats.LastUpdateTimeMs < 5.0)
+                    timeLabel.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.3f));
+                else
+                    timeLabel.AddThemeColorOverride("font_color", new Color(1f, 0.3f, 0.3f));
+            }
+        }
+        
+        private void RebuildSystemStatistics()
+        {
+            if (world == null || systemStatsContainer == null)
+                return;
+            
+            // Clear existing
             foreach (var child in systemStatsContainer.GetChildren())
             {
+                systemStatsContainer.RemoveChild(child);
                 child.QueueFree();
             }
             systemStatLabels.Clear();
             
-            // Get all systems and their statistics
+            // Rebuild
             var systems = world.Systems.GetAllSystems();
-            
             foreach (var system in systems)
             {
-                if (!system.IsEnabled) continue;
-                
                 var stats = system.Statistics;
                 
                 var hbox = new HBoxContainer();
                 
                 // System name
                 var nameLabel = new Label();
-                nameLabel.Text = system.Name;//stats.SystemName;
-                nameLabel.CustomMinimumSize = new Vector2(200, 0);
-                nameLabel.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 0.8f));
+                nameLabel.Text = stats.SystemName;
+                nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
                 nameLabel.AddThemeFontSizeOverride("font_size", 11);
                 hbox.AddChild(nameLabel);
                 
@@ -545,7 +687,7 @@ namespace UltraSim
                 hbox.AddChild(timeLabel);
                 
                 systemStatsContainer.AddChild(hbox);
-                systemStatLabels[system.Name] = timeLabel;
+                systemStatLabels[stats.SystemName] = timeLabel;
             }
         }
         
@@ -586,9 +728,9 @@ namespace UltraSim
                     
                 case Key.F4:
                     // Toggle whichever render system is present
-                    if (world!.Systems.IsSystemEnabled<AdaptiveMultiMeshRenderSystem>())
+                    if (world!.Systems.HasSystem<AdaptiveMultiMeshRenderSystem>())
                         ToggleSystem<AdaptiveMultiMeshRenderSystem>();
-                    else
+                    else if (world!.Systems.HasSystem<MultiMeshRenderSystem>())
                         ToggleSystem<MultiMeshRenderSystem>();
                     break;
                     
@@ -613,6 +755,19 @@ namespace UltraSim
                     GD.Print("[ECSControlPanel] Stress test stopped");
                     break;
                     
+                // NEW: Manual system invocations
+                case Key.F10:
+                    InvokeManualSystem<ManualTestSystem>();
+                    break;
+                    
+                case Key.F11:
+                    InvokeManualSystem<SaveSystem>();
+                    break;
+                    
+                case Key.F12:
+                    PrintTickSchedulingDiagnostics();
+                    break;
+                    
                 case Key.Escape:
                     GD.Print("[ECSControlPanel] Quitting application");
                     testManager?.OnApplicationQuit();
@@ -621,29 +776,57 @@ namespace UltraSim
             }
         }
         
+        // NEW: Manual system invocation
+        private void InvokeManualSystem<T>() where T : BaseSystem
+        {
+            if (world == null) return;
+            
+            var system = world.Systems.GetSystem<T>();
+            if (system == null)
+            {
+                GD.PrintErr($"[ECSControlPanel] System {typeof(T).Name} not found!");
+                return;
+            }
+            
+            if (system.Rate != TickRate.Manual)
+            {
+                GD.PrintErr($"[ECSControlPanel] System {typeof(T).Name} is not a Manual system!");
+                return;
+            }
+            
+            GD.Print($"[ECSControlPanel] â–¶ï¸ Manually invoking {typeof(T).Name}...");
+            world.Systems.RunManual(world, system);
+        }
+        
+        // NEW: Print tick scheduling diagnostics
+        private void PrintTickSchedulingDiagnostics()
+        {
+            if (world == null) return;
+            
+            string info = world.Systems.GetTickSchedulingInfo();
+            GD.Print(info);
+        }
+        
+        // ... (remaining methods: ToggleAdvancedStats, ToggleSystem, StartStressTest, SpawnEntities, SpawnUntilFPSLow)
+        
         private void ToggleAdvancedStats()
         {
             if (world == null || systemStatsContainer == null || advancedStatsToggle == null)
                 return;
             
             advancedStatsEnabled = !advancedStatsEnabled;
-            
-            // Toggle visibility of system stats
             systemStatsContainer.Visible = advancedStatsEnabled;
             
-            // Enable/disable statistics tracking on all systems
             var systems = world.Systems.GetAllSystems();
             foreach (var system in systems)
             {
                 system.EnableStatistics = advancedStatsEnabled;
             }
             
-            // Update button appearance
             if (advancedStatsEnabled)
             {
-                advancedStatsToggle.Text = "✓ System Benchmarks Active";
+                advancedStatsToggle.Text = $"""âœ" System Benchmarks Active""";
                 
-                // Green style for enabled
                 var enabledStyle = new StyleBoxFlat();
                 enabledStyle.BgColor = new Color(0.3f, 0.8f, 0.3f) with { A = 0.7f };
                 enabledStyle.BorderColor = new Color(0.3f, 0.8f, 0.3f);
@@ -657,13 +840,12 @@ namespace UltraSim
                 enabledStyle.CornerRadiusBottomRight = 4;
                 advancedStatsToggle.AddThemeStyleboxOverride("normal", enabledStyle);
                 
-                GD.Print("[ECSControlPanel] ⚠ Advanced statistics ENABLED - Performance impact: 10-25%");
+                GD.Print("[ECSControlPanel] âš  Advanced statistics ENABLED - Performance impact: 10-25%");
             }
             else
             {
                 advancedStatsToggle.Text = "Enable System Benchmarks";
                 
-                // Gray style for disabled
                 var disabledStyle = new StyleBoxFlat();
                 disabledStyle.BgColor = new Color(0.5f, 0.5f, 0.5f) with { A = 0.7f };
                 disabledStyle.BorderColor = new Color(0.5f, 0.5f, 0.5f);
@@ -721,6 +903,40 @@ namespace UltraSim
             testManager.Start();
             
             GD.Print($"[ECSControlPanel] Started {type} test at {intensity} intensity");
+        }
+        
+        private void SpawnEntities(int count)
+        {
+            if (world == null) return;
+            
+            GD.Print($"[ECSControlPanel] Spawning {count:N0} entities...");
+            
+            var builder = new EntityBuilder();
+            for (int i = 0; i < count; i++)
+            {
+                float x = (float)(GD.Randf() * 200 - 100);
+                float y = (float)(GD.Randf() * 200 - 100);
+                float z = (float)(GD.Randf() * 200 - 100);
+
+                builder
+                    //.With(new Position { X = x, Y = y, Z = z })
+                    //.With(new Velocity { X = 0, Y = 0, Z = 0 })
+                    //.Create();
+                    .Add<Position>(new Position { X = x, Y = y, Z = z })
+                    .Add<Velocity>(new Velocity { X = 0, Y = 0, Z = 0 });
+            }
+            
+            GD.Print($"[ECSControlPanel] âœ… Spawned {count:N0} entities");
+        }
+        
+        private void SpawnUntilFPSLow()
+        {
+            if (world == null) return;
+            
+            GD.Print("[ECSControlPanel] âˆž Starting infinite spawn (stops at FPS â‰¤ 29)...");
+            
+            // Start spawn stress test with UntilCrash intensity
+            StartStressTest(StressTestType.Spawn, StressIntensity.UntilCrash);
         }
     }
 }

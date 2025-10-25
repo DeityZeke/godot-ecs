@@ -112,7 +112,7 @@ namespace UltraSim.ECS
             // Phase 6: Rendering
             ProcessRenderQueue();
 
-            if (tickCount > 300 && printTickSchedule)
+            if (tickCount > 1 && printTickSchedule)
             {
                 GD.Print(_systems.GetTickSchedulingInfo());
                 printTickSchedule = false;

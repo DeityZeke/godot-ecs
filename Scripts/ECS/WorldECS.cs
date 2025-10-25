@@ -25,7 +25,7 @@ namespace UltraSim
     public partial class WorldECS : Node3D
     {
         [Export] public int EntityCount = 100;
-        [Export] public bool EnableDebugStats = true;        
+        [Export] public bool EnableDebugStats = true;
         [Export] public RendererType Renderer = RendererType.MultiMesh;
         [Export] public float SpawnRadius = 50f;
         [Export] public float MinSpeed = 2f;
@@ -91,7 +91,7 @@ namespace UltraSim
             // Enable systems
             //_world.EnqueueSystemEnable<PulsingMovementSystem>();
             //_world.EnqueueSystemEnable<MovementSystem>();
-            
+
             /*
             _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
             _world.EnqueueSystemEnable<OptimizedMovementSystem>();
@@ -122,11 +122,32 @@ namespace UltraSim
                     break;
             }
 
+            // Add tick rate test systems
+            _world.Systems.Register(new EveryFrameTestSystem());      // Runs every frame
+            _world.Systems.Register(new FastTickTestSystem());        // 20 Hz (50ms)
+            _world.Systems.Register(new MediumTickTestSystem());      // 10 Hz (100ms)
+            _world.Systems.Register(new SlowTickTestSystem());        // 1 Hz (1s)
+            _world.Systems.Register(new VerySlowTickTestSystem());    // 0.2 Hz (5s)
+            _world.Systems.Register(new ManualTestSystem());          // Manual only
+            _world.Systems.Register(new SaveSystem());                // Manual only
+            _world.Systems.Register(new BucketedUpdateSystem());      // 10 Hz with internal bucketing
+            _world.Systems.Register(new SimulatedAISystem());         // 1 Hz (simulates AI)
+
+            _world.EnqueueSystemEnable<EveryFrameTestSystem>();
+            _world.EnqueueSystemEnable<FastTickTestSystem>();
+            _world.EnqueueSystemEnable<MediumTickTestSystem>();
+            _world.EnqueueSystemEnable<SlowTickTestSystem>();
+            _world.EnqueueSystemEnable<VerySlowTickTestSystem>();
+            _world.EnqueueSystemEnable<BucketedUpdateSystem>();
+            _world.EnqueueSystemEnable<SimulatedAISystem>();
+            _world.EnqueueSystemEnable<ManualTestSystem>();
+            _world.EnqueueSystemEnable<SaveSystem>();
+
 
             // ═══════════════════════════════════════════════════════════
             // 🚀 NEW: Use StructuralCommandBuffer for FAST entity creation!
             // ═══════════════════════════════════════════════════════════
-            
+
             var buffer = new StructuralCommandBuffer();
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
