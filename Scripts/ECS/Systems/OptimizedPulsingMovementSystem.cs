@@ -63,9 +63,6 @@ namespace UltraSim.ECS.Systems
 
         public override void Update(World world, double delta)
         {
-            //int posId = ComponentTypeRegistry.GetId<Position>();
-            //int velId = ComponentTypeRegistry.GetId<Velocity>();
-            //int pulseId = ComponentTypeRegistry.GetId<PulseData>();
 
             float deltaF = (float)delta;
 

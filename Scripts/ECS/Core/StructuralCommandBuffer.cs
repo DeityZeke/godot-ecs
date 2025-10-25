@@ -69,7 +69,6 @@ namespace UltraSim.ECS
                 var signature = new ComponentSignature();
                 //foreach (var (typeId, _) in cmd.Components)
                 //foreach (var (typeId, _) in CollectionsMarshal.AsSpan(cmd.Components))
-                //signature = signature.Add(typeId);
                 foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
                     signature = signature.Add(component.typeId);
 
@@ -86,7 +85,6 @@ namespace UltraSim.ECS
                 //foreach (var (typeId, value) in cmd.Components)
                 //foreach (var (typeId, value) in CollectionsMarshal.AsSpan(cmd.Components))
                 //{
-                //    archetype.SetComponentValueBoxed(typeId, slot, value);
                 //}
                 foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
                     archetype.SetComponentValueBoxed(component.typeId, slot, component.value);

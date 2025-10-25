@@ -43,9 +43,9 @@ namespace UltraSim
 
         public override void _Ready()
         {
-            GD.Print("╔═══════════════════════════════════════════════════════════╗");
-            GD.Print("║           ECS WORLD INITIALIZATION                        ║");
-            GD.Print("╚═══════════════════════════════════════════════════════════╝");
+            GD.Print("========================================");
+            GD.Print("      ECS WORLD INITIALIZATION         ");
+            GD.Print("========================================");
 
             _world = new World();
 
@@ -55,8 +55,6 @@ namespace UltraSim
             _world.OnFrameComplete += () => { /* end-of-frame logic */ };
 
             // Queue systems (still using queues for systems - that's fine!)
-            //_world.EnqueueSystemCreate(new PulsingMovementSystem());
-            //_world.EnqueueSystemCreate(new MovementSystem());
             _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
             _world.EnqueueSystemCreate(new OptimizedMovementSystem());
 
@@ -81,26 +79,9 @@ namespace UltraSim
                     break;
             }
 
-            /*
-            if (Renderer == RendererType.MultiMesh)
-                _world.EnqueueSystemCreate(new MultiMeshRenderSystem());
-            else
-                _world.EnqueueSystemCreate(new RenderSystem());
-            */
 
             // Enable systems
-            //_world.EnqueueSystemEnable<PulsingMovementSystem>();
-            //_world.EnqueueSystemEnable<MovementSystem>();
 
-            /*
-            _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
-            _world.EnqueueSystemEnable<OptimizedMovementSystem>();
-
-            if (Renderer == RendererType.MultiMesh)
-                _world.EnqueueSystemEnable<MultiMeshRenderSystem>();
-            else
-                _world.EnqueueSystemEnable<RenderSystem>();
-            */
 
             switch (Renderer)
             {
@@ -144,9 +125,9 @@ namespace UltraSim
             _world.EnqueueSystemEnable<SaveSystem>();
 
 
-            // ═══════════════════════════════════════════════════════════
-            // 🚀 NEW: Use StructuralCommandBuffer for FAST entity creation!
-            // ═══════════════════════════════════════════════════════════
+
+            // NEW: Use StructuralCommandBuffer for FAST entity creation!
+
 
             var buffer = new StructuralCommandBuffer();
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -193,7 +174,7 @@ namespace UltraSim
             }
 
             sw.Stop();
-            GD.Print($"[WorldECS] ✓ Queued {EntityCount} entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            GD.Print($"[WorldECS] Queued {EntityCount} entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
 
             // Initialize world (processes system queues)
             _world.Initialize();
@@ -207,11 +188,11 @@ namespace UltraSim
             _world.MarkEntitiesSpawned();
             _entitiesMarkedAsSpawned = true;
 
-            GD.Print($"[WorldECS] ✓ Applied buffer in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            GD.Print($"[WorldECS] Applied buffer in {sw.Elapsed.TotalMilliseconds:F3}ms");
             GD.Print($"[WorldECS] Config: Radius={SpawnRadius}, Speed={MinSpeed}-{MaxSpeed}, Freq={PulseFrequencyMin}-{PulseFrequencyMax}Hz");
-            GD.Print("╔═══════════════════════════════════════════════════════════╗");
-            GD.Print("║              ECS WORLD READY                              ║");
-            GD.Print("╚═══════════════════════════════════════════════════════════╝\n");
+            GD.Print("========================================");
+            GD.Print("         ECS WORLD READY                ");
+            GD.Print("========================================\n");
         }
 
         private Vector3 RandomPointInSphere(float radius)

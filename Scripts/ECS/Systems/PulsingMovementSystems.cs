@@ -1,4 +1,3 @@
-
 #nullable enable
 
 using System;
@@ -34,9 +33,6 @@ namespace UltraSim.ECS.Systems
 
         public override void Update(World world, double delta)
         {
-            //int posId = ComponentTypeRegistry.GetId<Position>();
-            //int velId = ComponentTypeRegistry.GetId<Velocity>();
-            //int pulseId = ComponentTypeRegistry.GetId<PulseData>();
 
             foreach (var arch in _cachedQuery!)
             {
@@ -56,7 +52,7 @@ namespace UltraSim.ECS.Systems
 
                     // Update phase
                     pulse.Phase += pulse.Frequency * (float)delta;
-                    if (pulse.Phase > TWO_PI) // ✅ Use cached constant
+                    if (pulse.Phase > TWO_PI) // âœ… Use cached constant
                         pulse.Phase -= TWO_PI;
 
                     // Calculate direction to/from origin
@@ -80,7 +76,7 @@ namespace UltraSim.ECS.Systems
                     else
                     {
                         // At origin, give a small random push outward
-                        // ✅ Use cached Random instance (not new Random()!)
+                        // âœ… Use cached Random instance (not new Random()!)
                         vel.X = (float)(_random.NextDouble() - 0.5) * pulse.Speed;
                         vel.Y = (float)(_random.NextDouble() - 0.5) * pulse.Speed;
                         vel.Z = (float)(_random.NextDouble() - 0.5) * pulse.Speed;

@@ -34,8 +34,6 @@ namespace UltraSim.ECS.Systems
 
         public override void Update(World world, double delta)
         {
-            //int posId = ComponentTypeRegistry.GetId<Position>();
-            //int velId = ComponentTypeRegistry.GetId<Velocity>();
             float deltaF = (float)delta;
 
             foreach (var arch in _cachedQuery!)

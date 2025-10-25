@@ -102,7 +102,6 @@ namespace UltraSim.ECS
 #if USE_DEBUG
             _systems.ProfileUpdateAll(this, delta);
 #else
-            //_systems.ProcessSystemUpdates(this, delta);
             _systems.UpdateTicked(this, delta);
 #endif
 
@@ -341,7 +340,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] ⚠ System {typeof(T).Name} not found");
+                GD.PrintErr($"[World] âš  System {typeof(T).Name} not found");
                 return;
             }
 
@@ -356,7 +355,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] ⚠ System {typeof(T).Name} not found");
+                GD.PrintErr($"[World] âš  System {typeof(T).Name} not found");
                 return;
             }
 
@@ -371,7 +370,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] ⚠ System {typeof(T).Name} not found");
+                GD.PrintErr($"[World] âš  System {typeof(T).Name} not found");
                 return;
             }
 
@@ -388,7 +387,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] ⚠ System {typeof(T).Name} not found");
+                GD.PrintErr($"[World] âš  System {typeof(T).Name} not found");
                 return;
             }
 

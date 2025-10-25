@@ -1,4 +1,3 @@
-
 #nullable enable
 
 using System;
@@ -33,8 +32,6 @@ namespace UltraSim.ECS.Systems
         {
             _frameCount++;
 
-            //int posId = ComponentTypeRegistry.GetId<Position>();
-            //int velId = ComponentTypeRegistry.GetId<Velocity>();
 
             int archetypeCount = 0;
             int totalUpdated = 0;

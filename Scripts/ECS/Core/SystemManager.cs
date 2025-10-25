@@ -119,7 +119,6 @@ namespace UltraSim.ECS
                 system.Enable();
 
                 //if (system.SkipBatching)
-                    //ComputeBatches();
 
                 GD.Print($"[SystemManager] Enabled system: {system.Name}");
             }
@@ -145,7 +144,6 @@ namespace UltraSim.ECS
                 system.Disable();
 
                 //if (system.SkipBatching)
-                    //ComputeBatches();
 
                 GD.Print($"[SystemManager] Disabled system: {system.Name}");
             }

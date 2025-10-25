@@ -123,7 +123,7 @@ namespace UltraSim
             
             // Title
             var title = new Label();
-            title.Text = $"â•â•â•â• ECS CONTROL PANEL â•â•â•â•—";
+            title.Text = "==== ECS CONTROL PANEL ====";
             title.AddThemeFontSizeOverride("font_size", 16);
             title.AddThemeColorOverride("font_color", new Color(0.2f, 0.7f, 1f));
             container.AddChild(title);
@@ -179,7 +179,7 @@ namespace UltraSim
             
             // Warning label
             var warningLabel = new Label();
-            warningLabel.Text = "âš  Enabling will cause 10-25% performance hit!";
+            warningLabel.Text = "WARNING: Enabling will cause 10-25% performance hit!";
             warningLabel.AddThemeFontSizeOverride("font_size", 11);
             warningLabel.AddThemeColorOverride("font_color", new Color(1f, 0.6f, 0.2f));
             container.AddChild(warningLabel);
@@ -230,7 +230,7 @@ namespace UltraSim
             AddSpacer(5);
             
             // Infinity spawn button
-            var infinityButton = CreateStyledButton("âˆž Until FPS Low (â‰¤29)", new Color(1f, 0.3f, 0.3f));
+            var infinityButton = CreateStyledButton("Until FPS Low (<=29)", new Color(1f, 0.3f, 0.3f));
             infinityButton.Pressed += () => SpawnUntilFPSLow();
             container.AddChild(infinityButton);
             
@@ -257,7 +257,7 @@ namespace UltraSim
         private void AddSection(string title)
         {
             var label = new Label();
-            label.Text = $"""â"€â"€â"€ {title} â"€â"€â"€""";
+            label.Text = $"=== {title} ===";
             label.AddThemeFontSizeOverride("font_size", 14);
             label.AddThemeColorOverride("font_color", new Color(0.3f, 0.7f, 1f));
             container!.AddChild(label);
@@ -455,7 +455,7 @@ namespace UltraSim
             
             if (tickSchedulingVisible)
             {
-                tickSchedulingToggle.Text = $"""âœ" Tick Scheduling Active""";
+                tickSchedulingToggle.Text = "ACTIVE: Tick Scheduling";
                 
                 var enabledStyle = new StyleBoxFlat();
                 enabledStyle.BgColor = new Color(0.3f, 0.8f, 0.3f) with { A = 0.7f };
@@ -520,7 +520,7 @@ namespace UltraSim
                 
                 // Group header
                 var headerLabel = new Label();
-                headerLabel.Text = $"""â"€â"€ {rate} ({rate.ToFrequencyString()}) â"€â"€""";
+                headerLabel.Text = $"-- {rate} ({rate.ToFrequencyString()}) --";
                 headerLabel.AddThemeFontSizeOverride("font_size", 11);
                 headerLabel.AddThemeColorOverride("font_color", new Color(0.5f, 0.8f, 1f));
                 tickSchedulingContainer.AddChild(headerLabel);
@@ -794,7 +794,7 @@ namespace UltraSim
                 return;
             }
             
-            GD.Print($"[ECSControlPanel] â–¶ï¸ Manually invoking {typeof(T).Name}...");
+            GD.Print($"[ECSControlPanel] Manually invoking {typeof(T).Name}...");
             world.Systems.RunManual(world, system);
         }
         
@@ -825,7 +825,7 @@ namespace UltraSim
             
             if (advancedStatsEnabled)
             {
-                advancedStatsToggle.Text = $"""âœ" System Benchmarks Active""";
+                advancedStatsToggle.Text = "ACTIVE: System Benchmarks";
                 
                 var enabledStyle = new StyleBoxFlat();
                 enabledStyle.BgColor = new Color(0.3f, 0.8f, 0.3f) with { A = 0.7f };
@@ -840,7 +840,7 @@ namespace UltraSim
                 enabledStyle.CornerRadiusBottomRight = 4;
                 advancedStatsToggle.AddThemeStyleboxOverride("normal", enabledStyle);
                 
-                GD.Print("[ECSControlPanel] âš  Advanced statistics ENABLED - Performance impact: 10-25%");
+                GD.Print("[ECSControlPanel] Advanced statistics ENABLED - Performance impact: 10-25%");
             }
             else
             {
@@ -919,21 +919,18 @@ namespace UltraSim
                 float z = (float)(GD.Randf() * 200 - 100);
 
                 builder
-                    //.With(new Position { X = x, Y = y, Z = z })
-                    //.With(new Velocity { X = 0, Y = 0, Z = 0 })
-                    //.Create();
                     .Add<Position>(new Position { X = x, Y = y, Z = z })
                     .Add<Velocity>(new Velocity { X = 0, Y = 0, Z = 0 });
             }
             
-            GD.Print($"[ECSControlPanel] âœ… Spawned {count:N0} entities");
+            GD.Print($"[ECSControlPanel] Spawned {count:N0} entities");
         }
         
         private void SpawnUntilFPSLow()
         {
             if (world == null) return;
             
-            GD.Print("[ECSControlPanel] âˆž Starting infinite spawn (stops at FPS â‰¤ 29)...");
+            GD.Print("[ECSControlPanel] Starting infinite spawn (stops at FPS <= 29)...");
             
             // Start spawn stress test with UntilCrash intensity
             StartStressTest(StressTestType.Spawn, StressIntensity.UntilCrash);

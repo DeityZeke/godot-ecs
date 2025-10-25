@@ -29,7 +29,7 @@ namespace UltraSim.ECS.Systems
             // Only print occasionally to avoid spam
             if (frameCount % 60 == 0)
             {
-                GD.Print($"[EveryFrameTest] âœ… Frame {frameCount} (should print ~every second)");
+                GD.Print($"[EveryFrameTest] Å“â€¦ Frame {frameCount} (should print ~every second)");
             }
         }
     }
@@ -61,7 +61,7 @@ namespace UltraSim.ECS.Systems
             // Print every 20 ticks (once per second)
             if (tickCount % 20 == 0)
             {
-                GD.Print($"""[FastTickTest] âœ… Tick {tickCount} (Î" {deltaTime*1000:F1}ms, should be ~50ms)""");
+                GD.Print($"""[FastTickTest] Å“â€¦ Tick {tickCount} (delta: {deltaTime*1000:F1}ms, should be ~50ms)""");
             }
         }
     }
@@ -93,7 +93,7 @@ namespace UltraSim.ECS.Systems
             // Print every 10 ticks (once per second)
             if (tickCount % 10 == 0)
             {
-                GD.Print($"""[MediumTickTest] âœ… Tick {tickCount} (Î" {deltaTime*1000:F1}ms, should be ~100ms)""");
+                GD.Print($"""[MediumTickTest] Å“â€¦ Tick {tickCount} (delta: {deltaTime*1000:F1}ms, should be ~100ms)""");
             }
         }
     }
@@ -122,7 +122,7 @@ namespace UltraSim.ECS.Systems
             double deltaTime = currentTime - lastTickTime;
             lastTickTime = currentTime;
             
-            GD.Print($"""[SlowTickTest] âœ… Tick {tickCount} (Î" {deltaTime*1000:F0}ms, should be ~1000ms)""");
+            GD.Print($"""[SlowTickTest] Å“â€¦ Tick {tickCount} (delta: {deltaTime*1000:F0}ms, should be ~1000ms)""");
         }
     }
     
@@ -150,7 +150,7 @@ namespace UltraSim.ECS.Systems
             double deltaTime = currentTime - lastTickTime;
             lastTickTime = currentTime;
             
-            GD.Print($"""[VerySlowTickTest] âœ… Tick {tickCount} (Î" {deltaTime:F1}s, should be ~5.0s)""");
+            GD.Print($"""[VerySlowTickTest] Å“â€¦ Tick {tickCount} (delta: {deltaTime:F1}s, should be ~5.0s)""");
         }
     }
     
@@ -173,7 +173,7 @@ namespace UltraSim.ECS.Systems
         public override void Update(World world, double delta)
         {
             invokeCount++;
-            GD.Print($"[ManualTest] ðŸ'¥ MANUALLY INVOKED #{invokeCount} (should only happen when F10 pressed)");
+            GD.Print($"[ManualTest] Å¸'Â¥ MANUALLY INVOKED #{invokeCount} (should only happen when F10 pressed)");
         }
     }
     
@@ -196,11 +196,11 @@ namespace UltraSim.ECS.Systems
         {
             saveCount++;
             
-            GD.Print($"""â•"â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•""");
-            GD.Print($"â•'  SAVE SYSTEM INVOKED #{saveCount}");
-            GD.Print($"â•'  Entities: {CountEntities(world):N0}");
-            GD.Print($"â•'  Archetypes: {world.GetArchetypes().Count}");
-            GD.Print("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+            GD.Print($"""-"----------------------------------""");
+            GD.Print($"-'  SAVE SYSTEM INVOKED #{saveCount}");
+            GD.Print($"-'  Entities: {CountEntities(world):N0}");
+            GD.Print($"-'  Archetypes: {world.GetArchetypes().Count}");
+            GD.Print("-Å¡----------------------------------");
         }
         
         private int CountEntities(World world)
@@ -263,7 +263,7 @@ namespace UltraSim.ECS.Systems
             // Only print occasionally
             if (tickCount % 10 == 0)
             {
-                GD.Print($"[BucketedUpdate] âœ… Tick {tickCount} processed bucket {currentBucket} ({processedCount:N0} entities)");
+                GD.Print($"[BucketedUpdate] Å“â€¦ Tick {tickCount} processed bucket {currentBucket} ({processedCount:N0} entities)");
             }
             
             // Advance to next bucket
@@ -299,7 +299,7 @@ namespace UltraSim.ECS.Systems
             // Simulate expensive AI work
             int decisionsProcessed = entityCount;
             
-            GD.Print($"[SimulatedAI] ðŸ§  AI Update #{aiUpdateCount}: Processed {decisionsProcessed:N0} decision trees");
+            GD.Print($"[SimulatedAI] Å¸Â§  AI Update #{aiUpdateCount}: Processed {decisionsProcessed:N0} decision trees");
         }
     }
 }

@@ -44,7 +44,7 @@ namespace UltraSim.ECS.Testing
             result.TotalEntitiesCreated = config.TargetEntityCount;
 
             #if USE_DEBUG
-            GD.Print($"[ChurnTest] âœ… Initial spawn complete");
+            GD.Print($"[ChurnTest] Å“â€¦ Initial spawn complete");
             #endif // USE_DEBUG
         }
 
