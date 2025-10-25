@@ -105,10 +105,7 @@ namespace UltraSim.ECS
             _systems.UpdateTicked(this, delta);
 #endif
 
-            // Phase 5: Apply Deferred Changes
-            ApplyDeferredChanges();
-
-            // Phase 6: Rendering
+            // Phase 5: Rendering
             ProcessRenderQueue();
 
             if (tickCount > 1 && printTickSchedule)
@@ -119,7 +116,7 @@ namespace UltraSim.ECS
 
             tickCount++;
 
-            // Phase 7: Events
+            // Phase 6: Events
             OnSystemsUpdated?.Invoke();
             OnFrameComplete?.Invoke();
         }
@@ -214,12 +211,6 @@ namespace UltraSim.ECS
                 try { action.Invoke(); }
                 catch (Exception ex) { GD.PrintErr($"[World] Render action error: {ex}"); }
             }
-        }
-
-        private void ApplyDeferredChanges()
-        {
-            // TODO: Integrate command buffers here
-            // MergePhase(); CompressPhase(); ApplyValueChanges(); ApplyStructuralChanges();
         }
 
         #endregion

@@ -155,8 +155,6 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasComponent(int id) => Signature.Contains(id);
 
-        public ComponentSignature GetSignature() => Signature.Clone();
-
         public void SetComponentValue<T>(int componentTypeId, int slot, T value)
         {
             EnsureComponentList<T>(componentTypeId);
@@ -216,8 +214,6 @@ namespace UltraSim.ECS
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Entity GetEntity(int slot) => _entities[slot];
         public Entity[] GetEntityArray() => _entities.ToArray();
     }
 }

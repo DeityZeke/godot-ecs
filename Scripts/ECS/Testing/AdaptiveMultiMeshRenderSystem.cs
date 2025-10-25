@@ -384,7 +384,8 @@ namespace UltraSim.ECS.Systems
                 GD.Print($"[AdaptiveMultiMeshRenderSystem] Frame {_frameCount}: Batch updated {startIdx}-{endIdx} ({batchIdx} instances)");
             }
         }
-        
+
+        /* // Currently never used, but might be usefull in the future?
         /// <summary>
         /// Prints diagnostic information about the renderer state.
         /// </summary>
@@ -400,6 +401,7 @@ namespace UltraSim.ECS.Systems
             GD.Print($"[AdaptiveMultiMeshRenderSystem] Performance Limited: {performanceLimited}");
             GD.Print($"[AdaptiveMultiMeshRenderSystem] Warmup Complete: {warmupComplete}");
         }
+        */
 
         public override void OnShutdown(World world)
         {
