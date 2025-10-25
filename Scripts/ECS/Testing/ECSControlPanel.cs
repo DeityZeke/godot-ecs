@@ -46,7 +46,7 @@ namespace UltraSim
         
         // NEW: Tick scheduling visualization
         private VBoxContainer? tickSchedulingContainer;
-        private Dictionary<string, (Label nameLabel, Label rateLabel, ColorRect indicator, double lastBlinkTime)> tickSystemIndicators = new();
+        private Dictionary<string, (Label nameLabel, Label rateLabel, ColorRect indicator, double lastBlinkTime, int lastUpdateCount)> tickSystemIndicators = new();
         private bool tickSchedulingVisible = false;
         private Button? tickSchedulingToggle;
 
@@ -554,7 +554,7 @@ namespace UltraSim
                     
                     tickSchedulingContainer.AddChild(hbox);
                     
-                    tickSystemIndicators[system.Name] = (nameLabel, rateLabel, indicator, 0);
+                    tickSystemIndicators[system.Name] = (nameLabel, rateLabel, indicator, 0, 0);
                 }
                 
                 // Spacer between groups
@@ -578,26 +578,22 @@ namespace UltraSim
                 if (!tickSystemIndicators.TryGetValue(system.Name, out var indicator))
                     continue;
                 
-                // Check if system just ran by looking at statistics
+                // Check if system just ran by detecting UpdateCount change
                 var stats = system.Statistics;
-                bool justRan = stats.IsEnabled && stats.UpdateCount > 0;
+                int currentUpdateCount = stats.UpdateCount;
+                int previousUpdateCount = indicator.lastUpdateCount;
+                
+                bool justRan = currentUpdateCount > previousUpdateCount;
                 
                 if (justRan)
                 {
-                    // Store the time when we detected the system ran
-                    var prevTime = indicator.lastBlinkTime;
-                    var newTime = currentTime;
-                    
-                    // If system ran recently (within last 0.1s), show green
-                    if (newTime - prevTime > 0.016) // Only update if frame changed
-                    {
-                        indicator.indicator.Color = new Color(0.3f, 1f, 0.3f); // Green = just ran
-                        tickSystemIndicators[system.Name] = (indicator.nameLabel, indicator.rateLabel, indicator.indicator, newTime);
-                    }
+                    // System ran this frame - light up green!
+                    indicator.indicator.Color = new Color(0.3f, 1f, 0.3f); // Green = just ran
+                    tickSystemIndicators[system.Name] = (indicator.nameLabel, indicator.rateLabel, indicator.indicator, currentTime, currentUpdateCount);
                 }
                 else
                 {
-                    // Fade back to gray
+                    // Check if we should fade back to gray
                     double timeSinceRun = currentTime - indicator.lastBlinkTime;
                     if (timeSinceRun > 0.2) // Fade after 200ms
                     {
@@ -626,7 +622,8 @@ namespace UltraSim
             foreach (var system in systems)
             {
                 var stats = system.Statistics;
-                if (!systemStatLabels.TryGetValue(stats.SystemName, out var timeLabel))
+                // Use system.Name as the key instead of stats.SystemName
+                if (!systemStatLabels.TryGetValue(system.Name, out var timeLabel))
                     continue;
                 
                 timeLabel.Text = $"{stats.LastUpdateTimeMs:F3}ms";
@@ -662,9 +659,9 @@ namespace UltraSim
                 
                 var hbox = new HBoxContainer();
                 
-                // System name
+                // System name - use system.Name directly instead of stats.SystemName
                 var nameLabel = new Label();
-                nameLabel.Text = stats.SystemName;
+                nameLabel.Text = system.Name;
                 nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
                 nameLabel.AddThemeFontSizeOverride("font_size", 11);
                 hbox.AddChild(nameLabel);
@@ -687,7 +684,7 @@ namespace UltraSim
                 hbox.AddChild(timeLabel);
                 
                 systemStatsContainer.AddChild(hbox);
-                systemStatLabels[stats.SystemName] = timeLabel;
+                systemStatLabels[system.Name] = timeLabel;
             }
         }
         
@@ -911,17 +908,25 @@ namespace UltraSim
             
             GD.Print($"[ECSControlPanel] Spawning {count:N0} entities...");
             
-            var builder = new EntityBuilder();
+            var buffer = new StructuralCommandBuffer();
+            
             for (int i = 0; i < count; i++)
             {
                 float x = (float)(GD.Randf() * 200 - 100);
                 float y = (float)(GD.Randf() * 200 - 100);
                 float z = (float)(GD.Randf() * 200 - 100);
 
-                builder
-                    .Add<Position>(new Position { X = x, Y = y, Z = z })
-                    .Add<Velocity>(new Velocity { X = 0, Y = 0, Z = 0 });
+                buffer.CreateEntity(builder =>
+                {
+                    builder.Add(new Position { X = x, Y = y, Z = z });
+                    builder.Add(new Velocity { X = 0, Y = 0, Z = 0 });
+                    builder.Add(new RenderTag { });
+                    builder.Add(new Visible { });
+                });
             }
+            
+            // Apply the buffer to create all entities
+            buffer.Apply(world);
             
             GD.Print($"[ECSControlPanel] Spawned {count:N0} entities");
         }

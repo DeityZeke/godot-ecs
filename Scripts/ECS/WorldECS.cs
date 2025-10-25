@@ -67,35 +67,14 @@ namespace UltraSim
                     break;
                 case RendererType.IndividualMeshes:
                     _world.EnqueueSystemCreate(new RenderSystem());
-                    break;
-                case RendererType.MultiMesh:
-                    _world.EnqueueSystemCreate(new MultiMeshRenderSystem());
-                    break;
-                case RendererType.Adaptive:
-                    _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
-                    break;
-                default:
-                    GD.Print("[WorldECS] Unknown renderer type. No rendering system created.");
-                    break;
-            }
-
-
-            // Enable systems
-
-
-            switch (Renderer)
-            {
-
-                case RendererType.NONE:
-                    GD.Print("[WorldECS] No rendering system selected.");
-                    break;
-                case RendererType.IndividualMeshes:
                     _world.EnqueueSystemEnable<RenderSystem>();
                     break;
                 case RendererType.MultiMesh:
+                    _world.EnqueueSystemCreate(new MultiMeshRenderSystem());
                     _world.EnqueueSystemEnable<MultiMeshRenderSystem>();
                     break;
                 case RendererType.Adaptive:
+                    _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
                     _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
                     break;
                 default:
