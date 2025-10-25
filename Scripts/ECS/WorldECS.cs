@@ -1,7 +1,6 @@
 #nullable enable
 
 using Godot;
-using System;
 using UltraSim.ECS;
 using UltraSim.ECS.Systems;
 
@@ -37,7 +36,6 @@ namespace UltraSim
         private double _accum;
         private double _fpsAccum;
         private int _fpsFrames;
-        private Random _random = new Random();
         private bool _entitiesMarkedAsSpawned = false;
         private int _frameCount = 0;
 
@@ -116,12 +114,12 @@ namespace UltraSim
             for (int i = 0; i < EntityCount; i++)
             {
                 // Random position in sphere
-                Vector3 randomPos = RandomPointInSphere(SpawnRadius);
+                Vector3 randomPos = Utilities.RandomPointInSphere(SpawnRadius);
 
                 // Random speed and pulse frequency
-                float speed = (float)(_random.NextDouble() * (MaxSpeed - MinSpeed) + MinSpeed);
-                float frequency = (float)(_random.NextDouble() * (PulseFrequencyMax - PulseFrequencyMin) + PulseFrequencyMin);
-                float phaseOffset = (float)(_random.NextDouble() * Math.PI * 2);
+                float speed = Utilities.RandomRange(MinSpeed, MaxSpeed);
+                float frequency = Utilities.RandomRange(PulseFrequencyMin, PulseFrequencyMax);
+                float phaseOffset = Utilities.RandomRange(0f, Utilities.TWO_PI);
 
                 // Create entity with ALL components at once (NO archetype thrashing!)
                 buffer.CreateEntity(builder =>
@@ -174,26 +172,6 @@ namespace UltraSim
             GD.Print("========================================\n");
         }
 
-        private Vector3 RandomPointInSphere(float radius)
-        {
-            // Uniform distribution in sphere using spherical coordinates
-            float u = (float)_random.NextDouble();
-            float v = (float)_random.NextDouble();
-            float theta = u * 2f * Mathf.Pi;
-            float phi = Mathf.Acos(2f * v - 1f);
-            float r = (float)Math.Pow(_random.NextDouble(), 1.0 / 3.0) * radius;
-
-            float sinTheta = Mathf.Sin(theta);
-            float cosTheta = Mathf.Cos(theta);
-            float sinPhi = Mathf.Sin(phi);
-            float cosPhi = Mathf.Cos(phi);
-
-            return new Vector3(
-                r * sinPhi * cosTheta,
-                r * sinPhi * sinTheta,
-                r * cosPhi
-            );
-        }
 
         public override void _Process(double delta)
         {

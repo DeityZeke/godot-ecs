@@ -16,9 +16,6 @@ namespace UltraSim.ECS.Systems
         public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(PulseData) };
         public override Type[] WriteSet { get; } = new[] { typeof(Velocity), typeof(PulseData) };
 
-        private const float TWO_PI = 6.28318530718f; // Cached constant (MathF.PI * 2)
-        private readonly Random _random = new Random(); // Reuse Random instance
-
             private static readonly int PosId = ComponentTypeRegistry.GetId<Position>();
     private static readonly int VelId = ComponentTypeRegistry.GetId<Velocity>();
     private static readonly int PulseId = ComponentTypeRegistry.GetId<PulseData>();
@@ -52,8 +49,8 @@ namespace UltraSim.ECS.Systems
 
                     // Update phase
                     pulse.Phase += pulse.Frequency * (float)delta;
-                    if (pulse.Phase > TWO_PI) // âœ… Use cached constant
-                        pulse.Phase -= TWO_PI;
+                    if (pulse.Phase > Utilities.TWO_PI) // âœ… Use cached constant
+                        pulse.Phase -= Utilities.TWO_PI;
 
                     // Calculate direction to/from origin
                     float distToOrigin = MathF.Sqrt(pos.X * pos.X + pos.Y * pos.Y + pos.Z * pos.Z);
@@ -77,9 +74,9 @@ namespace UltraSim.ECS.Systems
                     {
                         // At origin, give a small random push outward
                         // âœ… Use cached Random instance (not new Random()!)
-                        vel.X = (float)(_random.NextDouble() - 0.5) * pulse.Speed;
-                        vel.Y = (float)(_random.NextDouble() - 0.5) * pulse.Speed;
-                        vel.Z = (float)(_random.NextDouble() - 0.5) * pulse.Speed;
+                        vel.X = Utilities.RandomRange(-0.5f, 0.5f) * pulse.Speed;
+                        vel.Y = Utilities.RandomRange(-0.5f, 0.5f) * pulse.Speed;
+                        vel.Z = Utilities.RandomRange(-0.5f, 0.5f) * pulse.Speed;
                     }
                 }
             }

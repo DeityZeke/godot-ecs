@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 
 using Godot;
 
@@ -25,33 +24,14 @@ namespace UltraSim.ECS.Systems
         public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(PulseData) };
         public override Type[] WriteSet { get; } = new[] { typeof(Velocity), typeof(PulseData) };
 
-        private const float TWO_PI = 6.28318530718f;
         private const int CHUNK_SIZE = 32768;
 
             private static readonly int PosId = ComponentTypeRegistry.GetId<Position>();
     private static readonly int VelId = ComponentTypeRegistry.GetId<Velocity>();
     private static readonly int PulseId = ComponentTypeRegistry.GetId<PulseData>();
 
-        private const int LOOKUP_SIZE = 1024;
-        private static readonly float[] SinLookup = new float[LOOKUP_SIZE];
-        private const float LOOKUP_SCALE = LOOKUP_SIZE / TWO_PI;
-
         // Manual thread pool (created once, reused forever)
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
-
-        static OptimizedPulsingMovementSystem()
-        {
-            for (int i = 0; i < LOOKUP_SIZE; i++)
-            {
-                float angle = i * TWO_PI / LOOKUP_SIZE;
-                SinLookup[i] = MathF.Sin(angle);
-            }
-
-            GD.Print($"[ManualThreadPoolPulsingSystem] Created thread pool with {System.Environment.ProcessorCount} threads");
-        }
-
-        [ThreadStatic] private static Random? _threadLocalRandom;
-        private static Random GetRandom() => _threadLocalRandom ??= new Random(System.Environment.CurrentManagedThreadId);
 
         public override void OnInitialize(World world)
         {
@@ -108,8 +88,6 @@ namespace UltraSim.ECS.Systems
             int end,
             float delta)
         {
-            var random = GetRandom();
-
             for (int i = start; i < end; i++)
             {
                 ref var p = ref pos[i];
@@ -117,17 +95,16 @@ namespace UltraSim.ECS.Systems
                 ref var pd = ref pulse[i];
 
                 pd.Phase += pd.Frequency * delta;
-                if (pd.Phase > TWO_PI)
-                    pd.Phase -= TWO_PI;
+                if (pd.Phase > Utilities.TWO_PI)
+                    pd.Phase -= Utilities.TWO_PI;
 
-                int lookupIndex = (int)(pd.Phase * LOOKUP_SCALE) & (LOOKUP_SIZE - 1);
-                float pulseDirection = SinLookup[lookupIndex];
+                float pulseDirection = Utilities.FastSin(pd.Phase);
 
                 float distSq = p.X * p.X + p.Y * p.Y + p.Z * p.Z;
 
                 if (distSq > 0.0001f)
                 {
-                    float invDist = FastInvSqrt(distSq);
+                    float invDist = Utilities.FastInvSqrt(distSq);
                     float speedFactor = pulseDirection * pd.Speed;
 
                     v.X = p.X * invDist * speedFactor;
@@ -136,22 +113,11 @@ namespace UltraSim.ECS.Systems
                 }
                 else
                 {
-                    v.X = (float)(random.NextDouble() - 0.5) * pd.Speed;
-                    v.Y = (float)(random.NextDouble() - 0.5) * pd.Speed;
-                    v.Z = (float)(random.NextDouble() - 0.5) * pd.Speed;
+                    v.X = Utilities.RandomRange(-0.5f, 0.5f) * pd.Speed;
+                    v.Y = Utilities.RandomRange(-0.5f, 0.5f) * pd.Speed;
+                    v.Z = Utilities.RandomRange(-0.5f, 0.5f) * pd.Speed;
                 }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float FastInvSqrt(float x)
-        {
-            float halfx = 0.5f * x;
-            int i = BitConverter.SingleToInt32Bits(x);
-            i = 0x5f3759df - (i >> 1);
-            float y = BitConverter.Int32BitsToSingle(i);
-            y = y * (1.5f - halfx * y * y);
-            return y;
         }
     }
 }

@@ -105,22 +105,16 @@ namespace UltraSim.ECS.Testing
 
         private void SpawnEntity()
         {
-            float theta = (float)(random.NextDouble() * Math.PI * 2);
-            float phi = (float)(Math.Acos(2 * random.NextDouble() - 1));
-            float r = (float)(Math.Pow(random.NextDouble(), 1.0 / 3.0) * spawnRadius);
-
-            float x = r * MathF.Sin(phi) * MathF.Cos(theta);
-            float y = r * MathF.Sin(phi) * MathF.Sin(theta);
-            float z = r * MathF.Cos(phi);
+            var pos = Utilities.RandomPointInSphere(spawnRadius);
 
             buffer.CreateEntity(builder =>
             {
-                builder.Add(new Position { X = x, Y = y, Z = z });
-                builder.Add(new Velocity 
-                { 
-                    X = (float)(random.NextDouble() * 2 - 1),
-                    Y = (float)(random.NextDouble() * 2 - 1),
-                    Z = (float)(random.NextDouble() * 2 - 1)
+                builder.Add(new Position { X = pos.X, Y = pos.Y, Z = pos.Z });
+                builder.Add(new Velocity
+                {
+                    X = Utilities.RandomRange(-1f, 1f),
+                    Y = Utilities.RandomRange(-1f, 1f),
+                    Z = Utilities.RandomRange(-1f, 1f)
                 });
                 builder.Add(new RenderTag { });
                 builder.Add(new Visible { });
