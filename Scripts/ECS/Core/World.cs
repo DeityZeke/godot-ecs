@@ -115,7 +115,7 @@ namespace UltraSim.ECS
 
             // Phase 5: Rendering
             ProcessRenderQueue();
-            
+
             _systems.UpdateAutoSave((float)delta); //Save at the end of frame, just in case
 
             // Phase 6: Events

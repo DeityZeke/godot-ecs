@@ -41,64 +41,64 @@ namespace UltraSim.ECS
             system.SaveSettings();
         }
 
-public void SaveAllSettings()
-{
-    int savedCount = 0;
-    
-    foreach (var system in _systems)
-    {
-        if (system.GetSettings() != null)
+        public void SaveAllSettings()
         {
-            system.SaveSettings();
-            savedCount++;
-        }
-    }
+            int savedCount = 0;
+
+            foreach (var system in _systems)
+            {
+                if (system.GetSettings() != null)
+                {
+                    system.SaveSettings();
+                    savedCount++;
+                }
+            }
 
 #if USE_DEBUG
-    GD.Print($"[SystemManager] Saved settings for {savedCount} systems");
+            GD.Print($"[SystemManager] Saved settings for {savedCount} systems");
 #endif
-}
+        }
 
-/// <summary>
-/// Saves master ECS settings (currently just a stub for future use).
-/// </summary>
-public void SaveMasterSettings()
-{
-    // Future: Save global ECS configuration
-    // For now, individual systems handle their own settings
-}
+        /// <summary>
+        /// Saves master ECS settings (currently just a stub for future use).
+        /// </summary>
+        public void SaveMasterSettings()
+        {
+            // Future: Save global ECS configuration
+            // For now, individual systems handle their own settings
+        }
 
-private float _autoSaveTimer = 0f;
+        private float _autoSaveTimer = 0f;
 
-/// <summary>
-/// Handles auto-save logic based on SaveSystem settings.
-/// Call this every frame from World.Tick().
-/// </summary>
-public void UpdateAutoSave(float delta)
-{
-    // Get SaveSystem to check if auto-save is enabled
-    var saveSystem = (SaveSystem)GetSystem<SaveSystem>();
-    if (saveSystem == null)
-        return;
-    
-    // Check if auto-save is enabled
-    bool autoSaveEnabled = saveSystem.SystemSettings.AutoSaveEnabled.Value;
-    if (!autoSaveEnabled)
-        return;
+        /// <summary>
+        /// Handles auto-save logic based on SaveSystem settings.
+        /// Call this every frame from World.Tick().
+        /// </summary>
+        public void UpdateAutoSave(float delta)
+        {
+            // Get SaveSystem to check if auto-save is enabled
+            var saveSystem = (SaveSystem)GetSystem<SaveSystem>();
+            if (saveSystem == null)
+                return;
 
-    float autoSaveInterval = saveSystem.SystemSettings.AutoSaveInterval.Value;
-    
-    _autoSaveTimer += delta;
-    
-    if (_autoSaveTimer >= autoSaveInterval)
-    {
-        // Trigger manual save
-        saveSystem.Update(World.Current!, delta);
-        _autoSaveTimer = 0f;
-        
-        GD.Print($"[SystemManager] Auto-save triggered (interval: {autoSaveInterval}s)");
-    }
-}
+            // Check if auto-save is enabled
+            bool autoSaveEnabled = saveSystem.SystemSettings.AutoSaveEnabled.Value;
+            if (!autoSaveEnabled)
+                return;
+
+            float autoSaveInterval = saveSystem.SystemSettings.AutoSaveInterval.Value;
+
+            _autoSaveTimer += delta;
+
+            if (_autoSaveTimer >= autoSaveInterval)
+            {
+                // Trigger manual save
+                saveSystem.Update(World.Current!, delta);
+                _autoSaveTimer = 0f;
+
+                GD.Print($"[SystemManager] Auto-save triggered (interval: {autoSaveInterval}s)");
+            }
+        }
 
         #endregion
 

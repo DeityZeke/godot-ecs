@@ -47,12 +47,12 @@ namespace UltraSim.ECS.Systems
         public override void OnInitialize(World world)
         {
             base.OnInitialize(world);
-            
+
             _cachedQuery = world.Query(typeof(Position), typeof(Velocity));
-            
+
             // Load settings
             LoadSettings();
-            
+
 #if USE_DEBUG
             GD.Print("[MovementSystem] Initialized with cached query.");
             GD.Print($"[MovementSystem] Settings - Speed: {SystemSettings.GlobalSpeedMultiplier.Value}, " +

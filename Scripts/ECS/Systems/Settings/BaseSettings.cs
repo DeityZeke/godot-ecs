@@ -8,7 +8,7 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
     public abstract class BaseSettings
     {
         private Dictionary<string, ISetting> _settings = new();
-        
+
         // Registration
         protected void Register(ISetting setting)
         {
@@ -19,9 +19,9 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             }
             _settings[setting.Name] = setting;
         }
-        
+
         // Fluent registration helpers
-        protected FloatSetting RegisterFloat(string name, float defaultValue, 
+        protected FloatSetting RegisterFloat(string name, float defaultValue,
             float min = 0f, float max = 100f, float step = 0.1f, string tooltip = "")
         {
             var setting = new FloatSetting
@@ -36,8 +36,8 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             Register(setting);
             return setting;
         }
-        
-        protected IntSetting RegisterInt(string name, int defaultValue, 
+
+        protected IntSetting RegisterInt(string name, int defaultValue,
             int min = 0, int max = 100, int step = 1, string tooltip = "")
         {
             var setting = new IntSetting
@@ -52,7 +52,7 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             Register(setting);
             return setting;
         }
-        
+
         protected BoolSetting RegisterBool(string name, bool defaultValue, string tooltip = "")
         {
             var setting = new BoolSetting
@@ -64,8 +64,8 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             Register(setting);
             return setting;
         }
-        
-        protected EnumSetting<T> RegisterEnum<T>(string name, T defaultValue, string tooltip = "") 
+
+        protected EnumSetting<T> RegisterEnum<T>(string name, T defaultValue, string tooltip = "")
             where T : struct, Enum
         {
             var setting = new EnumSetting<T>
@@ -77,8 +77,8 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             Register(setting);
             return setting;
         }
-        
-        protected StringSetting RegisterString(string name, string defaultValue = "", 
+
+        protected StringSetting RegisterString(string name, string defaultValue = "",
             int maxLength = 100, string tooltip = "")
         {
             var setting = new StringSetting
@@ -91,7 +91,7 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             Register(setting);
             return setting;
         }
-        
+
         // Generic getters (for dynamic access if needed)
         public T GetValue<T>(string name)
         {
@@ -102,30 +102,30 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
             }
             return (T)setting.GetValue();
         }
-        
+
         // Convenience accessors
         public float GetFloat(string name) => GetValue<float>(name);
         public int GetInt(string name) => GetValue<int>(name);
         public bool GetBool(string name) => GetValue<bool>(name);
         public string GetString(string name) => GetValue<string>(name);
-        
+
         // Setters (for dynamic updates if needed)
         public void SetValue<T>(string name, T value)
         {
             if (_settings.TryGetValue(name, out var setting))
                 setting.SetValue(value);
         }
-        
+
         // GUI support
         public List<ISetting> GetAllSettings() => _settings.Values.OrderBy(s => s.Name).ToList();
-        
+
         // Serialization
         public void Serialize(ConfigFile config, string section)
         {
             foreach (var setting in _settings.Values)
                 setting.Serialize(config, section);
         }
-        
+
         public void Deserialize(ConfigFile config, string section)
         {
             foreach (var setting in _settings.Values)
