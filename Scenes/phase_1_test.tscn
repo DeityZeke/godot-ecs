@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dkmudmnvsajtk"]
+
+[ext_resource type="Script" uid="uid://ctvgrrchk3a0x" path="res://Scripts/ECS/Testing/Phase1Test.cs" id="1_vyulv"]
+
+[node name="Node3D" type="Node3D"]
+script = ExtResource("1_vyulv")
