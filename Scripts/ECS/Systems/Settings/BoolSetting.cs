@@ -11,6 +11,7 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
         public bool Value { get; set; }
         
         public object GetValue() => Value;
+        public object GetValueAsString() => Value.ToString();
         public void SetValue(object value) => Value = Convert.ToBoolean(value);
         
         public Control CreateControl(Action<ISetting> onChanged)

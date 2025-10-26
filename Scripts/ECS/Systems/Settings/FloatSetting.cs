@@ -16,6 +16,7 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
         public string Format { get; set; } = "F2";
         
         public object GetValue() => Value;
+        public object GetValueAsString() => Value.ToString();
         public void SetValue(object value) => Value = Convert.ToSingle(value);
         
         public Control CreateControl(Action<ISetting> onChanged)

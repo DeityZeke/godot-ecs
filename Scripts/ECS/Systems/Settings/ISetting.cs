@@ -8,8 +8,9 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
         string Name { get; }
         string Category { get; set; }
         string Tooltip { get; set; }
-        
+
         object GetValue();
+        object GetValueAsString();
         void SetValue(object value);
         
         Control CreateControl(Action<ISetting> onChanged);

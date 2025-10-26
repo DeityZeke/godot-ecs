@@ -13,8 +13,9 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
         public int Min { get; set; } = 0;
         public int Max { get; set; } = 100;
         public int Step { get; set; } = 1;
-        
+
         public object GetValue() => Value;
+        public object GetValueAsString() => Value.ToString();
         public void SetValue(object value) => Value = Convert.ToInt32(value);
         
         public Control CreateControl(Action<ISetting> onChanged)

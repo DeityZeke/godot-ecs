@@ -12,6 +12,7 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
         public T Value { get; set; }
         
         public object GetValue() => Value;
+        public object GetValueAsString() => Value.ToString();
         public void SetValue(object value) => Value = (T)value;
         
         public Control CreateControl(Action<ISetting> onChanged)

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Godot;
@@ -41,7 +42,13 @@ namespace UltraSim.ECS
         private readonly ConcurrentQueue<(int entityIndex, int componentTypeId, object boxedValue)> _componentAddQueue = new();
         private readonly ConcurrentQueue<Action> _renderQueue = new();
 
+        public int ArchetypeCount => _archetypes.Count;
+        public int EntityCount => _entityLookup.Count;
+
         public static World? Current { get; private set; }
+
+        private UltraSim.ECS.GUI.ECSControlPanel _controlPanel;
+        private CanvasLayer canvasLayer = new CanvasLayer() { Layer = 100 };
 
         public SystemManager Systems => _systems;
         private bool _settingsInitialized = false;
@@ -98,6 +105,11 @@ namespace UltraSim.ECS
             ProcessSystemEnableQueue();
             ProcessEntityCreationQueue();
 
+            if (_controlPanel == null)
+            {
+                SetupControlPanel();
+            }
+
             // Phase 3: Component Operations
             ProcessComponentRemovalQueue();
             ProcessComponentAddQueue();
@@ -124,6 +136,26 @@ namespace UltraSim.ECS
         }
 
         #endregion
+
+        private void SetupControlPanel()
+        {
+            // Just create the control directly - no scene loading!
+            _controlPanel = new UltraSim.ECS.GUI.ECSControlPanel();
+
+            if (_controlPanel != null && WorldECS.RootNode != null)
+            {
+                WorldECS.RootNode.AddChild(canvasLayer);
+                canvasLayer.AddChild(_controlPanel);
+                //WorldECS.RootNode.AddChild(_controlPanel);
+                Callable.From(() => InitializeControlPanel()).CallDeferred();
+            }
+        }
+
+        private void InitializeControlPanel()
+        {
+            _controlPanel.Initialize(this);
+            GD.Print("ECS Control Panel ready! Press F12 to toggle.");
+        }
 
         #region Queue Processing
 

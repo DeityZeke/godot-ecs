@@ -1,8 +1,10 @@
 #nullable enable
 
 using Godot;
+
 using UltraSim.ECS;
 using UltraSim.ECS.Systems;
+using UltraSim.ECS.GUI;
 
 namespace UltraSim
 {
@@ -32,6 +34,8 @@ namespace UltraSim
         [Export] public float PulseFrequencyMin = 0.5f;
         [Export] public float PulseFrequencyMax = 2f;
 
+        public static Node RootNode { get; private set; }
+
         private World _world = null!;
         private double _accum;
         private double _fpsAccum;
@@ -45,6 +49,8 @@ namespace UltraSim
             GD.Print("      ECS WORLD INITIALIZATION         ");
             GD.Print("========================================");
 
+            RootNode = GetTree().Root.GetNode<Node>("Main");
+
             _world = new World();
 
             // Subscribe to world events
@@ -55,7 +61,6 @@ namespace UltraSim
             // Queue systems (still using queues for systems - that's fine!)
             _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
             _world.EnqueueSystemCreate(new OptimizedMovementSystem());
-
 
             switch (Renderer)
             {
@@ -100,11 +105,6 @@ namespace UltraSim
             _world.EnqueueSystemEnable<SimulatedAISystem>();
             _world.EnqueueSystemEnable<ManualTestSystem>();
             _world.EnqueueSystemEnable<SaveSystem>();
-
-
-
-            // NEW: Use StructuralCommandBuffer for FAST entity creation!
-
 
             var buffer = new StructuralCommandBuffer();
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -172,7 +172,6 @@ namespace UltraSim
             GD.Print("========================================\n");
         }
 
-
         public override void _Process(double delta)
         {
             var start = Time.GetTicksUsec();
@@ -202,5 +201,6 @@ namespace UltraSim
         }
 
         public World GetWorld() => _world;
+
     }
 }

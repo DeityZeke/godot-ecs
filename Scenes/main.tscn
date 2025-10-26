@@ -1,8 +1,7 @@
-[gd_scene load_steps=8 format=3 uid="uid://dpdngux01ogyp"]
+[gd_scene load_steps=7 format=3 uid="uid://dpdngux01ogyp"]
 
 [ext_resource type="Script" uid="uid://6ewt134sgjtr" path="res://Scripts/ECS/WorldECS.cs" id="1_jjgbg"]
 [ext_resource type="Script" uid="uid://c0bmkl4wjtvou" path="res://Scripts/CameraController.cs" id="2_bo1nx"]
-[ext_resource type="Script" uid="uid://cygmq7dks8lcu" path="res://Scripts/ECS/Testing/ECSControlPanel.cs" id="3_8gbba"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u77a"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -39,11 +38,3 @@ script = ExtResource("2_bo1nx")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_bo1nx")
-
-[node name="Control" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("3_8gbba")
-WorldECSPath = NodePath("../WorldECS")

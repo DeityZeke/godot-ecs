@@ -10,8 +10,11 @@ namespace UltraSim.Scripts.ECS.Systems.Settings
         public string Tooltip { get; set; } = "";
         public string Value { get; set; } = "";
         public int MaxLength { get; set; } = 100;
-        
+
         public object GetValue() => Value;
+
+        public object GetValueAsString() => Value;
+
         public void SetValue(object value) => Value = value?.ToString() ?? "";
         
         public Control CreateControl(Action<ISetting> onChanged)
