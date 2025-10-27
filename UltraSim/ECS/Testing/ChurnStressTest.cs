@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using Godot;
+using UltraSim;
 using UltraSim.ECS.Components;
 
 namespace UltraSim.ECS.Testing
@@ -17,14 +18,14 @@ namespace UltraSim.ECS.Testing
         public override StressTestType TestType => StressTestType.Churn;
         public override string TestName => "Entity Churn Test";
 
-        private StructuralCommandBuffer buffer;
+        private CommandBuffer buffer;
         private float spawnRadius = 50f;
         private float churnPercentage = 0.10f; // 10% churn per frame
 
         public ChurnStressTest(World world, StressTestConfig config) 
             : base(world, config)
         {
-            buffer = new StructuralCommandBuffer();
+            buffer = new CommandBuffer();
         }
 
         public override void Initialize()

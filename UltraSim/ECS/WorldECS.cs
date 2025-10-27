@@ -107,7 +107,7 @@ namespace UltraSim
             _world.EnqueueSystemEnable<ManualTestSystem>();
             _world.EnqueueSystemEnable<SaveSystem>();
 
-            var buffer = new StructuralCommandBuffer();
+            var buffer = new CommandBuffer();
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             GD.Print($"[WorldECS] Creating {EntityCount} entities with command buffer...");

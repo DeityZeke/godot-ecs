@@ -3,6 +3,7 @@
 
 using System;
 using Godot;
+using UltraSim;
 using UltraSim.ECS.Components;
 
 namespace UltraSim.ECS.Testing
@@ -16,13 +17,13 @@ namespace UltraSim.ECS.Testing
         public override StressTestType TestType => StressTestType.Spawn;
         public override string TestName => "Entity Spawn Test";
 
-        private StructuralCommandBuffer buffer;
+        private CommandBuffer buffer;
         private float spawnRadius = 50f;
 
         public SpawnStressTest(World world, StressTestConfig config) 
             : base(world, config)
         {
-            buffer = new StructuralCommandBuffer();
+            buffer = new CommandBuffer();
         }
 
         protected override void UpdateTest(float deltaTime)

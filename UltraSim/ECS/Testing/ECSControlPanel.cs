@@ -909,7 +909,7 @@ namespace UltraSim
             
             GD.Print($"[ECSControlPanel] Spawning {count:N0} entities...");
             
-            var buffer = new StructuralCommandBuffer();
+            var buffer = new CommandBuffer();
             
             for (int i = 0; i < count; i++)
             {

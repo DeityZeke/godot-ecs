@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using UltraSim;
 using UltraSim.ECS.Components;
 
 namespace UltraSim.ECS.Testing
@@ -16,7 +17,7 @@ namespace UltraSim.ECS.Testing
         public override StressTestType TestType => StressTestType.Archetype;
         public override string TestName => "Archetype Transition Test";
 
-        private StructuralCommandBuffer buffer;
+        private CommandBuffer buffer;
         private List<Entity> testEntities = new();
         private float spawnRadius = 50f;
         
@@ -27,7 +28,7 @@ namespace UltraSim.ECS.Testing
         public ArchetypeStressTest(World world, StressTestConfig config) 
             : base(world, config)
         {
-            buffer = new StructuralCommandBuffer();
+            buffer = new CommandBuffer();
         }
 
         public override void Initialize()
