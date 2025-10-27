@@ -429,6 +429,22 @@ namespace UltraSim.ECS.GUI
                     Toggle();
                     GetViewport().SetInputAsHandled();
                 }
+                if (keyEvent.Keycode == Key.F11)
+                {
+                    //InvokeManualSystem<SaveSystem>();
+                    _world!.Save($"manual_{System.DateTime.Now:yyyyMMdd_HHmmss}.sav");
+                }
+
+
+                if (keyEvent.Keycode == Key.Key9)
+                {
+                    _world!.QuickSave();
+                }
+
+                if (keyEvent.Keycode == Key.Key0)
+                {
+                    _world!.QuickLoad();
+                }
             }
         }
 

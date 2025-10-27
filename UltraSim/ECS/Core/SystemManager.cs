@@ -6,9 +6,6 @@ using System.Runtime.InteropServices;
 
 using Godot;
 
-using UltraSim.Scripts.ECS.Core.Utilities;
-using UltraSim.ECS.Examples;
-
 namespace UltraSim.ECS
 {
     /// <summary>
@@ -20,6 +17,8 @@ namespace UltraSim.ECS
         private List<List<BaseSystem>> _cachedBatches = new();
         private readonly Dictionary<Type, BaseSystem> _systemMap = new();
 
+        public int Count => _systems.Count;
+
 
         #region Settings Management
 
@@ -28,7 +27,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void InitializeSettings()
         {
-            ECSPaths.EnsureDirectoriesExist();
+            World.Paths.EnsureDirectoriesExist();
         }
 
         public void LoadSystemSettings(BaseSystem system)
@@ -68,6 +67,9 @@ namespace UltraSim.ECS
             // For now, individual systems handle their own settings
         }
 
+
+        /*
+
         private float _autoSaveTimer = 0f;
 
         /// <summary>
@@ -99,6 +101,7 @@ namespace UltraSim.ECS
                 GD.Print($"[SystemManager] Auto-save triggered (interval: {autoSaveInterval}s)");
             }
         }
+        */
 
         #endregion
 

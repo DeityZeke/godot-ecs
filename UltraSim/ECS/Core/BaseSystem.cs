@@ -7,7 +7,7 @@ using System.Diagnostics;
 using Godot;
 
 using UltraSim.Scripts.ECS.Systems.Settings;
-using UltraSim.Scripts.ECS.Core.Utilities;
+using UltraSim.Scripts.ECS;
 
 namespace UltraSim.ECS
 {
@@ -116,7 +116,7 @@ namespace UltraSim.ECS
             var config = new ConfigFile();
             settings.Serialize(config, Name);
 
-            var path = ECSPaths.GetSystemSettingsPath(Name);
+            var path = World.Paths.GetSystemSettingsPath(Name);
             var error = config.Save(path);
 
             if (error != Error.Ok)
@@ -135,7 +135,7 @@ namespace UltraSim.ECS
             if (GetSettings() is not BaseSettings settings)
                 return;
 
-            var path = ECSPaths.GetSystemSettingsPath(Name);
+            var path = World.Paths.GetSystemSettingsPath(Name);
             if (!FileAccess.FileExists(path))
             {
 #if USE_DEBUG

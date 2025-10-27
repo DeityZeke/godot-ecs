@@ -14,7 +14,7 @@ namespace UltraSim.ECS
     /// Core ECS World - manages entities, archetypes, and deferred operations.
     /// Uses queue-based pipeline for safe structural changes.
     /// </summary>
-    public sealed class World
+    public sealed partial class World
     {
         private readonly List<Archetype> _archetypes = new();
         private readonly Dictionary<int, (int archetypeIdx, int slot)> _entityLookup = new();
@@ -128,7 +128,8 @@ namespace UltraSim.ECS
             // Phase 5: Rendering
             ProcessRenderQueue();
 
-            _systems.UpdateAutoSave((float)delta); //Save at the end of frame, just in case
+            //_systems.UpdateAutoSave((float)delta); //Save at the end of frame, just in case
+            UpdateAutoSave((float)delta);
 
             // Phase 6: Events
             OnSystemsUpdated?.Invoke();
@@ -141,9 +142,12 @@ namespace UltraSim.ECS
         {
             // Just create the control directly - no scene loading!
             _controlPanel = new UltraSim.ECS.GUI.ECSControlPanel();
+            if (_controlPanel != null)
+                _controlPanel.Initialize(this);
 
             if (_controlPanel != null && WorldECS.RootNode != null)
             {
+
                 WorldECS.RootNode.AddChild(canvasLayer);
                 canvasLayer.AddChild(_controlPanel);
                 //WorldECS.RootNode.AddChild(_controlPanel);
