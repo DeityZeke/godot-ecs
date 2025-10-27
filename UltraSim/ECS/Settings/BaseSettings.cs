@@ -1,9 +1,11 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Godot;
 
-namespace UltraSim.Scripts.ECS.Systems.Settings
+namespace UltraSim.ECS.Settings
 {
     public abstract class BaseSettings
     {

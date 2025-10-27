@@ -6,10 +6,9 @@ using System.Diagnostics;
 
 using Godot;
 
-using UltraSim.Scripts.ECS.Systems.Settings;
-using UltraSim.Scripts.ECS;
+using UltraSim.ECS.Settings;
 
-namespace UltraSim.ECS
+namespace UltraSim.ECS.Systems
 {
     /// <summary>
     /// Performance statistics for a system (only tracked if enabled).

@@ -6,7 +6,9 @@ using System.Runtime.InteropServices;
 
 using Godot;
 
-namespace UltraSim.ECS
+using UltraSim.ECS.Threading;
+
+namespace UltraSim.ECS.Systems
 {
     /// <summary>
     /// Manages system registration, lifecycle, and parallel batch execution.

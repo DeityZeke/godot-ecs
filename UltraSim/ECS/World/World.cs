@@ -3,10 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+
 using Godot;
+
+using UltraSim.ECS.Systems;
 
 namespace UltraSim.ECS
 {
@@ -42,7 +43,7 @@ namespace UltraSim.ECS
 
         public static World? Current { get; private set; }
 
-        private UltraSim.ECS.GUI.ECSControlPanel _controlPanel;
+        private ECSControlPanel _controlPanel;
         private CanvasLayer canvasLayer = new CanvasLayer() { Layer = 100 };
 
         public SystemManager Systems => _systems;
@@ -138,14 +139,22 @@ namespace UltraSim.ECS
         private void SetupControlPanel()
         {
             // Just create the control directly - no scene loading!
-            _controlPanel = new UltraSim.ECS.GUI.ECSControlPanel();
+            _controlPanel = new ECSControlPanel();
             if (_controlPanel != null)
                 _controlPanel.Initialize(this);
 
-            if (_controlPanel != null && WorldECS.RootNode != null)
+            //if (_controlPanel != null && WorldECS.RootNode != null)
+            Node rootNode;
+            try { rootNode = (Node)SimContext.Host?.GetRootHandle()!; }
+            catch (Exception ex)
+            {
+                rootNode = null!; //Garuntee Null if there was an issue.
+            }
+            
+            if (_controlPanel != null && rootNode != null)
             {
 
-                WorldECS.RootNode.AddChild(canvasLayer);
+                rootNode.AddChild(canvasLayer);
                 canvasLayer.AddChild(_controlPanel);
                 //WorldECS.RootNode.AddChild(_controlPanel);
                 Callable.From(() => InitializeControlPanel()).CallDeferred();

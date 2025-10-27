@@ -1,11 +1,15 @@
-using Godot;
+
 using System;
 using System.Collections.Generic;
-using UltraSim.ECS;
-using UltraSim.ECS.Components;
-using UltraSim.Scripts.ECS.Systems.Settings;
 
-namespace UltraSim.ECS.GUI
+using Godot;
+
+using UltraSim.ECS.Systems;
+using UltraSim.ECS.Settings;
+
+
+namespace UltraSim.ECS
+
 {
     /// <summary>
     /// Fully code-generated ECS Control Panel - no .tscn files needed!

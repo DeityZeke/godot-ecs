@@ -1,4 +1,6 @@
+
 #if USE_DEBUG
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,9 +9,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
+
 using Godot;
 
-namespace UltraSim.ECS
+namespace UltraSim.ECS.Systems
 {
     public partial class SystemManager
     {

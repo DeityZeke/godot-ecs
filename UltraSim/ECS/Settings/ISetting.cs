@@ -1,7 +1,9 @@
+
 using System;
+
 using Godot;
 
-namespace UltraSim.Scripts.ECS.Systems.Settings
+namespace UltraSim.ECS.Settings
 {
     public interface ISetting
     {

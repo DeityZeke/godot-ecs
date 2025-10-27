@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace UltraSim.ECS
+using UltraSim.ECS.Systems;
+
+namespace UltraSim.ECS.Threading
 {
     /// <summary>
     /// Executes system batches in parallel using Task-based parallelism.
