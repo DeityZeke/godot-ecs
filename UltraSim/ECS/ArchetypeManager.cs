@@ -56,6 +56,12 @@ namespace UltraSim.ECS
             // Ensure component lists for all types in signature
             foreach (var typeId in signature.GetIds())
             {
+                if (typeId < 0 || typeId >= ComponentManager.TypeCount)
+                {
+                    Logger.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
+                    throw new ArgumentOutOfRangeException(nameof(typeId), $"Invalid component type ID: {typeId} (signature={signature})");
+                }
+                
                 var type = ComponentManager.GetComponentType(typeId);
                 var method = typeof(Archetype).GetMethod(nameof(Archetype.EnsureComponentList))
                                               ?.MakeGenericMethod(type);

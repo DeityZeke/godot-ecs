@@ -1,4 +1,3 @@
-
 #nullable enable
 
 using System;
@@ -19,17 +18,20 @@ namespace UltraSim.ECS
         /// </summary>
         public EntityBuilder Add<T>(T component) where T : struct
         {
-            int typeId = ComponentTypeRegistry.GetId<T>();
+            int typeId = ComponentManager.GetTypeId<T>();
             _components.Add((typeId, component));
             return this;
         }
 
         /// <summary>
         /// Adds a component by type ID (for dynamic scenarios).
+        /// We normalize to the canonical ID derived from the runtime component value's Type
+        /// so the stored IDs are always consistent with ComponentManager.
         /// </summary>
         public EntityBuilder Add(int typeId, object value)
         {
-            _components.Add((typeId, value));
+            int canonicalId = ComponentManager.GetTypeId(value.GetType());
+            _components.Add((canonicalId, value));
             return this;
         }
 

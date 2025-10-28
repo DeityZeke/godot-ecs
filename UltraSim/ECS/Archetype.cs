@@ -97,7 +97,8 @@ namespace UltraSim.ECS
             // Add the new component if provided
             if (newComponent != null)
             {
-                int typeId = ComponentTypeRegistry.GetId(newComponent.GetType());
+                //int typeId = ComponentTypeRegistry.GetId(newComponent.GetType());
+                int typeId = ComponentManager.GetTypeId(newComponent.GetType());
                 int newSlot = target.Count - 1;
                 target.SetComponentValueBoxed(typeId, newSlot, newComponent);
             }
@@ -206,7 +207,8 @@ namespace UltraSim.ECS
         {
             foreach (var t in componentTypes)
             {
-                int id = ComponentTypeRegistry.GetId(t);
+                //int id = ComponentTypeRegistry.GetId(t);
+                int id = ComponentManager.GetTypeId(t);
                 if (!_componentLists.ContainsKey(id))
                     return false;
             }
