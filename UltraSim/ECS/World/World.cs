@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-using Godot;
-
+using UltraSim;
+using UltraSim.Logging;
 using UltraSim.ECS.Systems;
 
 namespace UltraSim.ECS
@@ -21,6 +21,7 @@ namespace UltraSim.ECS
         private readonly ComponentManager _components;
         private readonly ArchetypeManager _archetypes;
         private readonly SystemManager _systems;
+        private readonly TimeTracker _time = new();
 
         private bool _initialized;
         private bool _entitiesSpawned;
@@ -41,10 +42,11 @@ namespace UltraSim.ECS
         public int ArchetypeCount => _archetypes.ArchetypeCount;
         public int EntityCount => _entities.EntityCount;
 
-        public static World? Current { get; private set; }
+        // Time tracking (self-contained, no engine dependency)
+        public double TotalSeconds => _time.TotalSeconds;
+        public long Microseconds => _time.Microseconds;
 
-        private ECSControlPanel _controlPanel;
-        private CanvasLayer canvasLayer = new CanvasLayer() { Layer = 100 };
+        public static World? Current { get; private set; }
 
         public SystemManager Systems => _systems;
         private bool _settingsInitialized = false;
@@ -86,6 +88,9 @@ namespace UltraSim.ECS
         /// </summary>
         public void Tick(double delta)
         {
+            // CRITICAL: Advance time tracker FIRST
+            _time.Advance((float)delta);
+
             // Initialize settings on first tick
             if (!_settingsInitialized)
             {
@@ -103,11 +108,6 @@ namespace UltraSim.ECS
             // Phase 2: Create & Enable
             ProcessSystemCreationQueue();
             ProcessSystemEnableQueue();
-
-            if (_controlPanel == null)
-            {
-                SetupControlPanel();
-            }
 
             // Phase 3: Component Operations
             _components.ProcessQueues();
@@ -136,37 +136,6 @@ namespace UltraSim.ECS
 
         #endregion
 
-        private void SetupControlPanel()
-        {
-            // Just create the control directly - no scene loading!
-            _controlPanel = new ECSControlPanel();
-            if (_controlPanel != null)
-                _controlPanel.Initialize(this);
-
-            //if (_controlPanel != null && WorldECS.RootNode != null)
-            Node rootNode;
-            try { rootNode = (Node)SimContext.Host?.GetRootHandle()!; }
-            catch (Exception ex)
-            {
-                rootNode = null!; //Garuntee Null if there was an issue.
-            }
-            
-            if (_controlPanel != null && rootNode != null)
-            {
-
-                rootNode.AddChild(canvasLayer);
-                canvasLayer.AddChild(_controlPanel);
-                //WorldECS.RootNode.AddChild(_controlPanel);
-                Callable.From(() => InitializeControlPanel()).CallDeferred();
-            }
-        }
-
-        private void InitializeControlPanel()
-        {
-            _controlPanel.Initialize(this);
-            GD.Print("ECS Control Panel ready! Press F12 to toggle.");
-        }
-
         #region Queue Processing
 
         private void ProcessSystemDisableQueue()
@@ -174,7 +143,7 @@ namespace UltraSim.ECS
             while (_systemDisableQueue.TryDequeue(out var s))
             {
                 try { s.Disable(); }
-                catch (Exception ex) { GD.PrintErr($"[World] Error disabling system {s.Name}: {ex}"); }
+                catch (Exception ex) { Logger.Log(($"Error disabling system {s.Name}: {ex}, World"), LogSeverity.Error); }
             }
         }
 
@@ -187,7 +156,7 @@ namespace UltraSim.ECS
                     if (s.IsEnabled) s.Disable();
                     _systems.Unregister(s);
                 }
-                catch (Exception ex) { GD.PrintErr($"[World] Error destroying system {s.Name}: {ex}"); }
+                catch (Exception ex) { Logger.Log($"[World] Error destroying system {s.Name}: {ex}", LogSeverity.Error); }
             }
         }
 
@@ -200,7 +169,7 @@ namespace UltraSim.ECS
                     _systems.Register(s);
                     s.OnInitialize(this);
                 }
-                catch (Exception ex) { GD.PrintErr($"[World] Error creating system {s.Name}: {ex}"); }
+                catch (Exception ex) { Logger.Log($"[World] Error creating system {s.Name}: {ex}", LogSeverity.Error); }
             }
         }
 
@@ -209,7 +178,7 @@ namespace UltraSim.ECS
             while (_systemEnableQueue.TryDequeue(out var s))
             {
                 try { s.Enable(); }
-                catch (Exception ex) { GD.PrintErr($"[World] Error enabling system {s.Name}: {ex}"); }
+                catch (Exception ex) { Logger.Log($"[World] Error enabling system {s.Name}: {ex}", LogSeverity.Error); }
             }
         }
 
@@ -218,7 +187,7 @@ namespace UltraSim.ECS
             while (_renderQueue.TryDequeue(out var action))
             {
                 try { action.Invoke(); }
-                catch (Exception ex) { GD.PrintErr($"[World] Render action error: {ex}"); }
+                catch (Exception ex) { Logger.Log($"[World] Render action error: {ex}", LogSeverity.Error); }
             }
         }
 
@@ -259,7 +228,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] Ã¢Å¡Â  System {typeof(T).Name} not found");
+                Logger.Log($"[World] ÃƒÂ¢Ã…Â¡Ã‚Â  System {typeof(T).Name} not found", LogSeverity.Error);
                 return;
             }
 
@@ -274,7 +243,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] Ã¢Å¡Â  System {typeof(T).Name} not found");
+                Logger.Log($"[World] ÃƒÂ¢Ã…Â¡Ã‚Â  System {typeof(T).Name} not found", LogSeverity.Error);
                 return;
             }
 
@@ -289,7 +258,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] Ã¢Å¡Â  System {typeof(T).Name} not found");
+                Logger.Log($"[World] ÃƒÂ¢Ã…Â¡Ã‚Â  System {typeof(T).Name} not found", LogSeverity.Error);
                 return;
             }
 
@@ -306,7 +275,7 @@ namespace UltraSim.ECS
 
             if (sys == null)
             {
-                GD.PrintErr($"[World] Ã¢Å¡Â  System {typeof(T).Name} not found");
+                Logger.Log($"[World] ÃƒÂ¢Ã…Â¡Ã‚Â  System {typeof(T).Name} not found", LogSeverity.Error);
                 return;
             }
 
@@ -331,7 +300,7 @@ namespace UltraSim.ECS
             var tempEntity = new Entity(entityIndex, 0);
             if (!_entities.TryGetLocation(tempEntity, out var sourceArch, out var sourceSlot))
             {
-                GD.PrintErr($"[World] Tried to add component to invalid entity {entityIndex}");
+                Logger.Log($"[World] Tried to add component to invalid entity {entityIndex}", LogSeverity.Error);
                 return;
             }
 
@@ -352,7 +321,7 @@ namespace UltraSim.ECS
             var tempEntity = new Entity(entityIndex, 0);
             if (!_entities.TryGetLocation(tempEntity, out var oldArch, out var slot))
             {
-                GD.PrintErr($"[World] Tried to remove component from invalid entity {entityIndex}");
+                Logger.Log($"[World] Tried to remove component from invalid entity {entityIndex}", LogSeverity.Error);
                 return;
             }
 

@@ -3,20 +3,41 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Godot;
+using UltraSim.Configuration;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS.Settings
 {
-    public abstract class BaseSettings
+    public abstract partial class BaseSetting : ISetting
     {
-        private Dictionary<string, ISetting> _settings = new();
+        public virtual string Name { get; set; } = "";
+        public virtual string Category { get; set; } = "";
+        public virtual string Tooltip { get; set; } = "";
+
+        //public virtual object GetValue() { return null; }
+        public abstract object GetValue();
+        //protected virtual string GetValueAsString() { return GetValue().ToString() ?? $"null"; }
+        public abstract object GetValueAsString();
+        //public virtual void SetValue(object Value) { }
+        public abstract void SetValue(object Value);
+
+        public abstract void Serialize(ConfigFile config, string section);
+        public abstract void Deserialize(ConfigFile config, string section);
+    }
+
+    //public abstract partial class BaseSettings
+    public abstract partial class SettingsManager
+    {
+        //private Dictionary<string, ISetting> _settings = new();
+        private Dictionary<string, BaseSetting> _settings = new(32);
 
         // Registration
-        protected void Register(ISetting setting)
+        //protected void Register(ISetting setting)
+        protected void Register(BaseSetting setting)
         {
             if (_settings.ContainsKey(setting.Name))
             {
-                GD.PushWarning($"Setting '{setting.Name}' already registered!");
+                Logger.Log($"Setting '{setting.Name}' already registered!", LogSeverity.Warning);
                 return;
             }
             _settings[setting.Name] = setting;
@@ -99,7 +120,8 @@ namespace UltraSim.ECS.Settings
         {
             if (!_settings.TryGetValue(name, out var setting))
             {
-                GD.PushError($"Setting '{name}' not found!");
+                //GD.PushError($"Setting '{name}' not found!");
+                Logger.Log($"Setting '{name}' not found!", LogSeverity.Error);
                 return default;
             }
             return (T)setting.GetValue();
@@ -119,7 +141,7 @@ namespace UltraSim.ECS.Settings
         }
 
         // GUI support
-        public List<ISetting> GetAllSettings() => _settings.Values.OrderBy(s => s.Name).ToList();
+        public List<BaseSetting> GetAllSettings() => _settings.Values.OrderBy(s => s.Name).ToList();
 
         // Serialization
         public void Serialize(ConfigFile config, string section)

@@ -1,5 +1,7 @@
-using Godot;
+
 using System;
+
+using Godot;
 
 /// <summary>
 /// Simple camera controller for viewing ECS entities.
@@ -32,12 +34,6 @@ public partial class CameraController : Camera3D
         // Make this the current camera
         MakeCurrent();
         
-        GD.Print("[Camera] ECS Camera Controller ready!");
-        GD.Print("[Camera] Controls:");
-        GD.Print("[Camera]   WASD - Move");
-        GD.Print("[Camera]   Q/E - Up/Down");
-        GD.Print("[Camera]   Right-Click + Drag - Rotate");
-        GD.Print("[Camera]   Scroll - Zoom");
     }
     
     public override void _Input(InputEvent @event)

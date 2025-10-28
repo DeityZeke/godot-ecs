@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-using Godot;
-
 using UltraSim.ECS.Threading;
+
+using UltraSim.Logging;
 
 namespace UltraSim.ECS.Systems
 {
@@ -56,7 +56,7 @@ namespace UltraSim.ECS.Systems
             }
 
 #if USE_DEBUG
-            GD.Print($"[SystemManager] Saved settings for {savedCount} systems");
+            Logger.Log($"[SystemManager] Saved settings for {savedCount} systems");
 #endif
         }
 
@@ -68,42 +68,6 @@ namespace UltraSim.ECS.Systems
             // Future: Save global ECS configuration
             // For now, individual systems handle their own settings
         }
-
-
-        /*
-
-        private float _autoSaveTimer = 0f;
-
-        /// <summary>
-        /// Handles auto-save logic based on SaveSystem settings.
-        /// Call this every frame from World.Tick().
-        /// </summary>
-        public void UpdateAutoSave(float delta)
-        {
-            // Get SaveSystem to check if auto-save is enabled
-            var saveSystem = (SaveSystem)GetSystem<SaveSystem>();
-            if (saveSystem == null)
-                return;
-
-            // Check if auto-save is enabled
-            bool autoSaveEnabled = saveSystem.SystemSettings.AutoSaveEnabled.Value;
-            if (!autoSaveEnabled)
-                return;
-
-            float autoSaveInterval = saveSystem.SystemSettings.AutoSaveInterval.Value;
-
-            _autoSaveTimer += delta;
-
-            if (_autoSaveTimer >= autoSaveInterval)
-            {
-                // Trigger manual save
-                saveSystem.Update(World.Current!, delta);
-                _autoSaveTimer = 0f;
-
-                GD.Print($"[SystemManager] Auto-save triggered (interval: {autoSaveInterval}s)");
-            }
-        }
-        */
 
         #endregion
 
@@ -118,7 +82,7 @@ namespace UltraSim.ECS.Systems
             var type = system.GetType();
             if (_systemMap.ContainsKey(type))
             {
-                GD.PrintErr($"[SystemManager] Attempted to register duplicate system: {type.Name}");
+                Logger.Log($"[SystemManager] Attempted to register duplicate system: {type.Name}", LogSeverity.Error);
                 return;
             }
 
@@ -131,7 +95,7 @@ namespace UltraSim.ECS.Systems
 
             ComputeBatches(); // Recompute batching after adding
 
-            GD.Print($"[SystemManager] Registered system: {type.Name}");
+            Logger.Log($"[SystemManager] Registered system: {type.Name}");
         }
 
         public void Unregister(BaseSystem system)
@@ -151,7 +115,7 @@ namespace UltraSim.ECS.Systems
             _systemMap.Remove(type);
             ComputeBatches(); // Recompute batching after removal
 
-            GD.Print($"[SystemManager] Unregistered system: {type.Name}");
+            Logger.Log($"[SystemManager] Unregistered system: {type.Name}");
         }
 
 
@@ -184,7 +148,7 @@ namespace UltraSim.ECS.Systems
 
                 //if (system.SkipBatching)
 
-                GD.Print($"[SystemManager] Enabled system: {system.Name}");
+                Logger.Log($"[SystemManager] Enabled system: {system.Name}");
             }
         }
 
@@ -206,7 +170,7 @@ namespace UltraSim.ECS.Systems
             if (system.IsEnabled)
             {
                 system.Disable();
-                GD.Print($"[SystemManager] Disabled system: {system.Name}");
+                Logger.Log($"[SystemManager] Disabled system: {system.Name}");
             }
         }
 
@@ -300,11 +264,11 @@ namespace UltraSim.ECS.Systems
             _cachedBatches = batches;
 
 #if USE_DEBUG
-            GD.Print($"[SystemManager] ComputeBatches: Created {batches.Count} batches from {_systems.Count} systems");
+            Logger.Log($"[SystemManager] ComputeBatches: Created {batches.Count} batches from {_systems.Count} systems");
             for (int i = 0; i < batches.Count; i++)
             {
                 var systemNames = string.Join(", ", batches[i].ConvertAll(s => s.Name));
-                GD.Print($"[SystemManager]   Batch {i}: [{systemNames}]");
+                Logger.Log($"[SystemManager]   Batch {i}: [{systemNames}]");
             }
 #endif
 

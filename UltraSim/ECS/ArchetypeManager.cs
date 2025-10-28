@@ -1,10 +1,11 @@
+
 #nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-using Godot;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -157,7 +158,7 @@ namespace UltraSim.ECS
             foreach (var arch in _archetypes)
             {
                 foreach (var error in arch.DebugValidate())
-                    GD.PrintErr($"[ArchetypeManager] Validation error: {error}");
+                    Logger.Log($"[ArchetypeManager] Validation error: {error}", LogSeverity.Error);
             }
 #endif
         }

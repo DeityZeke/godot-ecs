@@ -1,4 +1,3 @@
-
 #if USE_DEBUG
 
 using System;
@@ -10,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-using Godot;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS.Systems
 {
@@ -61,7 +60,7 @@ namespace UltraSim.ECS.Systems
                     systemTimes.Add(ms);
 
                     if (ms > SYSTEM_BUDGET_MS)
-                        GD.PrintErr($"âš ï¸ {system.Name} over per-system budget: {ms:F3} ms");
+                        Logger.Log($"Ã¢Å¡Â Ã¯Â¸Â {system.Name} over per-system budget: {ms:F3} ms", LogSeverity.Error);
                 }
 
                 // Batch load imbalance stats
@@ -74,7 +73,7 @@ namespace UltraSim.ECS.Systems
 
                     double imbalance = avg > 0 ? max / avg : 0;
                     if (imbalance > 2.5)
-                        GD.PrintErr($"âš ï¸ Batch {batchIndex} imbalance: {imbalance:F2}x (min {min:F3}ms, max {max:F3}ms, avg {avg:F3}ms)");
+                        Logger.Log($"Ã¢Å¡Â Ã¯Â¸Â Batch {batchIndex} imbalance: {imbalance:F2}x (min {min:F3}ms, max {max:F3}ms, avg {avg:F3}ms)", LogSeverity.Error);
                 }
                 else
                 {
@@ -89,11 +88,11 @@ namespace UltraSim.ECS.Systems
 
             // Frame Budget Alerts
             if (totalFrameMs > ECS_BUDGET_MS)
-                GD.PrintErr($"âš ï¸ ECS over total frame budget: {totalFrameMs:F3}ms / {ECS_BUDGET_MS}ms");
+                Logger.Log($"Ã¢Å¡Â Ã¯Â¸Â ECS over total frame budget: {totalFrameMs:F3}ms / {ECS_BUDGET_MS}ms", LogSeverity.Error);
 
             if (_frameIndex <= 10 || _frameIndex % 30 == 0)
             {
-                GD.Print($"[ECS Debug] Frame {_frameIndex}: ECS update {totalFrameMs:F3} ms | GC Δ {_gcAfter - _gcBefore} bytes");
+                Logger.Log($"[ECS Debug] Frame {_frameIndex}: ECS update {totalFrameMs:F3} ms | GC Î” {_gcAfter - _gcBefore} bytes", LogSeverity.Debug);
             }
 
             // Store frame for offline export

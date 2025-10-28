@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://dpdngux01ogyp"]
+[gd_scene load_steps=7 format=3 uid="uid://dpdngux01ogyp"]
 
+[ext_resource type="Script" uid="uid://6ewt134sgjtr" path="res://UltraSim/WorldECS/WorldECS.cs" id="1_bo1nx"]
 [ext_resource type="Script" uid="uid://c0bmkl4wjtvou" path="res://UltraSim/CameraController.cs" id="2_bo1nx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u77a"]
@@ -27,6 +28,7 @@ shadow_enabled = true
 environment = SubResource("Environment_bo1nx")
 
 [node name="WorldECS" type="Node3D" parent="."]
+script = ExtResource("1_bo1nx")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 current = true

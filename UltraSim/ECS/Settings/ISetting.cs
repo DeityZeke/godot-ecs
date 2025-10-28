@@ -1,10 +1,14 @@
 
 using System;
 
-using Godot;
+using UltraSim.Configuration;
 
 namespace UltraSim.ECS.Settings
 {
+    /// <summary>
+    /// Core setting interface - engine-independent.
+    /// For UI creation, see ISettingUI extension (Godot-specific).
+    /// </summary>
     public interface ISetting
     {
         string Name { get; }
@@ -14,8 +18,6 @@ namespace UltraSim.ECS.Settings
         object GetValue();
         object GetValueAsString();
         void SetValue(object value);
-        
-        Control CreateControl(Action<ISetting> onChanged);
         
         void Serialize(ConfigFile config, string section);
         void Deserialize(ConfigFile config, string section);

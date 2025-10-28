@@ -7,7 +7,6 @@ using Godot;
 using UltraSim.ECS.Systems;
 using UltraSim.ECS.Settings;
 
-
 namespace UltraSim.ECS
 
 {
@@ -41,6 +40,20 @@ namespace UltraSim.ECS
 
         #region Initialization
 
+        /// <summary>
+        /// Initialize the control panel with a world reference.
+        /// Call this after the world is set up.
+        /// </summary>
+        public void Initialize(World world)
+        {
+            _world = world;
+            _systemManager = world.Systems;
+
+            RefreshSystemsList();
+
+            UltraSim.Logging.Logger.Log($"ECSControlPanel initialized with {_systemEntries.Count} systems (with settings)");
+        }
+
         public override void _Ready()
         {
             // Force to top layer
@@ -66,7 +79,7 @@ namespace UltraSim.ECS
             // Start hidden - press F12 to show
             Visible = false;
 
-            GD.Print("ECSControlPanel ready! Press F12 to toggle.");
+            UltraSim.Logging.Logger.Log("ECSControlPanel ready! Press F12 to toggle.");
 
             // Force initial layout calculation
             CallDeferred(MethodName.UpdateMinimumSize);
@@ -78,13 +91,13 @@ namespace UltraSim.ECS
             Vector2 viewportSize = GetTree().Root.Size;
             int padding = (int)Mathf.Clamp(Mathf.Min(viewportSize.X, viewportSize.Y) * 0.05f, 50f, 150f);
 
-            GD.Print($"â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
-            GD.Print($"â•‘ ECSControlPanel BuildUI                      â•‘");
-            GD.Print($"â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
-            GD.Print($"â•‘ Viewport: {viewportSize.X}x{viewportSize.Y}");
-            GD.Print($"â•‘ ECSControlPanel Size: {Size}");
-            GD.Print($"â•‘ Padding: {padding}px");
-            GD.Print($"â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel BuildUI                      Ã¢â€¢â€˜");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢Â Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â£");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ Viewport: {viewportSize.X}x{viewportSize.Y}");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel Size: {Size}");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ Padding: {padding}px");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â");
 
             // ROOT MARGIN - creates the padding border around the panel
             var rootMargin = new MarginContainer();
@@ -181,21 +194,7 @@ namespace UltraSim.ECS
             _systemsContainer.AddThemeConstantOverride("separation", 8);
             _scrollContainer.AddChild(_systemsContainer);
 
-            GD.Print("UI built successfully!");
-        }
-
-        /// <summary>
-        /// Initialize the control panel with a world reference.
-        /// Call this after the world is set up.
-        /// </summary>
-        public void Initialize(World world)
-        {
-            _world = world;
-            _systemManager = world.Systems;
-
-            RefreshSystemsList();
-
-            GD.Print($"ECSControlPanel initialized with {_systemEntries.Count} systems (with settings)");
+            UltraSim.Logging.Logger.Log("UI built successfully!");
         }
 
         #endregion
@@ -204,6 +203,9 @@ namespace UltraSim.ECS
 
         public void RefreshSystemsList()
         {
+            if (_systemsContainer == null || _systemsContainer.GetChildCount() == 0)
+                return;
+
             // Clear existing entries - remove immediately to prevent duplicates
             foreach (var child in _systemsContainer.GetChildren())
             {
@@ -214,11 +216,11 @@ namespace UltraSim.ECS
 
             if (_systemManager == null)
             {
-                GD.PrintErr("SystemManager is null! Cannot refresh systems list.");
+                UltraSim.Logging.Logger.Log("SystemManager is null! Cannot refresh systems list.", UltraSim.Logging.LogSeverity.Error);
                 return;
             }
 
-            GD.Print("\n=== Refreshing Systems List ===");
+            UltraSim.Logging.Logger.Log("\n=== Refreshing Systems List ===", UltraSim.Logging.LogSeverity.Debug);
 
             // Create entry for each system with settings
             int totalSystems = 0;
@@ -231,23 +233,23 @@ namespace UltraSim.ECS
 
                 if (settings != null)
                 {
-                    GD.Print($"  Ã¢Å“â€œ {system.Name} has settings");
+                    UltraSim.Logging.Logger.Log($"  ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {system.Name} has settings");
                     CreateSystemEntry(system);
                     systemsWithSettings++;
                 }
                 else
                 {
-                    GD.Print($"  Ã¢Å“â€” {system.Name} has NO settings");
+                    UltraSim.Logging.Logger.Log($"  ÃƒÂ¢Ã…â€œÃ¢â‚¬â€ {system.Name} has NO settings");
                 }
             }
 
-            GD.Print($"Total: {totalSystems} systems, {systemsWithSettings} with settings");
-            GD.Print($"Added {_systemEntries.Count} entries to UI");
+            UltraSim.Logging.Logger.Log($"Total: {totalSystems} systems, {systemsWithSettings} with settings");
+            UltraSim.Logging.Logger.Log($"Added {_systemEntries.Count} entries to UI");
 
             // DEBUG: Check container after adding
-            GD.Print($"SystemsContainer children count: {_systemsContainer.GetChildCount()}");
-            GD.Print($"SystemsContainer size: {_systemsContainer.Size}");
-            GD.Print($"ScrollContainer size: {_scrollContainer.Size}\n");
+            UltraSim.Logging.Logger.Log($"SystemsContainer children count: {_systemsContainer.GetChildCount()}");
+            UltraSim.Logging.Logger.Log($"SystemsContainer size: {_systemsContainer.Size}");
+            UltraSim.Logging.Logger.Log($"ScrollContainer size: {_scrollContainer.Size}\n");
         }
 
         private void CreateSystemEntry(BaseSystem system)
@@ -256,13 +258,13 @@ namespace UltraSim.ECS
             _systemsContainer.AddChild(entry);
             _systemEntries[system] = entry;
 
-            GD.Print($"  Ã¢â€ â€™ Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
+            UltraSim.Logging.Logger.Log($"  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
         }
 
         private void OnSettingChanged(BaseSystem system)
         {
             // Setting changed - the SystemEntryUI handles showing its own Apply button
-            GD.Print($"Setting changed in {system.Name}");
+            UltraSim.Logging.Logger.Log($"Setting changed in {system.Name}");
         }
 
         #endregion
@@ -354,29 +356,29 @@ namespace UltraSim.ECS
 
         private void ForceLayoutUpdate()
         {
-            GD.Print($"\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
-            GD.Print($"â•‘ ForceLayoutUpdate                            â•‘");
-            GD.Print($"â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
-            GD.Print($"â•‘ ECSControlPanel Size: {Size}");
+            UltraSim.Logging.Logger.Log($"\nÃ¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ForceLayoutUpdate                            Ã¢â€¢â€˜");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢Â Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â£");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel Size: {Size}");
 
             if (_mainPanel != null)
             {
-                GD.Print($"â•‘ MainPanel Size: {_mainPanel.Size}");
-                GD.Print($"â•‘ MainPanel Position: {_mainPanel.Position}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel Size: {_mainPanel.Size}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel Position: {_mainPanel.Position}");
 
                 // Just reset sizes to force recalculation
                 _mainPanel.ResetSize();
                 _scrollContainer?.ResetSize();
                 _systemsContainer?.ResetSize();
 
-                GD.Print($"â•‘ After Reset - MainPanel: {_mainPanel.Size}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ After Reset - MainPanel: {_mainPanel.Size}");
             }
             else
             {
-                GD.Print($"â•‘ ERROR: MainPanel is null!");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ERROR: MainPanel is null!", UltraSim.Logging.LogSeverity.Error);
             }
 
-            GD.Print($"â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â");
 
             // Queue debug output for next frame
             CallDeferred(MethodName.DebugSizesAfterShow);
@@ -384,35 +386,35 @@ namespace UltraSim.ECS
 
         private void DebugSizesAfterShow()
         {
-            GD.Print($"\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
-            GD.Print($"â•‘ Final Layout (After Show)                    â•‘");
-            GD.Print($"â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
-            GD.Print($"â•‘ ECSControlPanel: {Size}");
+            UltraSim.Logging.Logger.Log($"\nÃ¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ Final Layout (After Show)                    Ã¢â€¢â€˜");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢Â Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â£");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel: {Size}");
 
             // Get the root margin
             var rootMargin = GetChildOrNull<MarginContainer>(0);
             if (rootMargin != null)
             {
-                GD.Print($"â•‘ RootMargin: {rootMargin.Size}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ RootMargin: {rootMargin.Size}");
             }
 
             if (_mainPanel != null)
             {
-                GD.Print($"â•‘ MainPanel: {_mainPanel.Size}");
-                GD.Print($"â•‘ MainPanel Position: {_mainPanel.Position}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel: {_mainPanel.Size}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel Position: {_mainPanel.Position}");
             }
 
             if (_scrollContainer != null)
             {
-                GD.Print($"â•‘ ScrollContainer: {_scrollContainer.Size}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ScrollContainer: {_scrollContainer.Size}");
             }
 
             if (_systemsContainer != null)
             {
-                GD.Print($"â•‘ SystemsContainer: {_systemsContainer.Size}");
+                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ SystemsContainer: {_systemsContainer.Size}");
             }
 
-            GD.Print($"â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
+            UltraSim.Logging.Logger.Log($"Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â\n");
         }
 
         public new void Hide()
@@ -422,37 +424,6 @@ namespace UltraSim.ECS
 
         #endregion
 
-        #region Input Handling
-
-        public override void _Input(InputEvent @event)
-        {
-            if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo)
-            {
-                if (keyEvent.Keycode == Key.F12)
-                {
-                    Toggle();
-                    GetViewport().SetInputAsHandled();
-                }
-                if (keyEvent.Keycode == Key.F11)
-                {
-                    //InvokeManualSystem<SaveSystem>();
-                    _world!.Save($"manual_{System.DateTime.Now:yyyyMMdd_HHmmss}.sav");
-                }
-
-
-                if (keyEvent.Keycode == Key.Key9)
-                {
-                    _world!.QuickSave();
-                }
-
-                if (keyEvent.Keycode == Key.Key0)
-                {
-                    _world!.QuickLoad();
-                }
-            }
-        }
-
-        #endregion
     }
 
     /// <summary>
@@ -484,7 +455,7 @@ namespace UltraSim.ECS
 
             BuildUI(showTimings);
 
-            GD.Print($"[SystemEntryUI] Created for {system.Name}, CustomMinSize: {CustomMinimumSize}");
+            UltraSim.Logging.Logger.Log($"[SystemEntryUI] Created for {system.Name}, CustomMinSize: {CustomMinimumSize}");
         }
 
         private void BuildUI(bool showTimings)
@@ -547,7 +518,7 @@ namespace UltraSim.ECS
             _timingLabel.SetAnchorsPreset(LayoutPreset.FullRect);
             _timingLabel.HorizontalAlignment = HorizontalAlignment.Right;
             _timingLabel.VerticalAlignment = VerticalAlignment.Center;
-            _timingLabel.Visible = showTimings;  // â† Label can hide, but space is reserved!
+            _timingLabel.Visible = showTimings;  // Ã¢â€ Â Label can hide, but space is reserved!
             timingContainer.AddChild(_timingLabel);
 
             // === SETTINGS CONTAINER ===
@@ -557,7 +528,8 @@ namespace UltraSim.ECS
             vbox.AddChild(_settingsContainer);
 
             // Generate settings UI
-            if (_system.GetSettings() is BaseSettings settings)
+            //if (_system.GetSettings() is BaseSetting settings)
+            if (_system.GetSettings() is SettingsManager settings)
             {
                 foreach (var setting in settings.GetAllSettings())
                 {
@@ -565,7 +537,7 @@ namespace UltraSim.ECS
                     _settingsContainer.AddChild(control);
                 }
 
-                GD.Print($"[SystemEntryUI] Added {settings.GetAllSettings().Count} setting controls for {_system.Name}");
+                UltraSim.Logging.Logger.Log($"[SystemEntryUI] Added {settings.GetAllSettings().Count} setting controls for {_system.Name}");
             }
 
             // Apply button
@@ -582,13 +554,13 @@ namespace UltraSim.ECS
             _settingsContainer.Visible = _isExpanded;
             _expandButton.Text = _isExpanded ? "v" : ">";
 
-            GD.Print($"[SystemEntryUI] {_system.Name} expanded: {_isExpanded}");
+            UltraSim.Logging.Logger.Log($"[SystemEntryUI] {_system.Name} expanded: {_isExpanded}");
         }
 
         private void OnEnabledToggled(bool enabled)
         {
             _system.IsEnabled = enabled;
-            GD.Print($"System '{_system.Name}' {(enabled ? "enabled" : "disabled")}");
+            UltraSim.Logging.Logger.Log($"System '{_system.Name}' {(enabled ? "enabled" : "disabled")}");
         }
 
         private void OnSettingChangedInternal(ISetting setting)
@@ -603,7 +575,7 @@ namespace UltraSim.ECS
             _system.SaveSettings();
             _isDirty = false;
             _applyButton.Visible = false;
-            GD.Print($"Ã¢Å“â€œ Applied settings for {_system.Name}");
+            UltraSim.Logging.Logger.Log($"ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ Applied settings for {_system.Name}");
         }
 
         public void UpdateTiming(float ms)

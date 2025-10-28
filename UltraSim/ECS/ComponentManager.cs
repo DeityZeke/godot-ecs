@@ -1,10 +1,11 @@
+
 #nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
-using Godot;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -163,7 +164,7 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"[ComponentManager] Error removing component: {ex}");
+                    Logger.Log($"[ComponentManager] Error removing component: {ex}", LogSeverity.Error);
                 }
             }
 
@@ -176,7 +177,7 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"[ComponentManager] Error adding component: {ex}");
+                    Logger.Log($"[ComponentManager] Error adding component: {ex}", LogSeverity.Error);
                 }
             }
         }

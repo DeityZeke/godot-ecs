@@ -9,12 +9,13 @@ namespace UltraSim
 {
     /// <summary>
     /// Defines the minimal interface any engine or runtime host must implement
-    /// in order to integrate UltraSim. Provides access to root handles, logging, etc.
+    /// in order to integrate UltraSim.
     /// </summary>
     public interface IHost
     {
         /// <summary>
-        /// Returns a handle to the root object of the engine’s scene tree or context.
+        /// Returns a handle to the root object of the engine's scene tree or context.
+        /// May return null for headless/test scenarios.
         /// </summary>
         object? GetRootHandle();
 

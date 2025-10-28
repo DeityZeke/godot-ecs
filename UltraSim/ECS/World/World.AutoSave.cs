@@ -1,6 +1,6 @@
 #nullable enable
 
-using Godot;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -54,7 +54,7 @@ namespace UltraSim.ECS
             _autoSaveCounter++;
             string filename = $"autosave_{_autoSaveCounter % 3}.sav"; // Rotate: autosave_0, autosave_1, autosave_2
 
-            GD.Print($"\n🕐 AUTO-SAVE #{_autoSaveCounter}");
+            Logger.Log($"\nðŸ• AUTO-SAVE #{_autoSaveCounter}", LogSeverity.Debug);
             Save(filename);
         }
 
@@ -72,7 +72,7 @@ namespace UltraSim.ECS
             AutoSaveInterval = intervalSeconds;
             _autoSaveTimer = 0f;
 
-            GD.Print($"[World] ✅ Auto-save enabled (interval: {intervalSeconds}s)");
+            Logger.Log($"[World] âœ… Auto-save enabled (interval: {intervalSeconds}s)");
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace UltraSim.ECS
         public void DisableAutoSave()
         {
             AutoSaveEnabled = false;
-            GD.Print("[World] ⏸️ Auto-save disabled");
+            Logger.Log("[World] â¸ï¸ Auto-save disabled");
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace UltraSim.ECS
             
             if (AutoSaveEnabled)
             {
-                GD.Print($"[World] 🔄 Auto-save interval changed to {intervalSeconds}s");
+                Logger.Log($"[World] ðŸ”„ Auto-save interval changed to {intervalSeconds}s");
             }
         }
 

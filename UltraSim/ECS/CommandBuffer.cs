@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using Godot;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -197,7 +197,7 @@ namespace UltraSim.ECS
 
             if (created > 0 || destroyed > 0)
             {
-                GD.Print($"[CommandBuffer] Applied: {created} created, {destroyed} destroyed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+                Logger.Log($"[CommandBuffer] Applied: {created} created, {destroyed} destroyed in {sw.Elapsed.TotalMilliseconds:F3}ms");
             }
 
             Clear();
@@ -260,7 +260,7 @@ namespace UltraSim.ECS
                 // Set all component values
                 if (!world.TryGetEntityLocation(entity, out var archetype, out var slot))
                 {
-                    GD.PrintErr($"[CommandBuffer] Failed to get location for entity {entity}");
+                    Logger.Log($"[CommandBuffer] Failed to get location for entity {entity}", LogSeverity.Error);
                     continue;
                 }
 

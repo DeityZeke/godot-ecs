@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-using Godot;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -184,7 +184,7 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex) 
                 { 
-                    GD.PrintErr($"[EntityManager] Entity builder exception: {ex}"); 
+                    Logger.Log($"[EntityManager] Entity builder exception: {ex}", LogSeverity.Error); 
                 }
             }
         }

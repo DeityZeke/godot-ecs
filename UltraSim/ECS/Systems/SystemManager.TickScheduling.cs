@@ -5,9 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Godot;
-
 using UltraSim.ECS.Threading;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS.Systems
 {
@@ -38,8 +37,8 @@ namespace UltraSim.ECS.Systems
                 _manualSystems.Add(system);
 
 #if USE_DEBUG
-                GD.Print($"⏸️ Manual system registered: {system.Name}");
-                GD.Print($"   Call: systemManager.RunManual<{system.GetType().Name}>()");
+                Logger.Log($"â¸ï¸ Manual system registered: {system.Name}");
+                Logger.Log($"   Call: systemManager.RunManual<{system.GetType().Name}>()");
 #endif
 
                 return; // Don't add to tick buckets or batching
@@ -55,7 +54,7 @@ namespace UltraSim.ECS.Systems
             _tickBuckets[rate].Add(system);
 
 #if USE_DEBUG
-            GD.Print($"✓ System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
+            Logger.Log($"âœ“ System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
 #endif
         }
 
@@ -100,7 +99,7 @@ namespace UltraSim.ECS.Systems
         /// <param name="delta">Time since last frame in seconds</param>
         public void UpdateTicked(World world, double delta)
         {
-            double currentTime = Time.GetTicksMsec() / 1000.0; // Current time in seconds
+            double currentTime = world.TotalSeconds; // From TimeTracker (self-contained)
 
             // Collect all systems that should run this frame
             var systemsToRun = new List<BaseSystem>();
@@ -157,7 +156,7 @@ namespace UltraSim.ECS.Systems
             // Log every 60 frames to avoid spam
             if (Engine.GetProcessFrames() % 60 == 0)
             {
-                GD.Print($"[TickScheduler] Frame {Engine.GetProcessFrames()}: Ran {systemsToRun.Count} systems, skipped {systemsSkipped}");
+                Logger.Log($"[TickScheduler] Frame {Engine.GetProcessFrames()}: Ran {systemsToRun.Count} systems, skipped {systemsSkipped}");
             }
 #endif
         }
@@ -277,19 +276,19 @@ namespace UltraSim.ECS.Systems
         {
             if (!_systemMap.TryGetValue(typeof(T), out var system))
             {
-                GD.PrintErr($"[SystemManager] System not found: {typeof(T).Name}");
+                Logger.Log($"[SystemManager] System not found: {typeof(T).Name}", LogSeverity.Error);
                 return;
             }
 
             if (system.Rate != TickRate.Manual)
             {
-                GD.PrintErr($"[SystemManager] Cannot manually run non-Manual system: {system.Name}");
-                GD.PrintErr($"   System has TickRate: {system.Rate}");
+                Logger.Log($"[SystemManager] Cannot manually run non-Manual system: {system.Name}", LogSeverity.Error);
+                Logger.Log($"   System has TickRate: {system.Rate}", LogSeverity.Error);
                 return;
             }
 
 #if USE_DEBUG
-            GD.Print($"▶️ Running manual system: {system.Name}");
+            Logger.Log($"â–¶ï¸ Running manual system: {system.Name}");
             var sw = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -297,7 +296,7 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             sw.Stop();
-            GD.Print($"✓ {system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logger.Log($"âœ“ {system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
 #endif
         }
 
@@ -309,13 +308,13 @@ namespace UltraSim.ECS.Systems
         {
             if (system.Rate != TickRate.Manual)
             {
-                GD.PrintErr($"[SystemManager] Cannot manually run non-Manual system: {system.Name}");
-                GD.PrintErr($"   System has TickRate: {system.Rate}");
+                Logger.Log($"[SystemManager] Cannot manually run non-Manual system: {system.Name}", LogSeverity.Error);
+                Logger.Log($"   System has TickRate: {system.Rate}", LogSeverity.Error);
                 return;
             }
 
 #if USE_DEBUG
-            GD.Print($"▶️ Running manual system: {system.Name}");
+            Logger.Log($"â–¶ï¸ Running manual system: {system.Name}");
             var sw = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -323,7 +322,7 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             sw.Stop();
-            GD.Print($"✓ {system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logger.Log($"âœ“ {system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
 #endif
         }
 
@@ -349,7 +348,7 @@ namespace UltraSim.ECS.Systems
 
                 foreach (var system in systems)
                 {
-                    string status = system.IsEnabled ? "✓" : "✗";
+                    string status = system.IsEnabled ? "âœ“" : "âœ—";
                     sb.AppendLine($"  {status} {system.Name}");
                 }
             }
@@ -362,7 +361,7 @@ namespace UltraSim.ECS.Systems
 
                 foreach (var system in _manualSystems)
                 {
-                    string status = system.IsEnabled ? "✓" : "✗";
+                    string status = system.IsEnabled ? "âœ“" : "âœ—";
                     sb.AppendLine($"  {status} {system.Name}");
                 }
             }
@@ -391,7 +390,7 @@ namespace UltraSim.ECS.Systems
             }
 
 #if USE_DEBUG
-            GD.Print("[TickScheduler] All tick timers reset");
+            Logger.Log("[TickScheduler] All tick timers reset");
 #endif
         }
     }

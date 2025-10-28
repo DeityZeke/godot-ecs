@@ -2,7 +2,10 @@
 
 using System;
 using System.IO;
-using Godot;
+
+using UltraSim.IO;
+using UltraSim.Configuration;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -25,14 +28,11 @@ namespace UltraSim.ECS
 
         /// <summary>
         /// Path management for save files.
+        /// Uses PathManager for engine-independent path resolution.
         /// </summary>
         public static class Paths
         {
-            public static string ExecutableDir => OS.GetExecutablePath().GetBaseDir();
-            private static bool IsRunningInEditor => OS.HasFeature("editor");
-            private static string BaseDir => IsRunningInEditor ? ProjectSettings.GlobalizePath("user://") : ExecutableDir;
-            
-            public static string SavesDir => Path.Combine(BaseDir, "Saves");
+            public static string SavesDir => PathManager.SavePath;
             public static string ECSDir => Path.Combine(SavesDir, "ECS");
             public static string SystemsDir => Path.Combine(ECSDir, "Systems");
             public static string WorldDir => Path.Combine(ECSDir, "World");
@@ -105,22 +105,22 @@ namespace UltraSim.ECS
                 var error = config.Save(savePath);
                 if (error != Error.Ok)
                 {
-                    GD.PrintErr($"[World] ❌ Failed to save: {error}");
+                    Logger.Log($"[World] âŒ Failed to save: {error}", LogSeverity.Error);
                     return;
                 }
 
                 sw.Stop();
-                GD.Print($"\n💾 WORLD SAVED");
-                GD.Print($"   Path: {savePath}");
-                GD.Print($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
-                GD.Print($"   Entities: {EntityCount}, Systems: {_systems.Count}");
+                Logger.Log($"\nðŸ’¾ WORLD SAVED");
+                Logger.Log($"   Path: {savePath}");
+                Logger.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
+                Logger.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
                 
                 OnAfterSave?.Invoke();
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"[World] ❌ Save failed with exception: {ex.Message}");
-                GD.PrintErr(ex.StackTrace);
+                Logger.Log($"[World] âŒ Save failed with exception: {ex.Message}", LogSeverity.Error);
+                Logger.Log(ex.StackTrace, LogSeverity.Error);
             }
         }
 
@@ -176,7 +176,7 @@ namespace UltraSim.ECS
                 
                 if (!File.Exists(loadPath))
                 {
-                    GD.PrintErr($"[World] ❌ Save file not found: {loadPath}");
+                    Logger.Log($"[World] âŒ Save file not found: {loadPath}", LogSeverity.Error);
                     return;
                 }
 
@@ -184,7 +184,7 @@ namespace UltraSim.ECS
                 var error = config.Load(loadPath);
                 if (error != Error.Ok)
                 {
-                    GD.PrintErr($"[World] ❌ Failed to load: {error}");
+                    Logger.Log($"[World] âŒ Failed to load: {error}", LogSeverity.Error);
                     return;
                 }
 
@@ -200,17 +200,17 @@ namespace UltraSim.ECS
                 LoadAllSystemStates(config);
 
                 sw.Stop();
-                GD.Print($"\n📂 WORLD LOADED");
-                GD.Print($"   Path: {loadPath}");
-                GD.Print($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
-                GD.Print($"   Entities: {EntityCount}, Systems: {_systems.Count}");
+                Logger.Log($"\nðŸ“‚ WORLD LOADED");
+                Logger.Log($"   Path: {loadPath}");
+                Logger.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
+                Logger.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
                 
                 OnAfterLoad?.Invoke();
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"[World] ❌ Load failed with exception: {ex.Message}");
-                GD.PrintErr(ex.StackTrace);
+                Logger.Log($"[World] âŒ Load failed with exception: {ex.Message}", LogSeverity.Error);
+                Logger.Log(ex.StackTrace, LogSeverity.Error);
             }
         }
 
@@ -221,7 +221,7 @@ namespace UltraSim.ECS
         {
             if (!config.HasSection("World"))
             {
-                GD.PrintErr("[World] ⚠️ No World section found in save file");
+                Logger.Log("[World] âš ï¸ No World section found in save file", LogSeverity.Error);
                 return;
             }
 
@@ -233,8 +233,8 @@ namespace UltraSim.ECS
             var savedArchetypeCount = (int)config.GetValue("World", "ArchetypeCount", 0);
             var timestamp = (long)config.GetValue("World", "SaveTimestamp", 0);
 
-            GD.Print($"[World] 📂 Loaded world state from {DateTimeOffset.FromUnixTimeSeconds(timestamp):yyyy-MM-dd HH:mm:ss}");
-            GD.Print($"[World]    Expected - Entities: {savedEntityCount}, Archetypes: {savedArchetypeCount}");
+            Logger.Log($"[World] ðŸ“‚ Loaded world state from {DateTimeOffset.FromUnixTimeSeconds(timestamp):yyyy-MM-dd HH:mm:ss}");
+            Logger.Log($"[World]    Expected - Entities: {savedEntityCount}, Archetypes: {savedArchetypeCount}");
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace UltraSim.ECS
                 statesLoaded++;
             }
 
-            GD.Print($"[World] 📂 Loaded {statesLoaded} system states");
+            Logger.Log($"[World] ðŸ“‚ Loaded {statesLoaded} system states");
         }
 
         #endregion

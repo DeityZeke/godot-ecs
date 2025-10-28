@@ -3,10 +3,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
-using Godot;
-
+using UltraSim.IO;
+using UltraSim.Configuration;
 using UltraSim.ECS.Settings;
+using UltraSim.Logging;
 
 namespace UltraSim.ECS.Systems
 {
@@ -83,7 +85,7 @@ namespace UltraSim.ECS.Systems
         public virtual TickRate Rate => TickRate.EveryFrame;
 
         // Performance statistics (optional)
-        [Export] public bool EnableStatistics = true; // Export so you can toggle in inspector
+        public bool EnableStatistics = true; // Export so you can toggle in inspector
         public SystemStatistics Statistics { get; private set; } = new SystemStatistics();
 
 #if USE_DEBUG
@@ -102,14 +104,16 @@ namespace UltraSim.ECS.Systems
         /// Override this to return your system's settings instance.
         /// Return null if your system has no settings.
         /// </summary>
-        public virtual BaseSettings? GetSettings() => null;
+        //public virtual BaseSettings? GetSettings() => null;
+        public virtual SettingsManager? GetSettings() => null;
 
         /// <summary>
         /// Saves this system's settings to disk.
         /// </summary>
         public void SaveSettings()
         {
-            if (GetSettings() is not BaseSettings settings)
+            //if (GetSettings() is not BaseSettings settings)
+            if (GetSettings() is not SettingsManager settings)
                 return;
 
             var config = new ConfigFile();
@@ -119,10 +123,10 @@ namespace UltraSim.ECS.Systems
             var error = config.Save(path);
 
             if (error != Error.Ok)
-                GD.PushError($"[BaseSystem] Failed to save settings for {Name}: {error}");
+                Logger.Log($"[BaseSystem] Failed to save settings for {Name}: {error}", LogSeverity.Error);
 #if USE_DEBUG
     else
-        GD.Print($"[BaseSystem] Saved settings for {Name} to {path}");
+        Logger.Log($"[BaseSystem] Saved settings for {Name} to {path}");
 #endif
         }
 
@@ -131,14 +135,15 @@ namespace UltraSim.ECS.Systems
         /// </summary>
         public void LoadSettings()
         {
-            if (GetSettings() is not BaseSettings settings)
+            //if (GetSettings() is not BaseSettings settings)
+            if (GetSettings() is not SettingsManager settings)
                 return;
 
             var path = World.Paths.GetSystemSettingsPath(Name);
-            if (!FileAccess.FileExists(path))
+            if (!File.Exists(path))
             {
 #if USE_DEBUG
-        GD.Print($"[BaseSystem] No settings file found for {Name}, using defaults");
+        Logger.Log($"[BaseSystem] No settings file found for {Name}, using defaults");
 #endif
                 return;
             }
@@ -148,13 +153,13 @@ namespace UltraSim.ECS.Systems
 
             if (error != Error.Ok)
             {
-                GD.PushError($"[BaseSystem] Failed to load settings for {Name}: {error}");
+                Logger.Log($"[BaseSystem] Failed to load settings for {Name}: {error}", LogSeverity.Error);
                 return;
             }
 
             settings.Deserialize(config, Name);
 #if USE_DEBUG
-    GD.Print($"[BaseSystem] Loaded settings for {Name} from {path}");
+    Logger.Log($"[BaseSystem] Loaded settings for {Name} from {path}");
 #endif
         }
 
