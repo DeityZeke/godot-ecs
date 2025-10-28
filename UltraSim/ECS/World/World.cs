@@ -222,6 +222,7 @@ namespace UltraSim.ECS
 
         public void EnqueueSystemCreate(BaseSystem s) => _systemCreateQueue.Enqueue(s);
 
+        /*
         public void EnqueueSystemCreate<T>() where T : BaseSystem
         {
             var sys = FindSystemInQueuesOrRegistry<T>();
@@ -234,6 +235,7 @@ namespace UltraSim.ECS
 
             _systemCreateQueue.Enqueue(sys);
         }
+        */
 
         public void EnqueueSystemDestroy(BaseSystem s) => _systemDestroyQueue.Enqueue(s);
 

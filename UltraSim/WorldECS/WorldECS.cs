@@ -7,6 +7,7 @@ using Godot;
 using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.Components;
+using UltraSim.ECS.Systems;
 using UltraSim.Logging;
 
 namespace UltraSim.WorldECS
@@ -79,6 +80,12 @@ namespace UltraSim.WorldECS
                     }
                 }
             };
+
+            _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
+            _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
+
+            _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
+            _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
 
             // Queue systems (still using queues for systems - that's fine!)
             //_world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());

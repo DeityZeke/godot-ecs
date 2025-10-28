@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 
@@ -91,13 +90,10 @@ namespace UltraSim.ECS
             Vector2 viewportSize = GetTree().Root.Size;
             int padding = (int)Mathf.Clamp(Mathf.Min(viewportSize.X, viewportSize.Y) * 0.05f, 50f, 150f);
 
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel BuildUI                      Ã¢â€¢â€˜");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢Â Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â£");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ Viewport: {viewportSize.X}x{viewportSize.Y}");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel Size: {Size}");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ Padding: {padding}px");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â");
+            UltraSim.Logging.Logger.Log("==== ECSControlPanel BuildUI ====");
+            UltraSim.Logging.Logger.Log($"Viewport: {viewportSize.X}x{viewportSize.Y}");
+            UltraSim.Logging.Logger.Log($"ECSControlPanel Size: {Size}");
+            UltraSim.Logging.Logger.Log($"Padding: {padding}px");
 
             // ROOT MARGIN - creates the padding border around the panel
             var rootMargin = new MarginContainer();
@@ -233,13 +229,13 @@ namespace UltraSim.ECS
 
                 if (settings != null)
                 {
-                    UltraSim.Logging.Logger.Log($"  ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {system.Name} has settings");
+                    UltraSim.Logging.Logger.Log($"  - {system.Name} has settings");
                     CreateSystemEntry(system);
                     systemsWithSettings++;
                 }
                 else
                 {
-                    UltraSim.Logging.Logger.Log($"  ÃƒÂ¢Ã…â€œÃ¢â‚¬â€ {system.Name} has NO settings");
+                    UltraSim.Logging.Logger.Log($"  - {system.Name} has NO settings");
                 }
             }
 
@@ -258,7 +254,7 @@ namespace UltraSim.ECS
             _systemsContainer.AddChild(entry);
             _systemEntries[system] = entry;
 
-            UltraSim.Logging.Logger.Log($"  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
+            UltraSim.Logging.Logger.Log($"  - Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
         }
 
         private void OnSettingChanged(BaseSystem system)
@@ -356,29 +352,25 @@ namespace UltraSim.ECS
 
         private void ForceLayoutUpdate()
         {
-            UltraSim.Logging.Logger.Log($"\nÃ¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ForceLayoutUpdate                            Ã¢â€¢â€˜");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢Â Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â£");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel Size: {Size}");
+            UltraSim.Logging.Logger.Log("\n==== ForceLayoutUpdate ====");
+            UltraSim.Logging.Logger.Log($"ECSControlPanel Size: {Size}");
 
             if (_mainPanel != null)
             {
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel Size: {_mainPanel.Size}");
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel Position: {_mainPanel.Position}");
+                UltraSim.Logging.Logger.Log($"MainPanel Size: {_mainPanel.Size}");
+                UltraSim.Logging.Logger.Log($"MainPanel Position: {_mainPanel.Position}");
 
                 // Just reset sizes to force recalculation
                 _mainPanel.ResetSize();
                 _scrollContainer?.ResetSize();
                 _systemsContainer?.ResetSize();
 
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ After Reset - MainPanel: {_mainPanel.Size}");
+                UltraSim.Logging.Logger.Log($"After Reset - MainPanel: {_mainPanel.Size}");
             }
             else
             {
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ERROR: MainPanel is null!", UltraSim.Logging.LogSeverity.Error);
+                UltraSim.Logging.Logger.Log($"ERROR: MainPanel is null!", UltraSim.Logging.LogSeverity.Error);
             }
-
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â");
 
             // Queue debug output for next frame
             CallDeferred(MethodName.DebugSizesAfterShow);
@@ -386,35 +378,31 @@ namespace UltraSim.ECS
 
         private void DebugSizesAfterShow()
         {
-            UltraSim.Logging.Logger.Log($"\nÃ¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ Final Layout (After Show)                    Ã¢â€¢â€˜");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢Â Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â£");
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ECSControlPanel: {Size}");
+            UltraSim.Logging.Logger.Log("\n==== Final Layout (After Show) ====");
+            UltraSim.Logging.Logger.Log($"ECSControlPanel: {Size}");
 
             // Get the root margin
             var rootMargin = GetChildOrNull<MarginContainer>(0);
             if (rootMargin != null)
             {
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ RootMargin: {rootMargin.Size}");
+                UltraSim.Logging.Logger.Log($"RootMargin: {rootMargin.Size}");
             }
 
             if (_mainPanel != null)
             {
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel: {_mainPanel.Size}");
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ MainPanel Position: {_mainPanel.Position}");
+                UltraSim.Logging.Logger.Log($"MainPanel: {_mainPanel.Size}");
+                UltraSim.Logging.Logger.Log($"MainPanel Position: {_mainPanel.Position}");
             }
 
             if (_scrollContainer != null)
             {
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ ScrollContainer: {_scrollContainer.Size}");
+                UltraSim.Logging.Logger.Log($"ScrollContainer: {_scrollContainer.Size}");
             }
 
             if (_systemsContainer != null)
             {
-                UltraSim.Logging.Logger.Log($"Ã¢â€¢â€˜ SystemsContainer: {_systemsContainer.Size}");
+                UltraSim.Logging.Logger.Log($"SystemsContainer: {_systemsContainer.Size}");
             }
-
-            UltraSim.Logging.Logger.Log($"Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â\n");
         }
 
         public new void Hide()
@@ -498,15 +486,6 @@ namespace UltraSim.ECS
             _enabledCheckBox.Toggled += OnEnabledToggled;
             headerHBox.AddChild(_enabledCheckBox);
 
-            /*
-            // Timing label
-            _timingLabel = new Label();
-            _timingLabel.Text = "0.000ms";
-            _timingLabel.CustomMinimumSize = new Vector2(80, 0);
-            _timingLabel.HorizontalAlignment = HorizontalAlignment.Right;
-            _timingLabel.Visible = showTimings;
-            headerHBox.AddChild(_timingLabel);
-            */
             // Timing container - ALWAYS reserves 100px of space
             var timingContainer = new Control();
             timingContainer.CustomMinimumSize = new Vector2(100, 0); // For "999.999ms"
@@ -518,7 +497,7 @@ namespace UltraSim.ECS
             _timingLabel.SetAnchorsPreset(LayoutPreset.FullRect);
             _timingLabel.HorizontalAlignment = HorizontalAlignment.Right;
             _timingLabel.VerticalAlignment = VerticalAlignment.Center;
-            _timingLabel.Visible = showTimings;  // Ã¢â€ Â Label can hide, but space is reserved!
+            _timingLabel.Visible = showTimings;  // Label can hide, but space is reserved!
             timingContainer.AddChild(_timingLabel);
 
             // === SETTINGS CONTAINER ===
@@ -528,7 +507,6 @@ namespace UltraSim.ECS
             vbox.AddChild(_settingsContainer);
 
             // Generate settings UI
-            //if (_system.GetSettings() is BaseSetting settings)
             if (_system.GetSettings() is SettingsManager settings)
             {
                 foreach (var setting in settings.GetAllSettings())
@@ -575,7 +553,7 @@ namespace UltraSim.ECS
             _system.SaveSettings();
             _isDirty = false;
             _applyButton.Visible = false;
-            UltraSim.Logging.Logger.Log($"ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ Applied settings for {_system.Name}");
+            UltraSim.Logging.Logger.Log($"Applied settings for {_system.Name}");
         }
 
         public void UpdateTiming(float ms)
