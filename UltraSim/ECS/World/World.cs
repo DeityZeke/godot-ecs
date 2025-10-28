@@ -281,7 +281,7 @@ namespace UltraSim.ECS
                 return;
             }
 
-            _systemEnableQueue.Enqueue(sys);
+            _systemDisableQueue.Enqueue(sys);
         }
 
         public void EnqueueComponentRemove(int entityIndex, int compId) =>
