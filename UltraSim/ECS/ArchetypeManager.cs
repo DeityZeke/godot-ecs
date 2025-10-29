@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 using UltraSim.Logging;
 
@@ -30,6 +32,8 @@ namespace UltraSim.ECS
 
         #region Archetype Lookup
 
+
+        /*
         /// <summary>
         /// Gets or creates an archetype with the given signature.
         /// Uses caching for O(1) lookup on repeated queries.
@@ -61,7 +65,7 @@ namespace UltraSim.ECS
                     Logger.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
                     throw new ArgumentOutOfRangeException(nameof(typeId), $"Invalid component type ID: {typeId} (signature={signature})");
                 }
-                
+
                 var type = ComponentManager.GetComponentType(typeId);
                 var method = typeof(Archetype).GetMethod(nameof(Archetype.EnsureComponentList))
                                               ?.MakeGenericMethod(type);
@@ -70,9 +74,76 @@ namespace UltraSim.ECS
 
             _archetypes.Add(newArch);
             _signatureCache[signature] = newArch;
-            
+
             return newArch;
         }
+        */
+
+        // CACHED DELEGATES: Type → Action<Archetype, int>
+        private static readonly ConcurrentDictionary<Type, Action<Archetype, int>> _ensureComponentListDelegates = new();
+
+        /// <summary>
+        /// Gets or creates an archetype with the given signature.
+        /// Uses caching for O(1) lookup on repeated queries.
+        /// Reflection is cached — zero cost after first use per type.
+        /// </summary>
+        public Archetype GetOrCreate(ComponentSignature signature)
+        {
+            // 1. Fast cache hit
+            if (_signatureCache.TryGetValue(signature, out var cached))
+                return cached;
+
+            // 2. Linear search (only when new archetype)
+            foreach (ref var arch in CollectionsMarshal.AsSpan(_archetypes))
+            {
+                if (arch.Signature.Equals(signature))
+                {
+                    _signatureCache[signature] = arch;
+                    return arch;
+                }
+            }
+
+            // 3. Create new archetype
+            var newArch = new Archetype(signature);
+
+            // ENSURE COMPONENT LISTS — CACHED DELEGATES
+            foreach (var typeId in signature.GetIds())
+            {
+                if (typeId < 0 || typeId >= ComponentManager.TypeCount)
+                {
+                    Logger.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
+                    throw new ArgumentOutOfRangeException(nameof(typeId), $"Invalid component type ID: {typeId} (signature={signature})");
+                }
+
+                var componentType = ComponentManager.GetComponentType(typeId);
+
+                // GET CACHED DELEGATE
+                if (!_ensureComponentListDelegates.TryGetValue(componentType, out var ensureAction))
+                {
+                    // First time: create and cache
+                    var genericMethod = typeof(Archetype)
+                        .GetMethod(nameof(Archetype.EnsureComponentList), BindingFlags.Instance | BindingFlags.NonPublic)
+                        ?.MakeGenericMethod(componentType);
+
+                    if (genericMethod == null)
+                        throw new MissingMethodException($"EnsureComponentList<{componentType.Name}> not found.");
+
+                    ensureAction = (Action<Archetype, int>)Delegate.CreateDelegate(
+                        typeof(Action<Archetype, int>), genericMethod);
+
+                    _ensureComponentListDelegates[componentType] = ensureAction;
+                }
+
+                // INVOKE CACHED DELEGATE
+                ensureAction(newArch, typeId);
+            }
+
+            _archetypes.Add(newArch);
+            _signatureCache[signature] = newArch;
+
+            return newArch;
+        }
+
 
         /// <summary>
         /// Gets the empty archetype (archetype 0).

@@ -136,7 +136,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Ensures a component list exists for the given type.
         /// </summary>
-        public void EnsureComponentList<T>(int componentTypeId)
+        internal void EnsureComponentList<T>(int componentTypeId) where T : struct
         {
             if (!_componentLists.TryGetValue(componentTypeId, out var existing))
             {
@@ -155,7 +155,7 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasComponent(int id) => Signature.Contains(id);
 
-        public void SetComponentValue<T>(int componentTypeId, int slot, T value)
+        public void SetComponentValue<T>(int componentTypeId, int slot, T value) where T : struct
         {
             EnsureComponentList<T>(componentTypeId);
             var list = (ComponentList<T>)_componentLists[componentTypeId];

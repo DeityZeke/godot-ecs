@@ -29,7 +29,7 @@ environment = SubResource("Environment_bo1nx")
 
 [node name="WorldECS" type="Node3D" parent="."]
 script = ExtResource("1_bo1nx")
-EntityCount = 8000000
+EntityCount = 10000
 
 [node name="Camera3D" type="Camera3D" parent="."]
 current = true

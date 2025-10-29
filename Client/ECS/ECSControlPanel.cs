@@ -313,8 +313,9 @@ namespace UltraSim.ECS
             // TODO: Get actual timing data from SystemManager
             foreach (var kvp in _systemEntries)
             {
-                float timing = 0.0f; // Replace with actual timing
-                kvp.Value.UpdateTiming(timing);
+                //float timing = 0.0f; // Replace with actual timing
+                //kvp.Value.UpdateTiming(timing);
+                kvp.Value.UpdateTiming();
             }
         }
 
@@ -568,10 +569,12 @@ namespace UltraSim.ECS
             UltraSim.Logging.Logger.Log($"Applied settings for {_system.Name}");
         }
 
-        public void UpdateTiming(float ms)
+        //public void UpdateTiming(float ms)
+        public void UpdateTiming()
         {
             if (_timingLabel.Visible)
             {
+                double ms = _system.Statistics.AverageUpdateTimeMs;
                 _timingLabel.Text = $"{ms:F3}ms";
             }
         }
