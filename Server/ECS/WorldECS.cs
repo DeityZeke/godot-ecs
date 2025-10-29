@@ -81,11 +81,14 @@ namespace UltraSim.WorldECS
                 }
             };
 
-            _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
-            _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
+            _world.EnqueueSystemCreate(new OptimizedMovementSystem());
+            _world.EnqueueSystemEnable<OptimizedMovementSystem>();
 
             _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
             _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
+            
+            _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
+            _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
 
             // Queue systems (still using queues for systems - that's fine!)
             //_world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
