@@ -19,7 +19,8 @@ namespace UltraSim.ECS
 
         private World _world;
         private SystemManager _systemManager;
-        private Dictionary<BaseSystem, SystemEntryUI> _systemEntries = new();
+        //private Dictionary<BaseSystem, SystemEntryUI> _systemEntries = new();
+        private Dictionary<SettingsManager, SystemEntryUI> _systemEntries = new();
         private bool _showTimings = false;
 
         private PanelContainer _mainPanel;  // Store reference to main panel
@@ -48,13 +49,23 @@ namespace UltraSim.ECS
             _world = world;
             _systemManager = world.Systems;
 
-            RefreshSystemsList();
+            //RefreshSystemsList();
 
             UltraSim.Logging.Logger.Log($"ECSControlPanel initialized with {_systemEntries.Count} systems (with settings)");
         }
 
         public override void _Ready()
         {
+            //GD.Print($"Systems count: {_world.SystemManager.GetAllSystems().Count}");
+            GD.Print($"Systems count: {_world.Systems.Count}");
+            //foreach (var sys in _world.SystemManager.GetAllSystems())
+            foreach (var sys in _world.Systems.Systems)
+            {
+                GD.Print($"System: {sys.GetType().Name}, Has Settings: {sys.GetSettings() != null}");
+                if (sys.GetSettings() != null)
+                    GD.Print($"  Settings Count: {sys.GetSettings().GetAllSettings().Count} ");
+            }
+
             // Force to top layer
             ZIndex = 100;
 
@@ -199,8 +210,8 @@ namespace UltraSim.ECS
 
         public void RefreshSystemsList()
         {
-            if (_systemsContainer == null || _systemsContainer.GetChildCount() == 0)
-                return;
+            //if (_systemsContainer == null || _systemsContainer.GetChildCount() == 0)
+                //return;
 
             // Clear existing entries - remove immediately to prevent duplicates
             foreach (var child in _systemsContainer.GetChildren())
@@ -249,10 +260,11 @@ namespace UltraSim.ECS
         }
 
         private void CreateSystemEntry(BaseSystem system)
+        //private void CreateSystemEntry(SettingsManager system)
         {
             var entry = new SystemEntryUI(system, _showTimings, OnSettingChanged);
             _systemsContainer.AddChild(entry);
-            _systemEntries[system] = entry;
+            _systemEntries[system.GetSettings()] = entry;
 
             UltraSim.Logging.Logger.Log($"  - Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
         }
