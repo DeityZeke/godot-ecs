@@ -5,30 +5,38 @@ using UltraSim.Configuration;
 
 namespace UltraSim.ECS.Settings
 {
-    public partial class FloatSetting : BaseSetting, ISetting
+
+    public class FloatSetting : Setting<float>
     {
-        public override string Name { get; set; }
-        public override string Category { get; set; } = "";
-        public override string Tooltip { get; set; } = "";
-
-        public float Value { get; set; }
-        public float Min { get; set; } = 0f;
-        public float Max { get; set; } = 100f;
+        public float Min { get; set; } = 0.0f;
+        public float Max { get; set; } = 100.0f;
         public float Step { get; set; } = 0.1f;
-        public string Format { get; set; } = "F2";
+        public string Format { get; set; } = $"F3";
 
-        public override object GetValue() => Value;
-        public override object GetValueAsString() => Value.ToString();
-        public override void SetValue(object value) => Value = Convert.ToSingle(value);
-
-        public override void Serialize(ConfigFile config, string section)
+        public FloatSetting(string name, float value) : base(name, value)
         {
-            config.SetValue(section, Name, Value);
+        }
+        
+        public FloatSetting(string name, float value, string toolTip) : this (name, value)
+        {
+            Tooltip = toolTip;
         }
 
-        public override void Deserialize(ConfigFile config, string section)
+        public FloatSetting(string name, float value, float min, float max, float step, string toolTip)
+        : this(name, value)
         {
-            Value = (float)config.GetValue(section, Name, Value);
+            Min = min;
+            Max = max;
+            Step = step;
+            Tooltip = toolTip;
+        }
+
+        public override void Serialize()
+        {
+        }
+
+        public override void Deserialize()
+        {
         }
     }
 }

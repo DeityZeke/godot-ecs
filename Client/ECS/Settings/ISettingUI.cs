@@ -10,11 +10,14 @@ namespace UltraSim.ECS.Settings
     /// This interface is Godot-specific and should live in the Client layer.
     /// </summary>
     public interface ISettingUI
-    {
+    {        
+        ISetting Setting { get; }
         /// <summary>
         /// Creates a Godot Control node for this setting.
         /// Only used by ECSControlPanel (Godot-specific).
         /// </summary>
-        Control CreateControl(Action<ISetting> onChanged);
+        //Control CreateControl(Action<ISetting> onChanged);        
+        Control Node { get; }
+        void Bind();
     }
 }

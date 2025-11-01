@@ -106,6 +106,8 @@ namespace UltraSim.ECS.Systems
         /// </summary>
         //public virtual BaseSettings? GetSettings() => null;
         public virtual SettingsManager? GetSettings() => null;
+        
+        //public virtual ISetting? GetSettings() => null;
 
         /// <summary>
         /// Saves this system's settings to disk.

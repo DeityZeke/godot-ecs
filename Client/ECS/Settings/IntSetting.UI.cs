@@ -1,43 +1,86 @@
-
 using System;
-
 using Godot;
 
-namespace UltraSim.ECS.Settings // The must have the same namespace as the ones IN UltraSim.ECS or it wont work
+namespace UltraSim.ECS.Settings
 {
-    public partial class IntSetting : ISettingUI
+    public class IntSettingUI : ISettingUI
     {
+        public ISetting Setting { get; }
+        public Control Node { get; }
 
-        public override Control CreateControl(Action<ISetting> onChanged)
+        private readonly HBoxContainer _container;
+        private readonly Label _label;
+        private readonly SpinBox _spinBox;
+
+        private bool _updatingUI;
+
+        // Optional range metadata
+        private int _min = 0;
+        private int _max = 100;
+        private int _step = 1;
+
+        public IntSettingUI(ISetting setting)
         {
-            var container = new HBoxContainer();
+            Setting = setting;
+            _container = new HBoxContainer();
 
-            var label = new Label
+            // Optionally extract range metadata from core IntSetting (if it has Min/Max/Step)
+            if (setting is IntSetting core)
             {
-                Text = Name,
+                _min = core.Min;
+                _max = core.Max;
+                _step = core.Step;
+            }
+
+            _label = new Label
+            {
+                Text = Setting.Name,
                 CustomMinimumSize = new Vector2(150, 0),
-                TooltipText = Tooltip
+                TooltipText = Setting.Tooltip
             };
 
-            var spinBox = new SpinBox
+            _spinBox = new SpinBox
             {
-                MinValue = Min,
-                MaxValue = Max,
-                Value = Value,
-                Step = Step,
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+                MinValue = _min,
+                MaxValue = _max,
+                Value = Convert.ToInt32(Setting.Value),
+                Step = _step,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                TooltipText = Setting.Tooltip
             };
 
-            spinBox.ValueChanged += (v) =>
+            _container.AddChild(_label);
+            _container.AddChild(_spinBox);
+            Node = _container;
+        }
+
+        public void Bind()
+        {
+            _spinBox.ValueChanged += OnValueChanged;
+            Setting.ValueChanged += OnSettingChanged;
+        }
+
+        private void OnValueChanged(double newValue)
+        {
+            if (_updatingUI)
+                return;
+
+            Setting.Value = (int)newValue;
+        }
+
+        private void OnSettingChanged(object value)
+        {
+            _updatingUI = true;
+            try
             {
-                Value = (int)v;
-                onChanged?.Invoke(this);
-            };
-
-            container.AddChild(label);
-            container.AddChild(spinBox);
-
-            return container;
+                int intVal = Convert.ToInt32(value);
+                if (Math.Abs(intVal - (int)_spinBox.Value) > 0)
+                    _spinBox.Value = intVal;
+            }
+            finally
+            {
+                _updatingUI = false;
+            }
         }
     }
 }

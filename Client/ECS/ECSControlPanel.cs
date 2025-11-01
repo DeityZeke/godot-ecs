@@ -21,6 +21,7 @@ namespace UltraSim.ECS
         private SystemManager _systemManager;
         //private Dictionary<BaseSystem, SystemEntryUI> _systemEntries = new();
         private Dictionary<SettingsManager, SystemEntryUI> _systemEntries = new();
+        //private Dictionary<ISetting, SystemEntryUI> _systemEntries = new();
         private bool _showTimings = false;
 
         private PanelContainer _mainPanel;  // Store reference to main panel
@@ -524,8 +525,11 @@ namespace UltraSim.ECS
             {
                 foreach (var setting in settings.GetAllSettings())
                 {
-                    var control = setting.CreateControl(OnSettingChangedInternal);
-                    _settingsContainer.AddChild(control);
+                    if (setting is ISettingUI settingUI)
+                    {
+                        var control = settingUI.Node;//.CreateControl(OnSettingChangedInternal);
+                        _settingsContainer.AddChild(control);
+                    }
                 }
 
                 UltraSim.Logging.Logger.Log($"[SystemEntryUI] Added {settings.GetAllSettings().Count} setting controls for {_system.Name}");

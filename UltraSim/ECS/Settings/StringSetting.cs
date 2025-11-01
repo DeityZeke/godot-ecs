@@ -5,28 +5,35 @@ using UltraSim.Configuration;
 
 namespace UltraSim.ECS.Settings
 {
-    public partial class StringSetting : BaseSetting, ISetting
+
+    public class StringSetting : Setting<string>
     {
-        public override string Name { get; set; }
-        public override string Category { get; set; } = "";
-        public override string Tooltip { get; set; } = "";
-        public string Value { get; set; } = "";
-        public int MaxLength { get; set; } = 100;
+        public int MaxLength { get; set; }
 
-        public override object GetValue() => Value;
-
-        public override object GetValueAsString() => Value;
-
-        public override void SetValue(object value) => Value = value?.ToString() ?? "";
-
-        public override void Serialize(ConfigFile config, string section)
+        public StringSetting(string name, string value) : base(name, value)
         {
-            config.SetValue(section, Name, Value);
+
         }
 
-        public override void Deserialize(ConfigFile config, string section)
+        public StringSetting(string name, string value, string toolTip) : this(name, value)
         {
-            Value = (string)config.GetValue(section, Name, Value);
+            Tooltip = toolTip;
+        }
+
+        public StringSetting(string name, string value, int maxLength, string toolTip) : this(name, value)
+        {
+            MaxLength = maxLength;
+            Tooltip = toolTip;
+        }
+
+        public override void Serialize()
+        {
+            
+        }
+
+        public override void Deserialize()
+        {
+            
         }
     }
 }

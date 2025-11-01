@@ -5,35 +5,66 @@ using Godot;
 
 namespace UltraSim.ECS.Settings
 {
-    public partial class BoolSetting : ISettingUI
+    public class BoolSettingUI : ISettingUI
     {
-        public override Control CreateControl(Action<ISetting> onChanged)
+        public ISetting Setting { get; }
+        public Control Node { get; }
+
+        private readonly HBoxContainer container;
+        private readonly Label text;
+        private readonly CheckBox checkBox;
+
+        private bool _updatingUI;
+
+        public BoolSettingUI(ISetting setting)
         {
-            var container = new HBoxContainer();
+            Setting = setting;
+            container = new HBoxContainer();
 
-            var label = new Label
+            text = new Label
             {
-                Text = Name,
+                Text = Setting.Name,
                 CustomMinimumSize = new Vector2(150, 0),
-                TooltipText = Tooltip
+                TooltipText = Setting.Tooltip
             };
 
-            var checkBox = new CheckBox
+            checkBox = new CheckBox
             {
-                ButtonPressed = Value,
-                TooltipText = Tooltip
+                ButtonPressed = (bool)Setting.Value,
+                TooltipText = Setting.Tooltip
             };
 
-            checkBox.Toggled += (pressed) =>
-            {
-                Value = pressed;
-                onChanged?.Invoke(this);
-            };
-
-            container.AddChild(label);
+            container.AddChild(text);
             container.AddChild(checkBox);
 
-            return container;
+            Node = container;
+        }
+
+        public void Bind()
+        {
+            checkBox.Toggled += OnToggled;
+            Setting.ValueChanged += OnSettingChanged;
+        }
+
+        private void OnToggled(bool pressed)
+        {
+            if (_updatingUI)
+                return;
+
+            Setting.Value = pressed;
+        }
+
+        private void OnSettingChanged(object value)
+        {
+            _updatingUI = true;
+            try
+            {
+                checkBox.ButtonPressed = (bool)value;
+            }
+            finally
+            {
+                _updatingUI = false;
+            }
         }
     }
 }

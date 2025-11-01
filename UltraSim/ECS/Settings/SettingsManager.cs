@@ -8,12 +8,12 @@ using UltraSim.Logging;
 
 namespace UltraSim.ECS.Settings
 {
-    public abstract partial class SettingsManager
+    public class SettingsManager
     {
-        private Dictionary<string, BaseSetting> _settings = new(32);
+        private Dictionary<string, ISetting> _settings = new(32);
 
         // Registration
-        protected void Register(BaseSetting setting)
+        protected void Register(ISetting setting)
         {
             if (_settings.ContainsKey(setting.Name))
             {
@@ -27,15 +27,7 @@ namespace UltraSim.ECS.Settings
         protected FloatSetting RegisterFloat(string name, float defaultValue,
             float min = 0f, float max = 100f, float step = 0.1f, string tooltip = "")
         {
-            var setting = new FloatSetting
-            {
-                Name = name,
-                Value = defaultValue,
-                Min = min,
-                Max = max,
-                Step = step,
-                Tooltip = tooltip
-            };
+            var setting = new FloatSetting(name, defaultValue, min, max, step, tooltip);
             Register(setting);
             return setting;
         }
@@ -43,27 +35,14 @@ namespace UltraSim.ECS.Settings
         protected IntSetting RegisterInt(string name, int defaultValue,
             int min = 0, int max = 100, int step = 1, string tooltip = "")
         {
-            var setting = new IntSetting
-            {
-                Name = name,
-                Value = defaultValue,
-                Min = min,
-                Max = max,
-                Step = step,
-                Tooltip = tooltip
-            };
+            var setting = new IntSetting(name, defaultValue, min, max, step, tooltip);
             Register(setting);
             return setting;
         }
 
         protected BoolSetting RegisterBool(string name, bool defaultValue, string tooltip = "")
         {
-            var setting = new BoolSetting
-            {
-                Name = name,
-                Value = defaultValue,
-                Tooltip = tooltip
-            };
+            var setting = new BoolSetting(name, defaultValue, tooltip);
             Register(setting);
             return setting;
         }
@@ -71,12 +50,7 @@ namespace UltraSim.ECS.Settings
         protected EnumSetting<T> RegisterEnum<T>(string name, T defaultValue, string tooltip = "")
             where T : struct, Enum
         {
-            var setting = new EnumSetting<T>
-            {
-                Name = name,
-                Value = defaultValue,
-                Tooltip = tooltip
-            };
+            var setting = new EnumSetting<T>(name, defaultValue, tooltip);
             Register(setting);
             return setting;
         }
@@ -84,13 +58,7 @@ namespace UltraSim.ECS.Settings
         protected StringSetting RegisterString(string name, string defaultValue = "",
             int maxLength = 100, string tooltip = "")
         {
-            var setting = new StringSetting
-            {
-                Name = name,
-                Value = defaultValue,
-                MaxLength = maxLength,
-                Tooltip = tooltip
-            };
+            var setting = new StringSetting(name, defaultValue, maxLength, tooltip);
             Register(setting);
             return setting;
         }
@@ -103,7 +71,7 @@ namespace UltraSim.ECS.Settings
                 Logger.Log($"Setting '{name}' not found!", LogSeverity.Error);
                 return default;
             }
-            return (T)setting.GetValue();
+            return (T)((Setting<T>)setting).Value;//setting.GetValue();
         }
 
         // Convenience accessors
@@ -116,23 +84,23 @@ namespace UltraSim.ECS.Settings
         public void SetValue<T>(string name, T value)
         {
             if (_settings.TryGetValue(name, out var setting))
-                setting.SetValue(value);
+                ((Setting<T>)setting).Value = value;//setting.SetValue(value);
         }
 
         // GUI support
-        public List<BaseSetting> GetAllSettings() => _settings.Values.OrderBy(s => s.Name).ToList();
+        public List<ISetting> GetAllSettings() => _settings.Values.OrderBy(s => s.Name).ToList();
 
         // Serialization
         public void Serialize(ConfigFile config, string section)
         {
-            foreach (var setting in _settings.Values)
-                setting.Serialize(config, section);
+            //foreach (var setting in _settings.Values)
+            //setting.Serialize(config, section);
         }
 
         public void Deserialize(ConfigFile config, string section)
         {
-            foreach (var setting in _settings.Values)
-                setting.Deserialize(config, section);
+            //foreach (var setting in _settings.Values)
+            //setting.Deserialize(config, section);
         }
     }
 }

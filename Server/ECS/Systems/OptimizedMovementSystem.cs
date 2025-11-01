@@ -39,6 +39,7 @@ namespace UltraSim.ECS.Systems
         // INTERNAL CLASS SETTINGS, NOT SETTINGSMANAGER GENERIC
         public Settings SystemSettings { get; } = new();
         public override SettingsManager? GetSettings() => SystemSettings;
+        //public override ISetting? GetSettings() => SystemSettings;
 
         #endregion
 
