@@ -275,30 +275,9 @@ namespace UltraSim.ECS
         }
 
         private void CreateSystemEntry(BaseSystem system)
-        //private void CreateSystemEntry(SettingsManager system)
         {
-            var entry = new SystemEntryUI(system, _showTimings, OnSettingChanged);
+            var entry = new SystemEntryUI(system, _showTimings, OnSettingChanged, GetSettingUI);
             _systemsContainer.AddChild(entry);
-            var settingSpan = CollectionsMarshal.AsSpan(system.GetSettings().GetAllSettings());
-            //for (int i = 0; i < settingSpan.Length; i++)
-            foreach (var setting in settingSpan)
-            {
-                Logging.Logger.Log($"    - Getting setting UI for '{setting.Name}'");
-                var settingUI = GetSettingUI(setting);
-                if (settingUI != null)
-                {
-                    Logging.Logger.Log($"      - Found setting UI for '{setting.Name}', binding...");
-                    if (settingUI is ISettingUI settingUIObj)
-                    {
-                        Logging.Logger.Log($"      - Binding setting UI for '{setting.Name}'...");
-                    }
-
-                    settingUI.Bind();
-                }
-
-                //if (settingSpan[i] is ISettingUI settingUI)
-                    //settingUI.Bind();
-            }
             _systemEntries[system.GetSettings()] = entry;
 
             UltraSim.Logging.Logger.Log($"  - Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
@@ -479,11 +458,13 @@ namespace UltraSim.ECS
         private Button _applyButton;
 
         private Action<BaseSystem> _onSettingChanged;
+        private Func<ISetting, ISettingUI> _getSettingUI;
 
-        public SystemEntryUI(BaseSystem system, bool showTimings, Action<BaseSystem> onSettingChanged)
+        public SystemEntryUI(BaseSystem system, bool showTimings, Action<BaseSystem> onSettingChanged, Func<ISetting, ISettingUI> getSettingUI)
         {
             _system = system;
             _onSettingChanged = onSettingChanged;
+            _getSettingUI = getSettingUI;
 
             // CRITICAL: Set size flags so it shows up!
             SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -557,16 +538,26 @@ namespace UltraSim.ECS
             // Generate settings UI
             if (_system.GetSettings() is SettingsManager settings)
             {
+                int settingCount = 0;
                 foreach (var setting in settings.GetAllSettings())
                 {
-                    if (setting is ISettingUI settingUI)
+                    UltraSim.Logging.Logger.Log($"[SystemEntryUI]   - Creating UI for setting '{setting.Name}'");
+
+                    var settingUI = _getSettingUI(setting);
+                    if (settingUI != null)
                     {
-                        var control = settingUI.Node;//.CreateControl(OnSettingChangedInternal);
-                        _settingsContainer.AddChild(control);
+                        UltraSim.Logging.Logger.Log($"[SystemEntryUI]     - Got UI wrapper, adding node to container");
+                        _settingsContainer.AddChild(settingUI.Node);
+                        settingUI.Bind();
+                        settingCount++;
+                    }
+                    else
+                    {
+                        UltraSim.Logging.Logger.Log($"[SystemEntryUI]     - WARNING: No UI wrapper for setting type {setting.GetType().Name}", UltraSim.Logging.LogSeverity.Warning);
                     }
                 }
 
-                UltraSim.Logging.Logger.Log($"[SystemEntryUI] Added {settings.GetAllSettings().Count} setting controls for {_system.Name}");
+                UltraSim.Logging.Logger.Log($"[SystemEntryUI] Added {settingCount} setting controls for {_system.Name}");
             }
 
             // Apply button
