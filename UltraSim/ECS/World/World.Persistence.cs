@@ -24,6 +24,18 @@ namespace UltraSim.ECS
 
         #endregion
 
+        #region IOProfile Integration
+
+        /// <summary>
+        /// Gets the active IOProfile from the Host, or falls back to DefaultIOProfile.
+        /// </summary>
+        private static IIOProfile GetIOProfile()
+        {
+            return SimContext.Host?.GetIOProfile() ?? DefaultIOProfile.Instance;
+        }
+
+        #endregion
+
         #region Paths
 
         /// <summary>

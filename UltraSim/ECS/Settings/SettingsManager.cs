@@ -93,14 +93,14 @@ namespace UltraSim.ECS.Settings
         // Serialization
         public void Serialize(ConfigFile config, string section)
         {
-            //foreach (var setting in _settings.Values)
-            //setting.Serialize(config, section);
+            foreach (var setting in _settings.Values)
+                setting.Serialize(config, section);
         }
 
         public void Deserialize(ConfigFile config, string section)
         {
-            //foreach (var setting in _settings.Values)
-            //setting.Deserialize(config, section);
+            foreach (var setting in _settings.Values)
+                setting.Deserialize(config, section);
         }
     }
 }

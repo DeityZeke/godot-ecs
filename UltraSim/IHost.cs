@@ -4,6 +4,7 @@
 using System;
 
 using UltraSim.Logging;
+using UltraSim.IO;
 
 namespace UltraSim
 {
@@ -24,5 +25,11 @@ namespace UltraSim
         /// The host decides how to display, store, or forward it.
         /// </summary>
         void Log(LogEntry entry);
+
+        /// <summary>
+        /// Returns the I/O profile to use for save/load operations.
+        /// Return null to use the default profile.
+        /// </summary>
+        IIOProfile? GetIOProfile() => null;
     }
 }

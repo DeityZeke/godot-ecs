@@ -1,6 +1,5 @@
 
 using System;
-using Godot;
 
 using UltraSim.Configuration;
 
@@ -18,12 +17,18 @@ namespace UltraSim.ECS.Settings
             Tooltip = toolTip;
         }
 
-        public override void Serialize()
+        public override void Serialize(ConfigFile config, string section)
         {
+            config.SetValue(section, Name, Value.ToString());
         }
 
-        public override void Deserialize()
+        public override void Deserialize(ConfigFile config, string section)
         {
+            string enumStr = config.GetValue(section, Name, Value.ToString());
+            if (Enum.TryParse<T>(enumStr, out T result))
+            {
+                Value = result;
+            }
         }
     }
 }

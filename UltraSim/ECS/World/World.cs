@@ -222,21 +222,6 @@ namespace UltraSim.ECS
 
         public void EnqueueSystemCreate(BaseSystem s) => _systemCreateQueue.Enqueue(s);
 
-        /*
-        public void EnqueueSystemCreate<T>() where T : BaseSystem
-        {
-            var sys = FindSystemInQueuesOrRegistry<T>();
-
-            if (sys == null)
-            {
-                Logger.Log($"[World] ÃƒÂ¢Ã…Â¡Ã‚Â  System {typeof(T).Name} not found", LogSeverity.Error);
-                return;
-            }
-
-            _systemCreateQueue.Enqueue(sys);
-        }
-        */
-
         public void EnqueueSystemDestroy(BaseSystem s) => _systemDestroyQueue.Enqueue(s);
 
         public void EnqueueSystemDestroy<T>() where T : BaseSystem

@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 
+using UltraSim.Configuration;
+
 namespace UltraSim.ECS.Settings
 {
 
@@ -46,7 +48,7 @@ namespace UltraSim.ECS.Settings
 
         public override string ToString() => _value == null ? "NullValue" : _value.ToString()!;
 
-        public abstract void Serialize();
-        public abstract void Deserialize();
+        public abstract void Serialize(ConfigFile config, string section);
+        public abstract void Deserialize(ConfigFile config, string section);
     }
 }

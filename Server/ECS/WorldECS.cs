@@ -41,6 +41,12 @@ namespace UltraSim.WorldECS
         //public static Node RootNode { get; private set; }
         public object GetRootHandle() => GetTree().Root;
 
+        /// <summary>
+        /// Returns null to use the DefaultIOProfile.
+        /// Override in derived classes to provide custom I/O profiles.
+        /// </summary>
+        public UltraSim.IO.IIOProfile? GetIOProfile() => null;
+
         private World _world = null!;
         private ECSControlPanel controlPanel = null!;
         private double _accum;

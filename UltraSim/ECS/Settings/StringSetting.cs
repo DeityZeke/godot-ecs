@@ -26,14 +26,14 @@ namespace UltraSim.ECS.Settings
             Tooltip = toolTip;
         }
 
-        public override void Serialize()
+        public override void Serialize(ConfigFile config, string section)
         {
-            
+            config.SetValue(section, Name, Value);
         }
 
-        public override void Deserialize()
+        public override void Deserialize(ConfigFile config, string section)
         {
-            
+            Value = config.GetValue(section, Name, Value);
         }
     }
 }

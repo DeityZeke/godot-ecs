@@ -21,7 +21,7 @@ namespace UltraSim.ECS.Settings
 
         string ToString();
 
-        void Serialize();
-        void Deserialize();
+        void Serialize(ConfigFile config, string section);
+        void Deserialize(ConfigFile config, string section);
     }
 }
