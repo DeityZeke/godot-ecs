@@ -13,15 +13,11 @@ namespace UltraSim.ECS.Settings
         private readonly HBoxContainer _container;
         private readonly Label _label;
         private readonly OptionButton _optionButton;
-        private readonly T[] _values;
-
         private bool _updatingUI;
 
         public EnumSettingUI(ISetting setting)
         {
             Setting = setting;
-            _values = Enum.GetValues<T>();
-
             _container = new HBoxContainer();
 
             _label = new Label
@@ -37,50 +33,42 @@ namespace UltraSim.ECS.Settings
                 TooltipText = Setting.Tooltip
             };
 
-            // Populate options
-            int selectedIdx = 0;
-            for (int i = 0; i < _values.Length; i++)
+            var values = Enum.GetValues<T>();
+            int selected = 0;
+            for (int i = 0; i < values.Length; i++)
             {
-                _optionButton.AddItem(_values[i].ToString());
-                if (_values[i].Equals(Setting.Value))
-                    selectedIdx = i;
+                _optionButton.AddItem(values[i].ToString());
+                if (values[i].Equals(Setting.Value))
+                    selected = i;
             }
-            _optionButton.Selected = selectedIdx;
+            _optionButton.Selected = selected;
 
             _container.AddChild(_label);
             _container.AddChild(_optionButton);
-
             Node = _container;
         }
 
         public void Bind()
         {
-            _optionButton.ItemSelected += OnItemSelected;
-            Setting.ValueChanged += OnSettingChanged;
-        }
+            var values = Enum.GetValues<T>();
 
-        private void OnItemSelected(long index)
-        {
-            if (_updatingUI)
-                return;
-
-            if (index >= 0 && index < _values.Length)
-                Setting.Value = _values[index];
-        }
-
-        private void OnSettingChanged(object value)
-        {
-            _updatingUI = true;
-            try
+            _optionButton.ItemSelected += (idx) =>
             {
-                int selectedIdx = Array.IndexOf(_values, (T)value);
-                if (selectedIdx >= 0 && selectedIdx != _optionButton.Selected)
-                    _optionButton.Select(selectedIdx);
-            }
-            finally
+                if (_updatingUI) return;
+                Setting.Value = values[idx];
+            };
+
+            Setting.ValueChanged += (value) =>
             {
-                _updatingUI = false;
-            }
+                _updatingUI = true;
+                try
+                {
+                    int newIdx = Array.IndexOf(values, (T)value);
+                    if (_optionButton.Selected != newIdx)
+                        _optionButton.Selected = newIdx;
+                }
+                finally { _updatingUI = false; }
+            };
         }
     }
 }

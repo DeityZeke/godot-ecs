@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 using Godot;
 
@@ -212,7 +214,7 @@ namespace UltraSim.ECS
         public void RefreshSystemsList()
         {
             //if (_systemsContainer == null || _systemsContainer.GetChildCount() == 0)
-                //return;
+            //return;
 
             // Clear existing entries - remove immediately to prevent duplicates
             foreach (var child in _systemsContainer.GetChildren())
@@ -260,11 +262,43 @@ namespace UltraSim.ECS
             UltraSim.Logging.Logger.Log($"ScrollContainer size: {_scrollContainer.Size}\n");
         }
 
+        private static ISettingUI GetSettingUI(ISetting setting)
+        {
+            return setting switch
+            {
+                BoolSetting => new BoolSettingUI(setting),
+                IntSetting => new IntSettingUI(setting),
+                FloatSetting => new FloatSettingUI(setting),
+                StringSetting => new StringSettingUI(setting),
+                _ => null
+            };
+        }
+
         private void CreateSystemEntry(BaseSystem system)
         //private void CreateSystemEntry(SettingsManager system)
         {
             var entry = new SystemEntryUI(system, _showTimings, OnSettingChanged);
             _systemsContainer.AddChild(entry);
+            var settingSpan = CollectionsMarshal.AsSpan(system.GetSettings().GetAllSettings());
+            //for (int i = 0; i < settingSpan.Length; i++)
+            foreach (var setting in settingSpan)
+            {
+                Logging.Logger.Log($"    - Getting setting UI for '{setting.Name}'");
+                var settingUI = GetSettingUI(setting);
+                if (settingUI != null)
+                {
+                    Logging.Logger.Log($"      - Found setting UI for '{setting.Name}', binding...");
+                    if (settingUI is ISettingUI settingUIObj)
+                    {
+                        Logging.Logger.Log($"      - Binding setting UI for '{setting.Name}'...");
+                    }
+
+                    settingUI.Bind();
+                }
+
+                //if (settingSpan[i] is ISettingUI settingUI)
+                    //settingUI.Bind();
+            }
             _systemEntries[system.GetSettings()] = entry;
 
             UltraSim.Logging.Logger.Log($"  - Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");

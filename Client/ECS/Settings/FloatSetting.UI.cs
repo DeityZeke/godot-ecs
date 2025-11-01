@@ -14,28 +14,12 @@ namespace UltraSim.ECS.Settings
         private readonly Label _label;
         private readonly HSlider _slider;
         private readonly Label _valueLabel;
-
         private bool _updatingUI;
-
-        // Optional extended metadata if you expose these via Setting metadata
-        private float _min = 0f;
-        private float _max = 1f;
-        private float _step = 0.01f;
-        private string _format = "0.00";
 
         public FloatSettingUI(ISetting setting)
         {
             Setting = setting;
             _container = new HBoxContainer();
-
-            // Retrieve optional metadata if provided (depends on how your core defines settings)
-            if (setting is FloatSetting range)
-            {
-                _min = range.Min;
-                _max = range.Max;
-                _step = range.Step;
-                _format = range.Format;
-            }
 
             _label = new Label
             {
@@ -46,17 +30,17 @@ namespace UltraSim.ECS.Settings
 
             _slider = new HSlider
             {
-                MinValue = _min,
-                MaxValue = _max,
+                MinValue = 0,
+                MaxValue = 1,
+                Step = 0.01f,
                 Value = Convert.ToSingle(Setting.Value),
-                Step = _step,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 TooltipText = Setting.Tooltip
             };
 
             _valueLabel = new Label
             {
-                Text = Convert.ToSingle(Setting.Value).ToString(_format),
+                Text = Convert.ToSingle(Setting.Value).ToString("0.00"),
                 CustomMinimumSize = new Vector2(60, 0),
                 HorizontalAlignment = HorizontalAlignment.Right
             };
@@ -64,38 +48,29 @@ namespace UltraSim.ECS.Settings
             _container.AddChild(_label);
             _container.AddChild(_slider);
             _container.AddChild(_valueLabel);
-
             Node = _container;
         }
 
         public void Bind()
         {
-            _slider.ValueChanged += OnSliderChanged;
-            Setting.ValueChanged += OnSettingChanged;
-        }
-
-        private void OnSliderChanged(double newValue)
-        {
-            if (_updatingUI)
-                return;
-
-            Setting.Value = (float)newValue;
-        }
-
-        private void OnSettingChanged(object newValue)
-        {
-            _updatingUI = true;
-            try
+            _slider.ValueChanged += (v) =>
             {
-                float v = Convert.ToSingle(newValue);
-                if (Math.Abs(v - (float)_slider.Value) > float.Epsilon)
-                    _slider.Value = v;
-                _valueLabel.Text = v.ToString(_format);
-            }
-            finally
+                if (_updatingUI) return;
+                Setting.Value = (float)v;
+            };
+
+            Setting.ValueChanged += (value) =>
             {
-                _updatingUI = false;
-            }
+                _updatingUI = true;
+                try
+                {
+                    float newVal = Convert.ToSingle(value);
+                    if (Math.Abs(newVal - (float)_slider.Value) > 0.0001f)
+                        _slider.Value = newVal;
+                    _valueLabel.Text = newVal.ToString("0.00");
+                }
+                finally { _updatingUI = false; }
+            };
         }
     }
 }

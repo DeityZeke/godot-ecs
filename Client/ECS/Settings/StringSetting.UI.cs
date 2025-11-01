@@ -13,18 +13,12 @@ namespace UltraSim.ECS.Settings
         private readonly HBoxContainer _container;
         private readonly Label _label;
         private readonly LineEdit _lineEdit;
-
         private bool _updatingUI;
-
-        private int _maxLength = 256;
 
         public StringSettingUI(ISetting setting)
         {
             Setting = setting;
             _container = new HBoxContainer();
-
-            if (setting is StringSetting meta)
-                _maxLength = meta.MaxLength;
 
             _label = new Label
             {
@@ -36,7 +30,6 @@ namespace UltraSim.ECS.Settings
             _lineEdit = new LineEdit
             {
                 Text = Setting.Value?.ToString() ?? string.Empty,
-                MaxLength = _maxLength,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 TooltipText = Setting.Tooltip
             };
@@ -48,31 +41,23 @@ namespace UltraSim.ECS.Settings
 
         public void Bind()
         {
-            _lineEdit.TextChanged += OnTextChanged;
-            Setting.ValueChanged += OnSettingChanged;
-        }
-
-        private void OnTextChanged(string newText)
-        {
-            if (_updatingUI)
-                return;
-
-            Setting.Value = newText;
-        }
-
-        private void OnSettingChanged(object value)
-        {
-            _updatingUI = true;
-            try
+            _lineEdit.TextChanged += (text) =>
             {
-                string newVal = value?.ToString() ?? string.Empty;
-                if (_lineEdit.Text != newVal)
-                    _lineEdit.Text = newVal;
-            }
-            finally
+                if (_updatingUI) return;
+                Setting.Value = text;
+            };
+
+            Setting.ValueChanged += (value) =>
             {
-                _updatingUI = false;
-            }
+                _updatingUI = true;
+                try
+                {
+                    string newVal = value?.ToString() ?? string.Empty;
+                    if (_lineEdit.Text != newVal)
+                        _lineEdit.Text = newVal;
+                }
+                finally { _updatingUI = false; }
+            };
         }
     }
 }
