@@ -44,5 +44,11 @@ namespace UltraSim.ECS
         /// Called when the control panel is hidden.
         /// </summary>
         void OnHide();
+
+        /// <summary>
+        /// Optional: Create custom header buttons to appear after the title.
+        /// Return null if no custom buttons are needed.
+        /// </summary>
+        Control CreateHeaderButtons() => null;
     }
 }

@@ -20,6 +20,7 @@ namespace UltraSim.ECS.Settings
         {
             Setting = setting;
             _container = new HBoxContainer();
+            _container.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 
             _label = new Label
             {
@@ -34,7 +35,7 @@ namespace UltraSim.ECS.Settings
                 MaxValue = 1,
                 Step = 0.01f,
                 Value = Convert.ToSingle(Setting.Value),
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                CustomMinimumSize = new Vector2(150, 0),
                 TooltipText = Setting.Tooltip
             };
 

@@ -63,6 +63,13 @@ namespace UltraSim.ECS.Settings
             return setting;
         }
 
+        protected ButtonSetting RegisterButton(string name, string tooltip = "")
+        {
+            var setting = new ButtonSetting(name, tooltip);
+            Register(setting);
+            return setting;
+        }
+
         // Generic getters (for dynamic access if needed)
         public T GetValue<T>(string name)
         {

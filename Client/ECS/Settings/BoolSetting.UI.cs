@@ -20,6 +20,7 @@ namespace UltraSim.ECS.Settings
         {
             Setting = setting;
             container = new HBoxContainer();
+            container.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 
             text = new Label
             {
@@ -28,14 +29,23 @@ namespace UltraSim.ECS.Settings
                 TooltipText = Setting.Tooltip
             };
 
+            // Wrap checkbox in a panel for visibility
+            var checkBoxPanel = new PanelContainer();
+            checkBoxPanel.CustomMinimumSize = new Vector2(30, 30);
+
             checkBox = new CheckBox
             {
                 ButtonPressed = (bool)Setting.Value,
                 TooltipText = Setting.Tooltip
             };
 
+            // Make checkbox always visible by forcing focus mode
+            checkBox.FocusMode = Control.FocusModeEnum.None;
+
+            checkBoxPanel.AddChild(checkBox);
+
             container.AddChild(text);
-            container.AddChild(checkBox);
+            container.AddChild(checkBoxPanel);
 
             Node = container;
         }

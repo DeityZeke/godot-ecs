@@ -33,67 +33,34 @@ namespace UltraSim.ECS
         }
 
         /// <summary>
-        /// Loads panel configuration from user config file, or auto-discovers panels if config doesn't exist.
+        /// Auto-discovers panels via reflection, then merges with user config preferences.
+        /// This ensures new panels always appear, and removed panels are ignored.
         /// </summary>
         public List<PanelSettings> LoadOrDiscover()
         {
             var configPath = ProjectSettings.GlobalizePath(CONFIG_PATH);
 
+            // ALWAYS discover panels first (this finds all panels in code)
+            var discoveredPanels = AutoDiscoverPanels();
+
+            // If config exists, merge preferences (order, expanded state)
             if (FileAccess.FileExists(CONFIG_PATH))
             {
-                Logging.Logger.Log($"[PanelConfig] Loading panel config from {configPath}");
-                return LoadFromConfig();
+                Logging.Logger.Log($"[PanelConfig] Merging discovered panels with config from {configPath}");
+                MergeConfigPreferences(discoveredPanels);
             }
             else
             {
-                Logging.Logger.Log($"[PanelConfig] No config found at {configPath}, auto-discovering panels...");
-                return AutoDiscoverPanels();
+                Logging.Logger.Log($"[PanelConfig] No config found, using discovered panel defaults");
             }
+
+            return discoveredPanels.OrderBy(p => p.Order).ToList();
         }
 
-        /// <summary>
-        /// Loads panel configuration from config file.
-        /// </summary>
-        private List<PanelSettings> LoadFromConfig()
-        {
-            var err = _config.Load(CONFIG_PATH);
-            if (err != Error.Ok)
-            {
-                Logging.Logger.Log($"[PanelConfig] Failed to load config: {err}, falling back to auto-discovery", Logging.LogSeverity.Warning);
-                return AutoDiscoverPanels();
-            }
-
-            var panels = new List<PanelSettings>();
-
-            // Get all panel entries from config
-            var keys = _config.GetSectionKeys(SECTION_PANELS);
-            foreach (string key in keys)
-            {
-                if (!key.EndsWith("_order"))
-                    continue;
-
-                string panelId = key.Replace("_order", "");
-                var settings = new PanelSettings
-                {
-                    TypeName = _config.GetValue(SECTION_PANELS, panelId + "_type", "").AsString(),
-                    Order = _config.GetValue(SECTION_PANELS, panelId + "_order", 100).AsInt32(),
-                    Expanded = _config.GetValue(SECTION_PANELS, panelId + "_expanded", true).AsBool(),
-                    Enabled = _config.GetValue(SECTION_PANELS, panelId + "_enabled", true).AsBool()
-                };
-
-                if (!string.IsNullOrEmpty(settings.TypeName))
-                {
-                    panels.Add(settings);
-                    _panelSettings[panelId] = settings;
-                }
-            }
-
-            Logging.Logger.Log($"[PanelConfig] Loaded {panels.Count} panels from config");
-            return panels.OrderBy(p => p.Order).ToList();
-        }
 
         /// <summary>
         /// Auto-discovers panel sections using reflection.
+        /// Returns a list of panels with default settings from attributes.
         /// </summary>
         private List<PanelSettings> AutoDiscoverPanels()
         {
@@ -105,21 +72,87 @@ namespace UltraSim.ECS
                 var attr = type.GetCustomAttribute<ControlPanelSectionAttribute>();
                 if (attr != null && typeof(IControlPanelSection).IsAssignableFrom(type))
                 {
-                    var settings = new PanelSettings
+                    // Create temporary instance to get panel ID
+                    try
                     {
-                        TypeName = type.FullName,
-                        Order = attr.DefaultOrder,
-                        Expanded = attr.DefaultExpanded,
-                        Enabled = true
-                    };
+                        var tempInstance = Activator.CreateInstance(type, new object[] { null }) as IControlPanelSection;
+                        if (tempInstance != null)
+                        {
+                            var settings = new PanelSettings
+                            {
+                                TypeName = type.FullName,
+                                Order = attr.DefaultOrder,
+                                Expanded = attr.DefaultExpanded,
+                                Enabled = true
+                            };
 
-                    panels.Add(settings);
-                    Logging.Logger.Log($"[PanelConfig] Discovered panel: {type.Name} (order: {attr.DefaultOrder})");
+                            panels.Add(settings);
+                            _panelSettings[tempInstance.Id] = settings; // Cache by ID for merging
+                            Logging.Logger.Log($"[PanelConfig] Discovered panel: {type.Name} (id: {tempInstance.Id}, order: {attr.DefaultOrder})");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Logger.Log($"[PanelConfig] Failed to instantiate panel {type.Name}: {ex.Message}", Logging.LogSeverity.Warning);
+                    }
                 }
             }
 
             Logging.Logger.Log($"[PanelConfig] Auto-discovered {panels.Count} panels");
-            return panels.OrderBy(p => p.Order).ToList();
+            return panels;
+        }
+
+        /// <summary>
+        /// Merges user config preferences (order, expanded, enabled) into discovered panels.
+        /// Panels not in code are ignored. New panels get default settings.
+        /// </summary>
+        private void MergeConfigPreferences(List<PanelSettings> discoveredPanels)
+        {
+            var err = _config.Load(CONFIG_PATH);
+            if (err != Error.Ok)
+            {
+                Logging.Logger.Log($"[PanelConfig] Failed to load config: {err}, using defaults", Logging.LogSeverity.Warning);
+                return;
+            }
+
+            // Get all panel entries from config
+            var keys = _config.GetSectionKeys(SECTION_PANELS);
+            var configuredPanelIds = new HashSet<string>();
+
+            foreach (string key in keys)
+            {
+                if (!key.EndsWith("_order"))
+                    continue;
+
+                string panelId = key.Replace("_order", "");
+                configuredPanelIds.Add(panelId);
+
+                // Find matching discovered panel
+                if (_panelSettings.TryGetValue(panelId, out var settings))
+                {
+                    // Override discovered settings with user preferences
+                    settings.Order = _config.GetValue(SECTION_PANELS, panelId + "_order", settings.Order).AsInt32();
+                    settings.Expanded = _config.GetValue(SECTION_PANELS, panelId + "_expanded", settings.Expanded).AsBool();
+                    settings.Enabled = _config.GetValue(SECTION_PANELS, panelId + "_enabled", settings.Enabled).AsBool();
+
+                    Logging.Logger.Log($"[PanelConfig] Merged preferences for panel: {panelId}");
+                }
+                else
+                {
+                    // Panel in config but not in code - ignore it
+                    Logging.Logger.Log($"[PanelConfig] Ignoring removed panel from config: {panelId}", Logging.LogSeverity.Warning);
+                }
+            }
+
+            // Log any new panels that weren't in config
+            foreach (var panel in discoveredPanels)
+            {
+                var tempInstance = Activator.CreateInstance(Type.GetType(panel.TypeName), new object[] { null }) as IControlPanelSection;
+                if (tempInstance != null && !configuredPanelIds.Contains(tempInstance.Id))
+                {
+                    Logging.Logger.Log($"[PanelConfig] New panel detected (not in config): {tempInstance.Id}");
+                }
+            }
         }
 
         /// <summary>

@@ -9,10 +9,10 @@ using UltraSim.IO;
 namespace UltraSim
 {
     /// <summary>
-    /// Defines the minimal interface any engine or runtime host must implement
-    /// in order to integrate UltraSim.
+    /// Defines the interface any engine or runtime host must implement to integrate UltraSim.
+    /// Extends IEnvironmentInfo to provide hardware and build information.
     /// </summary>
-    public interface IHost
+    public interface IHost : IEnvironmentInfo
     {
         /// <summary>
         /// Returns a handle to the root object of the engine's scene tree or context.

@@ -42,6 +42,9 @@ namespace UltraSim.ECS
             OffsetRight = 0;
             OffsetBottom = 0;
 
+            // Set minimum size
+            CustomMinimumSize = new Vector2(800, 600);
+
             // Block input to 3D scene when visible
             MouseFilter = MouseFilterEnum.Stop;
 
@@ -102,6 +105,10 @@ namespace UltraSim.ECS
             // === STATIC HEADER ===
             BuildStaticHeader(mainVBox);
 
+            // === SEPARATOR UNDER HEADER ===
+            var topSeparator = new HSeparator();
+            mainVBox.AddChild(topSeparator);
+
             // === PANELS CONTAINER ===
             var scrollContainer = new ScrollContainer();
             scrollContainer.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -112,7 +119,7 @@ namespace UltraSim.ECS
 
             _panelsContainer = new VBoxContainer();
             _panelsContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            _panelsContainer.AddThemeConstantOverride("separation", 8);
+            _panelsContainer.AddThemeConstantOverride("separation", 0);
             scrollContainer.AddChild(_panelsContainer);
 
             Logging.Logger.Log("[ECSControlPanel] UI built successfully");
@@ -336,6 +343,17 @@ namespace UltraSim.ECS
             _titleLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             _titleLabel.VerticalAlignment = VerticalAlignment.Center;
             headerHBox.AddChild(_titleLabel);
+
+            // Custom header buttons (if any)
+            var customButtons = Panel.CreateHeaderButtons();
+            if (customButtons != null)
+            {
+                headerHBox.AddChild(customButtons);
+            }
+
+            // === SEPARATOR ===
+            var separator = new HSeparator();
+            vbox.AddChild(separator);
 
             // === CONTENT ===
             _contentContainer = Panel.CreateUI();

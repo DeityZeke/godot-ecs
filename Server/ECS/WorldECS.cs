@@ -1,59 +1,157 @@
 #nullable enable
 
-using System.IO;
-
 using Godot;
 
 using UltraSim;
 using UltraSim.ECS;
-using UltraSim.ECS.Components;
 using UltraSim.ECS.Systems;
 using UltraSim.Logging;
 
 namespace UltraSim.WorldECS
 {
     /// <summary>
-    /// Main ECS manager node - attach to your scene.
-    /// </summary>
-    public enum RendererType
-    {
-        NONE,               // No rendering
-        IndividualMeshes,  // Original RenderSystem with individual MeshInstance3D nodes
-        MultiMesh,         // New MultiMeshRenderSystem with GPU instancing
-        Adaptive,          // Future: Adaptive renderer switching based on entity count
-    }
-
-    /// <summary>
-    /// Main ECS manager node - attach to your scene.
-    /// NOW WITH FAST COMMAND BUFFER ENTITY CREATION!
+    /// Main ECS bootstrapper - attach to your scene as the entry point.
+    /// Implements IHost to provide Godot-specific services to the ECS framework.
     /// </summary>
     public partial class WorldECS : Node3D, IHost
     {
-        [Export] public int EntityCount = 100;
         [Export] public bool EnableDebugStats = true;
-        [Export] public RendererType Renderer = RendererType.MultiMesh;
-        [Export] public float SpawnRadius = 50f;
-        [Export] public float MinSpeed = 2f;
-        [Export] public float MaxSpeed = 8f;
-        [Export] public float PulseFrequencyMin = 0.5f;
-        [Export] public float PulseFrequencyMax = 2f;
-
-        //public static Node RootNode { get; private set; }
-        public object GetRootHandle() => GetTree().Root;
-
-        /// <summary>
-        /// Returns null to use the DefaultIOProfile.
-        /// Override in derived classes to provide custom I/O profiles.
-        /// </summary>
-        public UltraSim.IO.IIOProfile? GetIOProfile() => null;
+        [Export] public float AutoSaveInterval = 60f;
 
         private World _world = null!;
-        private ECSControlPanel controlPanel = null!;
+        private ECSControlPanel _controlPanel = null!;
         private double _accum;
         private double _fpsAccum;
         private int _fpsFrames;
-        private bool _entitiesMarkedAsSpawned = false;
         private int _frameCount = 0;
+
+        #region IHost Implementation
+
+        public object GetRootHandle() => GetTree().Root;
+
+        public UltraSim.IO.IIOProfile? GetIOProfile() => null;
+
+        public void Log(LogEntry entry)
+        {
+            switch (entry.Severity)
+            {
+                case LogSeverity.Error:
+                    GD.PushError(entry.ToString());
+                    break;
+                case LogSeverity.Warning:
+                    GD.PushWarning(entry.ToString());
+                    break;
+                default:
+                    GD.Print(entry.ToString());
+                    break;
+            }
+        }
+
+        public World GetWorld() => _world;
+
+        #endregion
+
+        #region IEnvironmentInfo Implementation
+
+        public EnvironmentType Environment => EnvironmentType.Hybrid;
+
+        public bool IsDebugBuild
+        {
+            get
+            {
+#if DEBUG || USE_DEBUG
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
+
+        public string Platform => OS.GetName();
+
+        public string Engine => $"Godot {Godot.Engine.GetVersionInfo()["string"]}";
+
+        public string DotNetVersion => System.Environment.Version.ToString();
+
+        public string? BuildId => null;
+
+        public string ProcessorName => OS.GetProcessorName();
+
+        public int PhysicalCores => OS.GetProcessorCount(); // Godot doesn't distinguish physical vs logical
+
+        public int LogicalCores => OS.GetProcessorCount();
+
+        public SimdSupport MaxSimdSupport
+        {
+            get
+            {
+                // Detect SIMD support via .NET intrinsics
+                if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported)
+                    return SimdSupport.AVX512;
+                if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+                    return SimdSupport.AVX2;
+                if (System.Runtime.Intrinsics.X86.Avx.IsSupported)
+                    return SimdSupport.AVX;
+                if (System.Runtime.Intrinsics.X86.Sse42.IsSupported)
+                    return SimdSupport.SSE3;
+                if (System.Runtime.Intrinsics.X86.Sse2.IsSupported)
+                    return SimdSupport.SSE2;
+                if (System.Runtime.Intrinsics.X86.Sse.IsSupported)
+                    return SimdSupport.SSE;
+                return SimdSupport.Scalar;
+            }
+        }
+
+        public long TotalRamMB => (long)(Performance.GetMonitor(Performance.Monitor.MemoryStatic) / 1024 / 1024);
+
+        public long AvailableRamMB => (long)((Performance.GetMonitor(Performance.Monitor.MemoryStatic) -
+                                              Performance.GetMonitor(Performance.Monitor.MemoryStaticMax)) / 1024 / 1024);
+
+        public string GpuName
+        {
+            get
+            {
+                var adapter = RenderingServer.GetVideoAdapterName();
+                return adapter.Length > 0 ? adapter : "Unknown";
+            }
+        }
+
+        public string GpuVendor
+        {
+            get
+            {
+                var vendor = RenderingServer.GetVideoAdapterVendor();
+                return vendor.Length > 0 ? vendor : "Unknown";
+            }
+        }
+
+        public long TotalVramMB
+        {
+            get
+            {
+                // Godot doesn't directly expose VRAM, estimate from texture memory
+                var vram = RenderingServer.GetRenderingInfo(RenderingServer.RenderingInfo.VideoMemUsed);
+                return (long)(vram / 1024 / 1024);
+            }
+        }
+
+        public string GraphicsAPI
+        {
+            get
+            {
+                var apiName = RenderingServer.GetVideoAdapterApiVersion();
+                var renderingDevice = RenderingServer.GetRenderingDevice();
+                if (renderingDevice != null)
+                {
+                    return $"Vulkan {apiName}";
+                }
+                return apiName.Length > 0 ? apiName : "Unknown";
+            }
+        }
+
+        #endregion
+
+        #region Godot Lifecycle
 
         public override void _Ready()
         {
@@ -63,133 +161,30 @@ namespace UltraSim.WorldECS
             GD.Print("      ECS WORLD INITIALIZATION         ");
             GD.Print("========================================");
 
-            //RootNode = GetTree().Root.GetNode<Node>("Main");
-
             _world = new World();
 
             // Subscribe to world events
             _world.OnInitialized += () => GD.Print("[WorldECS] World initialized.");
-            _world.OnEntitiesSpawned += () => GD.Print("[WorldECS] Entities spawned.");
             _world.OnFrameComplete += () =>
             {
                 if (_frameCount == 1)
                 {
-                    var frame = new CanvasLayer();
-                    //CallDeferred(MethodName.AddChild, frame);
-                    GetTree().Root.CallDeferred(MethodName.AddChild, frame);
-
-                    controlPanel = new ECSControlPanel();
-                    if (controlPanel != null)
-                    {
-                        controlPanel.Initialize(_world);
-                        frame.CallDeferred(MethodName.AddChild, controlPanel);
-                    }
+                    CreateControlPanel();
                 }
             };
 
-            _world.EnqueueSystemCreate(new OptimizedMovementSystem());
-            _world.EnqueueSystemEnable<OptimizedMovementSystem>();
+            // Register systems
+            RegisterSystems();
 
-            _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
-            _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
-            
-            _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
-            _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
-
-            // Queue systems (still using queues for systems - that's fine!)
-            //_world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
-            //_world.EnqueueSystemCreate(new OptimizedMovementSystem());
-
-            /*
-            switch (Renderer)
-            {
-
-                case RendererType.NONE:
-                    GD.Print("[WorldECS] No rendering system selected.");
-                    break;
-                case RendererType.IndividualMeshes:
-                    _world.EnqueueSystemCreate(new RenderSystem());
-                    _world.EnqueueSystemEnable<RenderSystem>();
-                    break;
-                case RendererType.MultiMesh:
-                    _world.EnqueueSystemCreate(new MultiMeshRenderSystem());
-                    _world.EnqueueSystemEnable<MultiMeshRenderSystem>();
-                    break;
-                case RendererType.Adaptive:
-                    _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
-                    _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
-                    break;
-                default:
-                    GD.Print("[WorldECS] Unknown renderer type. No rendering system enabled.");
-                    break;
-            }
-            */
-
-            _world.EnableAutoSave(60f);
-
-            var buffer = new CommandBuffer();
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            GD.Print($"[WorldECS] Creating {EntityCount} entities with command buffer...");
-
-            for (int i = 0; i < EntityCount; i++)
-            {
-                // Random position in sphere
-                Vector3 randomPos = Utilities.RandomPointInSphere(SpawnRadius);
-
-                // Random speed and pulse frequency
-                float speed = Utilities.RandomRange(MinSpeed, MaxSpeed);
-                float frequency = Utilities.RandomRange(PulseFrequencyMin, PulseFrequencyMax);
-                float phaseOffset = Utilities.RandomRange(0f, Utilities.TWO_PI);
-
-                // Create entity with ALL components at once (NO archetype thrashing!)
-                buffer.CreateEntity(builder =>
-                {
-                    builder.Add(new Position
-                    {
-                        X = randomPos.X,
-                        Y = randomPos.Y,
-                        Z = randomPos.Z
-                    });
-
-                    builder.Add(new Velocity
-                    {
-                        X = 0f,
-                        Y = 0f,
-                        Z = 0f
-                    });
-
-                    builder.Add(new PulseData
-                    {
-                        Speed = speed,
-                        Frequency = frequency,
-                        Phase = phaseOffset
-                    });
-
-                    builder.Add(new RenderTag { });
-                    builder.Add(new Visible { });
-                });
-            }
-
-            sw.Stop();
-            GD.Print($"[WorldECS] Queued {EntityCount} entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            // Enable auto-save
+            _world.EnableAutoSave(AutoSaveInterval);
 
             // Initialize world (processes system queues)
             _world.Initialize();
 
-            // Apply the entity creation buffer (FAST - all entities created in 1 frame!)
-            sw.Restart();
-            buffer.Apply(_world);
-            sw.Stop();
-
-            // Mark entities as spawned immediately
-            _world.MarkEntitiesSpawned();
-            _entitiesMarkedAsSpawned = true;
-
-            GD.Print($"[WorldECS] Applied buffer in {sw.Elapsed.TotalMilliseconds:F3}ms");
-            GD.Print($"[WorldECS] Config: Radius={SpawnRadius}, Speed={MinSpeed}-{MaxSpeed}, Freq={PulseFrequencyMin}-{PulseFrequencyMax}Hz");
             GD.Print("========================================");
             GD.Print("         ECS WORLD READY                ");
+            GD.Print("  Press F12 to open Control Panel      ");
             GD.Print("========================================\n");
         }
 
@@ -223,55 +218,62 @@ namespace UltraSim.WorldECS
             }
         }
 
-                #region Input Handling
-
         public override void _Input(InputEvent @event)
         {
             if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo)
             {
                 if (keyEvent.Keycode == Key.F12)
                 {
-                    controlPanel.Toggle();
+                    _controlPanel.Toggle();
                     GetViewport().SetInputAsHandled();
                 }
-                if (keyEvent.Keycode == Key.F11)
+                else if (keyEvent.Keycode == Key.F11)
                 {
-                    //InvokeManualSystem<SaveSystem>();
-                    _world!.Save($"manual_{System.DateTime.Now:yyyyMMdd_HHmmss}.sav");
+                    _world.Save($"manual_{System.DateTime.Now:yyyyMMdd_HHmmss}.sav");
                 }
-
-
-                if (keyEvent.Keycode == Key.Key9)
+                else if (keyEvent.Keycode == Key.Key9)
                 {
-                    _world!.QuickSave();
+                    _world.QuickSave();
                 }
-
-                if (keyEvent.Keycode == Key.Key0)
+                else if (keyEvent.Keycode == Key.Key0)
                 {
-                    _world!.QuickLoad();
+                    _world.QuickLoad();
                 }
             }
         }
 
         #endregion
 
-        public void Log(LogEntry entry)
+        #region Helper Methods
+
+        private void RegisterSystems()
         {
-            switch (entry.Severity)
-            {
-                case LogSeverity.Error:
-                    GD.PushError(entry.ToString());
-                    break;
-                case LogSeverity.Warning:
-                    GD.PushWarning(entry.ToString());
-                    break;
-                default:
-                    GD.Print(entry.ToString());
-                    break;
-            }
+            // Entity spawner (for on-demand entity creation)
+            _world.EnqueueSystemCreate(new EntitySpawnerSystem());
+            _world.EnqueueSystemEnable<EntitySpawnerSystem>();
+
+            // Movement systems
+            _world.EnqueueSystemCreate(new OptimizedMovementSystem());
+            _world.EnqueueSystemEnable<OptimizedMovementSystem>();
+
+            _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
+            _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
+
+            // Rendering system
+            _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
+            _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
         }
 
-        public World GetWorld() => _world;
+        private void CreateControlPanel()
+        {
+            var frame = new CanvasLayer();
+            GetTree().Root.CallDeferred(MethodName.AddChild, frame);
 
+            _controlPanel = new ECSControlPanel();
+            _controlPanel.Initialize(_world);
+            frame.CallDeferred(MethodName.AddChild, _controlPanel);
+        }
+
+        #endregion
     }
 }

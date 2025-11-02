@@ -19,6 +19,7 @@ namespace UltraSim.ECS.Settings
         {
             Setting = setting;
             _container = new HBoxContainer();
+            _container.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 
             _label = new Label
             {
