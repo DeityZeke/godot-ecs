@@ -48,6 +48,8 @@ namespace UltraSim.ECS.Systems
                 PulseFrequencyMax = RegisterFloat("Max Pulse Frequency", 2f, 0.1f, 10f, 0.1f,
                     tooltip: "Maximum pulse frequency (Hz) for spawned entities");
 
+                RegisterString("", ""); // Spacer
+
                 Spawn100 = RegisterButton("Spawn 100 Entities",
                     tooltip: "Spawn 100 entities with current settings");
 

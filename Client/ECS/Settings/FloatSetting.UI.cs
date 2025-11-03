@@ -19,14 +19,22 @@ namespace UltraSim.ECS.Settings
         public FloatSettingUI(ISetting setting)
         {
             Setting = setting;
-            _container = new HBoxContainer();
-            _container.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            //_container = new HBoxContainer();
+            //_container.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                _container = new HBoxContainer
+    {
+        //Alignment = BoxContainer.AlignmentMode.Center
+    };
+    _container.AddThemeConstantOverride("separation", 8);
+    _container.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+    _container.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
 
             _label = new Label
             {
                 Text = Setting.Name,
                 CustomMinimumSize = new Vector2(150, 0),
-                TooltipText = Setting.Tooltip
+                TooltipText = Setting.Tooltip,
+        VerticalAlignment = VerticalAlignment.Center
             };
 
             _slider = new HSlider
@@ -36,14 +44,16 @@ namespace UltraSim.ECS.Settings
                 Step = 0.01f,
                 Value = Convert.ToSingle(Setting.Value),
                 CustomMinimumSize = new Vector2(150, 0),
-                TooltipText = Setting.Tooltip
+                TooltipText = Setting.Tooltip,
+        //HSizeFlags = Control.SizeFlags.ShrinkCenter
             };
 
             _valueLabel = new Label
             {
                 Text = Convert.ToSingle(Setting.Value).ToString("0.00"),
                 CustomMinimumSize = new Vector2(60, 0),
-                HorizontalAlignment = HorizontalAlignment.Right
+                HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center
             };
 
             _container.AddChild(_label);

@@ -36,7 +36,7 @@ namespace UltraSim.ECS.Settings
             };
 
             _container.AddChild(_label);
-            _container.AddChild(_lineEdit);
+            if (((StringSetting)Setting).IsEditable) _container.AddChild(_lineEdit);
             Node = _container;
         }
 

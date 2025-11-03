@@ -325,9 +325,9 @@ namespace UltraSim.ECS
             // Generate settings UI in a 4-column grid (2 label-value pairs per row)
             if (_system.GetSettings() is SettingsManager settings)
             {
-                var settingsGrid = new GridContainer { Columns = 4 };
-                settingsGrid.AddThemeConstantOverride("h_separation", 16);
-                settingsGrid.AddThemeConstantOverride("v_separation", 8);
+                var settingsGrid = new GridContainer { Columns = 2 };
+                settingsGrid.AddThemeConstantOverride("h_separation", 24);
+                settingsGrid.AddThemeConstantOverride("v_separation", 10);
                 _settingsContainer.AddChild(settingsGrid);
 
                 int settingCount = 0;
@@ -342,6 +342,7 @@ namespace UltraSim.ECS
 
                         // Ensure both label and control expand to fill 25% each
                         settingUI.Node.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                        settingUI.Node.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
                         settingsGrid.AddChild(settingUI.Node);
                         settingUI.Bind();
 

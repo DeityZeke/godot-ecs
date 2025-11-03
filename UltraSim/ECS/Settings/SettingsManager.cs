@@ -95,7 +95,8 @@ namespace UltraSim.ECS.Settings
         }
 
         // GUI support
-        public List<ISetting> GetAllSettings() => _settings.Values.OrderBy(s => s.Name).ToList();
+        public List<ISetting> GetAllSettings() => _settings.Values.ToList();//.OrderBy(s => s.Name).ToList();
+        public List<ISetting> GetAllSettingsSorted() => _settings.Values.OrderBy(s => s.Name).ToList();
 
         // Serialization
         public void Serialize(ConfigFile config, string section)
