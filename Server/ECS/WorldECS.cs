@@ -16,7 +16,7 @@ namespace UltraSim.WorldECS
     public partial class WorldECS : Node3D, IHost
     {
         [Export] public bool EnableDebugStats = true;
-        [Export] public float AutoSaveInterval = 60f;
+        [Export] public float AutoSaveInterval = 60.0f;
 
         private World _world = null!;
         private ECSControlPanel _controlPanel = null!;
@@ -102,10 +102,10 @@ namespace UltraSim.WorldECS
             }
         }
 
-        public long TotalRamMB => (long)(Performance.GetMonitor(Performance.Monitor.MemoryStatic) / 1024 / 1024);
+        // Note: Godot doesn't expose total system RAM, so we show current usage and peak
+        public long TotalRamMB => (long)(Performance.GetMonitor(Performance.Monitor.MemoryStaticMax) / 1024 / 1024);
 
-        public long AvailableRamMB => (long)((Performance.GetMonitor(Performance.Monitor.MemoryStatic) -
-                                              Performance.GetMonitor(Performance.Monitor.MemoryStaticMax)) / 1024 / 1024);
+        public long AvailableRamMB => (long)(Performance.GetMonitor(Performance.Monitor.MemoryStatic) / 1024 / 1024);
 
         public string GpuName
         {

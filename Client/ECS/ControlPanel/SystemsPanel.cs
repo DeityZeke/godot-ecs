@@ -1,3 +1,4 @@
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using Godot;
 
 using UltraSim.ECS.Systems;
 using UltraSim.ECS.Settings;
+using UltraSim.UI;
 
 namespace UltraSim.ECS
 {
@@ -15,16 +17,16 @@ namespace UltraSim.ECS
     /// Systems panel displaying all ECS systems with their settings.
     /// </summary>
     [ControlPanelSection(defaultOrder: 10, defaultExpanded: true)]
-    public class SystemsPanel : IControlPanelSection
+    public partial class SystemsPanel : UIBuilder, IControlPanelSection
     {
         private World _world;
-        private SystemManager _systemManager;
+        private SystemManager? _systemManager;
         private Dictionary<SettingsManager, SystemEntryUI> _systemEntries = new();
         private bool _showTimings = false;
 
-        private VBoxContainer _systemsContainer;
-        private CheckBox _showTimingsCheckBox;
-        private Button _saveAllButton;
+        private VBoxContainer? _systemsContainer;
+        private CheckBox? _showTimingsCheckBox;
+        private Button? _saveAllButton;
         private bool _anyDirty = false;
 
         public string Title => "Systems";
@@ -40,37 +42,28 @@ namespace UltraSim.ECS
             }
         }
 
-        public Control CreateHeaderButtons()
+        public Control? CreateHeaderButtons()
         {
-            var container = new HBoxContainer();
-            container.AddThemeConstantOverride("separation", 8);
+            var container = CreateHBox();
 
             // Save All button (left, only visible when there are unsaved changes)
-            _saveAllButton = new Button();
-            _saveAllButton.Text = "Save All";
+            _saveAllButton = AddContainerButton(container, "Save All", OnSaveAllPressed);
             _saveAllButton.Visible = false;
-            _saveAllButton.Pressed += OnSaveAllPressed;
-            container.AddChild(_saveAllButton);
 
             // Show Advanced Timings checkbox (right, always visible)
-            _showTimingsCheckBox = new CheckBox();
+            _showTimingsCheckBox = AddContainerCheckBox(container, false, OnShowTimingsToggled);
             _showTimingsCheckBox.Text = "Show Advanced Timings";
-            _showTimingsCheckBox.ButtonPressed = false;
-            _showTimingsCheckBox.Toggled += OnShowTimingsToggled;
-            container.AddChild(_showTimingsCheckBox);
 
             return container;
         }
 
         public Control CreateUI()
         {
-            var container = new VBoxContainer();
-            container.AddThemeConstantOverride("separation", 8);
+            var container = CreateVBox();
 
             // Systems list
-            _systemsContainer = new VBoxContainer();
+            _systemsContainer = CreateVBox();
             _systemsContainer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            _systemsContainer.AddThemeConstantOverride("separation", 8);
             container.AddChild(_systemsContainer);
 
             return container;
@@ -99,6 +92,9 @@ namespace UltraSim.ECS
 
         private void RefreshSystemsList()
         {
+            if (_systemsContainer == null)
+                return;
+
             // Clear existing entries
             foreach (var child in _systemsContainer.GetChildren())
             {
@@ -139,7 +135,7 @@ namespace UltraSim.ECS
             Logging.Logger.Log($"Added {_systemEntries.Count} entries to UI");
         }
 
-        private static ISettingUI GetSettingUI(ISetting setting)
+        private static ISettingUI? GetSettingUI(ISetting setting)
         {
             // Check for specific setting types
             if (setting is BoolSetting)
@@ -163,9 +159,15 @@ namespace UltraSim.ECS
 
         private void CreateSystemEntry(BaseSystem system)
         {
+            if (_systemsContainer == null)
+                return;
+
             var entry = new SystemEntryUI(system, _showTimings, OnSettingChanged, GetSettingUI);
             _systemsContainer.AddChild(entry);
-            _systemEntries[system.GetSettings()] = entry;
+
+            var settings = system.GetSettings();
+            if (settings != null)
+                _systemEntries[settings] = entry;
 
             Logging.Logger.Log($"  - Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
         }
@@ -224,19 +226,19 @@ namespace UltraSim.ECS
         private bool _isExpanded = false;
         private bool _isDirty = false;
 
-        private Button _expandButton;
-        private Label _nameLabel;
-        private CheckBox _enabledCheckBox;
-        private Label _timingLabel;
-        private VBoxContainer _settingsContainer;
-        private Button _applyButton;
+        private Button? _expandButton;
+        private Label? _nameLabel;
+        private CheckBox? _enabledCheckBox;
+        private Label? _timingLabel;
+        private VBoxContainer? _settingsContainer;
+        private Button? _applyButton;
 
         private Action<BaseSystem> _onSettingChanged;
-        private Func<ISetting, ISettingUI> _getSettingUI;
+        private Func<ISetting, ISettingUI?> _getSettingUI;
 
         public bool IsDirty => _isDirty;
 
-        public SystemEntryUI(BaseSystem system, bool showTimings, Action<BaseSystem> onSettingChanged, Func<ISetting, ISettingUI> getSettingUI)
+        public SystemEntryUI(BaseSystem system, bool showTimings, Action<BaseSystem> onSettingChanged, Func<ISetting, ISettingUI?> getSettingUI)
         {
             _system = system;
             _onSettingChanged = onSettingChanged;
@@ -252,6 +254,7 @@ namespace UltraSim.ECS
 
         private void BuildUI(bool showTimings)
         {
+            // Margin
             var margin = new MarginContainer();
             margin.AddThemeConstantOverride("margin_left", 8);
             margin.AddThemeConstantOverride("margin_right", 8);
@@ -259,6 +262,7 @@ namespace UltraSim.ECS
             margin.AddThemeConstantOverride("margin_bottom", 8);
             AddChild(margin);
 
+            // Main VBox
             var vbox = new VBoxContainer();
             vbox.AddThemeConstantOverride("separation", 8);
             margin.AddChild(vbox);
@@ -269,17 +273,21 @@ namespace UltraSim.ECS
             vbox.AddChild(headerHBox);
 
             // Expand button
-            _expandButton = new Button();
-            _expandButton.Text = ">";
-            _expandButton.CustomMinimumSize = new Vector2(32, 0);
+            _expandButton = new Button
+            {
+                Text = ">",
+                CustomMinimumSize = new Vector2(32, 0)
+            };
             _expandButton.Pressed += OnExpandToggled;
             headerHBox.AddChild(_expandButton);
 
             // System name
-            _nameLabel = new Label();
-            _nameLabel.Text = _system.Name;
-            _nameLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            _nameLabel.VerticalAlignment = VerticalAlignment.Center;
+            _nameLabel = new Label
+            {
+                Text = _system.Name,
+                VerticalAlignment = VerticalAlignment.Center,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
             headerHBox.AddChild(_nameLabel);
 
             // Timing container (before enabled checkbox)
@@ -288,18 +296,23 @@ namespace UltraSim.ECS
             headerHBox.AddChild(timingContainer);
 
             // Timing label
-            _timingLabel = new Label();
-            _timingLabel.Text = "0.000ms";
+            _timingLabel = new Label
+            {
+                Text = "0.000ms",
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Visible = showTimings
+            };
             _timingLabel.SetAnchorsPreset(LayoutPreset.FullRect);
-            _timingLabel.HorizontalAlignment = HorizontalAlignment.Right;
-            _timingLabel.VerticalAlignment = VerticalAlignment.Center;
-            _timingLabel.Visible = showTimings;
             timingContainer.AddChild(_timingLabel);
 
             // Enabled checkbox (on far right)
-            _enabledCheckBox = new CheckBox();
-            _enabledCheckBox.Text = "Enabled";
-            _enabledCheckBox.ButtonPressed = _system.IsEnabled;
+            _enabledCheckBox = new CheckBox
+            {
+                ButtonPressed = _system.IsEnabled,
+                Text = "Enabled",
+                FocusMode = FocusModeEnum.None
+            };
             _enabledCheckBox.Toggled += OnEnabledToggled;
             headerHBox.AddChild(_enabledCheckBox);
 
@@ -309,11 +322,10 @@ namespace UltraSim.ECS
             _settingsContainer.Visible = false;
             vbox.AddChild(_settingsContainer);
 
-            // Generate settings UI in a 2-column grid
+            // Generate settings UI in a 4-column grid (2 label-value pairs per row)
             if (_system.GetSettings() is SettingsManager settings)
             {
-                var settingsGrid = new GridContainer();
-                settingsGrid.Columns = 2;
+                var settingsGrid = new GridContainer { Columns = 4 };
                 settingsGrid.AddThemeConstantOverride("h_separation", 16);
                 settingsGrid.AddThemeConstantOverride("v_separation", 8);
                 _settingsContainer.AddChild(settingsGrid);
@@ -327,6 +339,9 @@ namespace UltraSim.ECS
                     if (settingUI != null)
                     {
                         Logging.Logger.Log($"[SystemEntryUI]     - Got UI wrapper, adding node to container");
+
+                        // Ensure both label and control expand to fill 25% each
+                        settingUI.Node.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
                         settingsGrid.AddChild(settingUI.Node);
                         settingUI.Bind();
 
@@ -341,11 +356,19 @@ namespace UltraSim.ECS
                     }
                 }
 
+                // If odd number of settings, add two empty spacers to complete the row
+                if (settingCount % 2 == 1)
+                {
+                    settingsGrid.AddChild(new Control());
+                    settingsGrid.AddChild(new Control());
+                }
+
                 Logging.Logger.Log($"[SystemEntryUI] Added {settingCount} setting controls for {_system.Name}");
             }
 
             // Apply button container (for right alignment with padding)
             var applyButtonContainer = new HBoxContainer();
+            applyButtonContainer.AddThemeConstantOverride("separation", 8);
             _settingsContainer.AddChild(applyButtonContainer);
 
             // Spacer to push button to the right
@@ -355,13 +378,18 @@ namespace UltraSim.ECS
 
             // Apply button (smaller, right-aligned)
             var applyMargin = new MarginContainer();
+            applyMargin.AddThemeConstantOverride("margin_left", 0);
             applyMargin.AddThemeConstantOverride("margin_right", 8);
+            applyMargin.AddThemeConstantOverride("margin_top", 0);
+            applyMargin.AddThemeConstantOverride("margin_bottom", 0);
             applyButtonContainer.AddChild(applyMargin);
 
-            _applyButton = new Button();
-            _applyButton.Text = "Apply";
-            _applyButton.CustomMinimumSize = new Vector2(80, 0);
-            _applyButton.Visible = false;
+            _applyButton = new Button
+            {
+                Text = "Apply",
+                CustomMinimumSize = new Vector2(80, 0),
+                Visible = false
+            };
             _applyButton.Pressed += OnApplyPressed;
             applyMargin.AddChild(_applyButton);
         }
@@ -369,8 +397,10 @@ namespace UltraSim.ECS
         private void OnExpandToggled()
         {
             _isExpanded = !_isExpanded;
-            _settingsContainer.Visible = _isExpanded;
-            _expandButton.Text = _isExpanded ? "v" : ">";
+            if (_settingsContainer != null)
+                _settingsContainer.Visible = _isExpanded;
+            if (_expandButton != null)
+                _expandButton.Text = _isExpanded ? "v" : ">";
 
             Logging.Logger.Log($"[SystemEntryUI] {_system.Name} expanded: {_isExpanded}");
         }
@@ -384,7 +414,8 @@ namespace UltraSim.ECS
         private void OnSettingChangedInternal(ISetting setting)
         {
             _isDirty = true;
-            _applyButton.Visible = true;
+            if (_applyButton != null)
+                _applyButton.Visible = true;
             _onSettingChanged?.Invoke(_system);
         }
 
@@ -397,7 +428,8 @@ namespace UltraSim.ECS
         {
             _system.SaveSettings();
             _isDirty = false;
-            _applyButton.Visible = false;
+            if (_applyButton != null)
+                _applyButton.Visible = false;
             Logging.Logger.Log($"Applied settings for {_system.Name}");
 
             // Notify parent that dirty state changed
@@ -406,7 +438,7 @@ namespace UltraSim.ECS
 
         public void UpdateTiming()
         {
-            if (_timingLabel.Visible)
+            if (_timingLabel != null && _timingLabel.Visible)
             {
                 double ms = _system.Statistics.AverageUpdateTimeMs;
                 _timingLabel.Text = $"{ms:F3}ms";
@@ -415,7 +447,8 @@ namespace UltraSim.ECS
 
         public void SetTimingVisible(bool visible)
         {
-            _timingLabel.Visible = visible;
+            if (_timingLabel != null)
+                _timingLabel.Visible = visible;
         }
     }
 }

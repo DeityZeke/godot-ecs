@@ -1,10 +1,13 @@
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 using Godot;
+
+using UltraSim.UI;
 
 namespace UltraSim.ECS
 {
@@ -12,15 +15,15 @@ namespace UltraSim.ECS
     /// Modular ECS Control Panel - lightweight container for panel sections.
     /// Press F12 to toggle visibility.
     /// </summary>
-    public partial class ECSControlPanel : Control
+    public partial class ECSControlPanel : UIBuilder
     {
-        private World _world;
-        private PanelConfiguration _config;
+        private World _world = null!;
+        private PanelConfiguration _config = null!;
         private List<PanelSectionUI> _panels = new();
 
         // UI References
-        private PanelContainer _mainPanel;
-        private VBoxContainer _panelsContainer;
+        private PanelContainer _mainPanel = null!;
+        private VBoxContainer _panelsContainer = null!;
 
         #region Initialization
 
@@ -74,32 +77,23 @@ namespace UltraSim.ECS
             int padding = (int)Mathf.Clamp(Mathf.Min(viewportSize.X, viewportSize.Y) * 0.05f, 50f, 150f);
 
             // ROOT MARGIN - creates the padding border around the panel
-            var rootMargin = new MarginContainer();
+            var rootMargin = CreateMargin(padding);
             rootMargin.Name = "RootMargin";
             rootMargin.SetAnchorsPreset(LayoutPreset.FullRect);
-            rootMargin.AddThemeConstantOverride("margin_left", padding);
-            rootMargin.AddThemeConstantOverride("margin_right", padding);
-            rootMargin.AddThemeConstantOverride("margin_top", padding);
-            rootMargin.AddThemeConstantOverride("margin_bottom", padding);
             AddChild(rootMargin);
 
             // PANEL - the visible background
-            _mainPanel = new PanelContainer();
+            _mainPanel = CreatePanel();
             _mainPanel.Name = "MainPanel";
             rootMargin.AddChild(_mainPanel);
 
             // INNER MARGIN - padding inside the panel
-            var margin = new MarginContainer();
-            margin.AddThemeConstantOverride("margin_left", 16);
-            margin.AddThemeConstantOverride("margin_right", 16);
-            margin.AddThemeConstantOverride("margin_top", 16);
-            margin.AddThemeConstantOverride("margin_bottom", 16);
+            var margin = CreateMargin(16);
             _mainPanel.AddChild(margin);
 
             // Main vertical layout
-            var mainVBox = new VBoxContainer();
+            var mainVBox = CreateVBox(separation: 0);
             mainVBox.SizeFlagsVertical = SizeFlags.ExpandFill;
-            mainVBox.AddThemeConstantOverride("separation", 0);
             margin.AddChild(mainVBox);
 
             // === STATIC HEADER ===
@@ -111,15 +105,15 @@ namespace UltraSim.ECS
 
             // === PANELS CONTAINER ===
             var scrollContainer = new ScrollContainer();
+            scrollContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             scrollContainer.SizeFlagsVertical = SizeFlags.ExpandFill;
             scrollContainer.CustomMinimumSize = new Vector2(0, 200);
             scrollContainer.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
             scrollContainer.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
             mainVBox.AddChild(scrollContainer);
 
-            _panelsContainer = new VBoxContainer();
+            _panelsContainer = CreateVBox(separation: 8);
             _panelsContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            _panelsContainer.AddThemeConstantOverride("separation", 0);
             scrollContainer.AddChild(_panelsContainer);
 
             Logging.Logger.Log("[ECSControlPanel] UI built successfully");
@@ -127,19 +121,14 @@ namespace UltraSim.ECS
 
         private void BuildStaticHeader(VBoxContainer parent)
         {
-            var headerPanel = new PanelContainer();
+            var headerPanel = CreatePanel();
             headerPanel.CustomMinimumSize = new Vector2(0, 48);
             parent.AddChild(headerPanel);
 
-            var headerMargin = new MarginContainer();
-            headerMargin.AddThemeConstantOverride("margin_left", 12);
-            headerMargin.AddThemeConstantOverride("margin_right", 12);
-            headerMargin.AddThemeConstantOverride("margin_top", 8);
-            headerMargin.AddThemeConstantOverride("margin_bottom", 8);
+            var headerMargin = CreateMargin(12, 8, 12, 8);
             headerPanel.AddChild(headerMargin);
 
-            var headerHBox = new HBoxContainer();
-            headerHBox.AddThemeConstantOverride("separation", 16);
+            var headerHBox = CreateHBox(separation: 16);
             headerMargin.AddChild(headerHBox);
 
             // Spacer (pushes title to center)
@@ -148,11 +137,8 @@ namespace UltraSim.ECS
             headerHBox.AddChild(leftSpacer);
 
             // Title
-            var titleLabel = new Label();
-            titleLabel.Text = "ECS CONTROL PANEL";
-            titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
-            titleLabel.VerticalAlignment = VerticalAlignment.Center;
-            titleLabel.AddThemeFontSizeOverride("font_size", 20);
+            var titleLabel = CreateLabel("ECS CONTROL PANEL", fontSize: 20,
+                hAlign: HorizontalAlignment.Center, vAlign: VerticalAlignment.Center);
             headerHBox.AddChild(titleLabel);
 
             // Spacer (pushes close button to right)
@@ -161,9 +147,7 @@ namespace UltraSim.ECS
             headerHBox.AddChild(rightSpacer);
 
             // Close button
-            var closeButton = new Button();
-            closeButton.Text = "Close (F12)";
-            closeButton.Pressed += OnClosePressed;
+            var closeButton = CreateButton("Close (F12)", OnClosePressed);
             headerHBox.AddChild(closeButton);
         }
 
@@ -298,15 +282,16 @@ namespace UltraSim.ECS
     {
         public IControlPanelSection Panel { get; }
 
-        private Button _expandButton;
-        private Label _titleLabel;
-        private Control _contentContainer;
+        private Button? _expandButton;
+        private Label? _titleLabel;
+        private Control? _contentContainer;
 
         public PanelSectionUI(IControlPanelSection panel)
         {
             Panel = panel;
 
             SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            SizeFlagsVertical = SizeFlags.ShrinkBegin;
             CustomMinimumSize = new Vector2(0, 40);
 
             BuildUI();
@@ -314,6 +299,7 @@ namespace UltraSim.ECS
 
         private void BuildUI()
         {
+            // Margin
             var margin = new MarginContainer();
             margin.AddThemeConstantOverride("margin_left", 8);
             margin.AddThemeConstantOverride("margin_right", 8);
@@ -321,6 +307,7 @@ namespace UltraSim.ECS
             margin.AddThemeConstantOverride("margin_bottom", 8);
             AddChild(margin);
 
+            // Main VBox
             var vbox = new VBoxContainer();
             vbox.AddThemeConstantOverride("separation", 8);
             margin.AddChild(vbox);
@@ -331,17 +318,21 @@ namespace UltraSim.ECS
             vbox.AddChild(headerHBox);
 
             // Expand button
-            _expandButton = new Button();
-            _expandButton.Text = Panel.IsExpanded ? "v" : ">";
-            _expandButton.CustomMinimumSize = new Vector2(32, 0);
+            _expandButton = new Button
+            {
+                Text = Panel.IsExpanded ? "v" : ">",
+                CustomMinimumSize = new Vector2(32, 0)
+            };
             _expandButton.Pressed += OnExpandToggled;
             headerHBox.AddChild(_expandButton);
 
             // Title
-            _titleLabel = new Label();
-            _titleLabel.Text = Panel.Title;
-            _titleLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            _titleLabel.VerticalAlignment = VerticalAlignment.Center;
+            _titleLabel = new Label
+            {
+                Text = Panel.Title,
+                VerticalAlignment = VerticalAlignment.Center,
+                SizeFlagsHorizontal = SizeFlags.ExpandFill
+            };
             headerHBox.AddChild(_titleLabel);
 
             // Custom header buttons (if any)
@@ -358,14 +349,17 @@ namespace UltraSim.ECS
             // === CONTENT ===
             _contentContainer = Panel.CreateUI();
             _contentContainer.Visible = Panel.IsExpanded;
+            _contentContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             vbox.AddChild(_contentContainer);
         }
 
         private void OnExpandToggled()
         {
             Panel.IsExpanded = !Panel.IsExpanded;
-            _contentContainer.Visible = Panel.IsExpanded;
-            _expandButton.Text = Panel.IsExpanded ? "v" : ">";
+            if (_contentContainer != null)
+                _contentContainer.Visible = Panel.IsExpanded;
+            if (_expandButton != null)
+                _expandButton.Text = Panel.IsExpanded ? "v" : ">";
         }
     }
 }

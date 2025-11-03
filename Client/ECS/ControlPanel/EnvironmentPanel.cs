@@ -1,7 +1,11 @@
 
+#nullable enable
+
+using System;
+
 using Godot;
 
-using UltraSim;
+using UltraSim.UI;
 
 namespace UltraSim.ECS
 {
@@ -10,113 +14,119 @@ namespace UltraSim.ECS
     /// Displays build type, platform, CPU, GPU, and SIMD capabilities.
     /// </summary>
     [ControlPanelSection(defaultOrder: 5, defaultExpanded: false)]
-    public class EnvironmentPanel : IControlPanelSection
+    public partial class EnvironmentPanel : UIBuilder, IControlPanelSection
     {
-        private IEnvironmentInfo _env;
+        private IEnvironmentInfo? _env;
 
         // UI References
-        private Label _environmentLabel;
-        private Label _buildTypeLabel;
-        private Label _platformLabel;
-        private Label _engineLabel;
-        private Label _dotnetLabel;
-        private Label _cpuLabel;
-        private Label _coresLabel;
-        private Label _simdLabel;
-        private Label _ramLabel;
-        private Label _gpuLabel;
-        private Label _vramLabel;
-        private Label _graphicsApiLabel;
+        private Label? _ramLabel;
 
         public string Title => "Environment";
         public string Id => "environment_panel";
         public bool IsExpanded { get; set; }
 
-        public EnvironmentPanel(World world)
+        public EnvironmentPanel(World? world)
         {
-            _env = SimContext.Host;
+            if (world != null)
+            {
+                _env = SimContext.Host;
+            }
         }
 
-        public Control CreateHeaderButtons() => null;
+        public Control? CreateHeaderButtons() => null;
 
         public Control CreateUI()
         {
-            // Use GridContainer: 2 columns (label, value)
-            var grid = new GridContainer();
-            grid.Columns = 2;
-            grid.AddThemeConstantOverride("h_separation", 16);
-            grid.AddThemeConstantOverride("v_separation", 8);
+            // Main HBox to hold two columns
+            var mainHBox = CreateHBox(separation: 32);
 
-            // === BUILD & PLATFORM ===
-            AddHeader(grid, "Build & Platform");
+            // === LEFT COLUMN ===
+            var leftColumn = CreateVBox(separation: 16);
+            leftColumn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            mainHBox.AddChild(leftColumn);
 
-            grid.AddChild(CreateLabelCell("Environment:"));
-            _environmentLabel = CreateDataCell(_env.Environment.ToString());
-            grid.AddChild(_environmentLabel);
+            // BUILD & PLATFORM Section
+            var buildGrid = CreateGrid(columns: 2);
+            leftColumn.AddChild(buildGrid);
 
-            grid.AddChild(CreateLabelCell("Build Type:"));
-            _buildTypeLabel = CreateDataCell(_env.IsDebugBuild ? "Debug" : "Release");
-            grid.AddChild(_buildTypeLabel);
+            AddGridHeader(buildGrid, "Build & Platform");
 
-            grid.AddChild(CreateLabelCell("Platform:"));
-            _platformLabel = CreateDataCell(_env.Platform);
-            grid.AddChild(_platformLabel);
+            AddContainerLabel(buildGrid, "Environment:");
+            AddContainerLabel(buildGrid, _env!.Environment.ToString());
 
-            grid.AddChild(CreateLabelCell("Engine:"));
-            _engineLabel = CreateDataCell(_env.Engine);
-            grid.AddChild(_engineLabel);
+            AddContainerLabel(buildGrid, "Build Type:");
+            AddContainerLabel(buildGrid, _env.IsDebugBuild ? "Debug" : "Release");
 
-            grid.AddChild(CreateLabelCell(".NET Runtime:"));
-            _dotnetLabel = CreateDataCell(_env.DotNetVersion);
-            grid.AddChild(_dotnetLabel);
+            AddContainerLabel(buildGrid, "Platform:");
+            AddContainerLabel(buildGrid, _env.Platform);
 
-            // === CPU ===
-            AddSpacer(grid);
-            AddHeader(grid, "CPU");
+            AddContainerLabel(buildGrid, "Engine:");
+            AddContainerLabel(buildGrid, _env.Engine);
 
-            grid.AddChild(CreateLabelCell("Processor:"));
-            _cpuLabel = CreateDataCell(_env.ProcessorName);
-            grid.AddChild(_cpuLabel);
+            AddContainerLabel(buildGrid, ".NET Runtime:");
+            AddContainerLabel(buildGrid, _env.DotNetVersion);
 
-            grid.AddChild(CreateLabelCell("Cores:"));
-            _coresLabel = CreateDataCell($"{_env.PhysicalCores} Physical / {_env.LogicalCores} Logical");
-            grid.AddChild(_coresLabel);
+            // MEMORY Section
+            var memoryGrid = CreateGrid(columns: 2);
+            leftColumn.AddChild(memoryGrid);
 
-            grid.AddChild(CreateLabelCell("Max SIMD:"));
-            _simdLabel = CreateDataCell(_env.MaxSimdSupport.ToString());
-            grid.AddChild(_simdLabel);
+            AddGridHeader(memoryGrid, "Memory");
 
-            // === MEMORY ===
-            AddSpacer(grid);
-            AddHeader(grid, "Memory");
+            AddContainerLabel(memoryGrid, "Godot RAM:");
+            _ramLabel = AddContainerLabel(memoryGrid, $"{_env.AvailableRamMB:N0} MB");
 
-            grid.AddChild(CreateLabelCell("System RAM:"));
-            _ramLabel = CreateDataCell($"{_env.TotalRamMB:N0} MB");
-            grid.AddChild(_ramLabel);
+            AddContainerLabel(memoryGrid, "Peak:");
+            AddContainerLabel(memoryGrid, $"{_env.TotalRamMB:N0} MB");
 
-            // === GPU ===
-            AddSpacer(grid);
-            AddHeader(grid, "GPU");
+            // === RIGHT COLUMN ===
+            var rightColumn = CreateVBox(separation: 16);
+            rightColumn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            mainHBox.AddChild(rightColumn);
 
-            grid.AddChild(CreateLabelCell("GPU:"));
-            _gpuLabel = CreateDataCell($"{_env.GpuVendor} {_env.GpuName}");
-            grid.AddChild(_gpuLabel);
+            // CPU Section
+            var cpuGrid = CreateGrid(columns: 2);
+            rightColumn.AddChild(cpuGrid);
 
-            grid.AddChild(CreateLabelCell("VRAM:"));
-            _vramLabel = CreateDataCell($"{_env.TotalVramMB:N0} MB");
-            grid.AddChild(_vramLabel);
+            AddGridHeader(cpuGrid, "CPU");
 
-            grid.AddChild(CreateLabelCell("Graphics API:"));
-            _graphicsApiLabel = CreateDataCell(_env.GraphicsAPI);
-            grid.AddChild(_graphicsApiLabel);
+            AddContainerLabel(cpuGrid, "Processor:");
+            var processorLabel = AddContainerLabel(cpuGrid, _env.ProcessorName);
+            processorLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            processorLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 
-            return grid;
+            AddContainerLabel(cpuGrid, "Cores:");
+            AddContainerLabel(cpuGrid, $"{_env.PhysicalCores} Physical / {_env.LogicalCores} Logical");
+
+            AddContainerLabel(cpuGrid, "Max SIMD:");
+            AddContainerLabel(cpuGrid, _env.MaxSimdSupport.ToString());
+
+            // GPU Section
+            var gpuGrid = CreateGrid(columns: 2);
+            rightColumn.AddChild(gpuGrid);
+
+            AddGridHeader(gpuGrid, "GPU");
+
+            AddContainerLabel(gpuGrid, "GPU:");
+            var gpuLabel = AddContainerLabel(gpuGrid, $"{_env.GpuVendor} {_env.GpuName}");
+            gpuLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            gpuLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+
+            AddContainerLabel(gpuGrid, "VRAM Used:");
+            AddContainerLabel(gpuGrid, $"{_env.TotalVramMB:N0} MB");
+
+            AddContainerLabel(gpuGrid, "Graphics API:");
+            AddContainerLabel(gpuGrid, _env.GraphicsAPI);
+
+            return mainHBox;
         }
 
         public void Update(double delta)
         {
-            // Update dynamic values (RAM availability changes)
-            _ramLabel.Text = $"{_env.TotalRamMB:N0} MB (Available: {_env.AvailableRamMB:N0} MB)";
+            if (_env != null && _ramLabel != null)
+            {
+                // Update current RAM usage
+                _ramLabel.Text = $"{_env.AvailableRamMB:N0} MB";
+            }
         }
 
         public void OnShow()
@@ -127,47 +137,6 @@ namespace UltraSim.ECS
         public void OnHide()
         {
             // Nothing to do on hide
-        }
-
-        private Label CreateLabelCell(string text)
-        {
-            var label = new Label();
-            label.Text = text;
-            label.HorizontalAlignment = HorizontalAlignment.Left;
-            label.VerticalAlignment = VerticalAlignment.Center;
-            return label;
-        }
-
-        private Label CreateDataCell(string text)
-        {
-            var label = new Label();
-            label.Text = text;
-            label.HorizontalAlignment = HorizontalAlignment.Left;
-            label.VerticalAlignment = VerticalAlignment.Center;
-            return label;
-        }
-
-        private void AddHeader(GridContainer grid, string headerText)
-        {
-            var header = new Label();
-            header.Text = headerText;
-            header.AddThemeFontSizeOverride("font_size", 14);
-            header.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 1.0f));
-            grid.AddChild(header);
-
-            // Empty cell for second column
-            grid.AddChild(new Control());
-        }
-
-        private void AddSpacer(GridContainer grid)
-        {
-            var spacer1 = new Control();
-            spacer1.CustomMinimumSize = new Vector2(0, 8);
-            grid.AddChild(spacer1);
-
-            var spacer2 = new Control();
-            spacer2.CustomMinimumSize = new Vector2(0, 8);
-            grid.AddChild(spacer2);
         }
     }
 }
