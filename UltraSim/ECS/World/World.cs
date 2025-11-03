@@ -83,7 +83,7 @@ namespace UltraSim.ECS
 
         #region Frame Pipeline
 
-        int tickCount = 0;
+        public int tickCount { get; private set; } = 0;
         bool printTickSchedule = true;
 
         /// <summary>
@@ -131,6 +131,8 @@ namespace UltraSim.ECS
 
             //_systems.UpdateAutoSave((float)delta); //Save at the end of frame, just in case
             UpdateAutoSave((float)delta);
+
+            tickCount++;
 
             // Phase 6: Events
             OnSystemsUpdated?.Invoke();

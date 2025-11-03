@@ -39,7 +39,7 @@ namespace UltraSim.ECS.Systems
                 _manualSystems.Add(system);
 
 #if USE_DEBUG
-                Logger.Log($"â¸ï¸ Manual system registered: {system.Name}");
+                Logger.Log($"Manual system registered: {system.Name}");
                 Logger.Log($"   Call: systemManager.RunManual<{system.GetType().Name}>()");
 #endif
 
@@ -59,7 +59,7 @@ namespace UltraSim.ECS.Systems
             RebuildTickBucketsCache();
 
 #if USE_DEBUG
-            Logger.Log($"âœ" System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
+            Logger.Log($"System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
 #endif
         }
 
@@ -164,9 +164,9 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             // Log every 60 frames to avoid spam
-            if (Engine.GetProcessFrames() % 60 == 0)
+            if (World.Current.tickCount % 60 == 0)
             {
-                Logger.Log($"[TickScheduler] Frame {Engine.GetProcessFrames()}: Ran {systemsToRun.Count} systems, skipped {systemsSkipped}");
+                Logger.Log($"[TickScheduler] Frame {World.Current.tickCount}: Ran {systemsToRun.Count} systems, skipped {systemsSkipped}");
             }
 #endif
         }
@@ -236,47 +236,6 @@ namespace UltraSim.ECS.Systems
 
             return batches;
         }
-
-
-        /*
-
-        /// <summary>
-        /// Checks if a system conflicts with any system in a batch.
-        /// Copied from SystemManager for consistency.
-        /// </summary>
-        private static bool ConflictsWithBatch(BaseSystem s, List<BaseSystem> batch)
-        {
-            if (batch.Count == 0) return false;
-
-            Span<Type> readSpan = s.ReadSet.AsSpan();
-            Span<Type> writeSpan = s.WriteSet.AsSpan();
-
-            foreach (var other in batch)
-            {
-                var oRead = other.ReadSet;
-                var oWrite = other.WriteSet;
-
-                // Write/Write conflicts
-                foreach (var wt in writeSpan)
-                {
-                    foreach (var owt in oWrite)
-                        if (wt == owt) return true;
-
-                    foreach (var ort in oRead)
-                        if (wt == ort) return true;
-                }
-
-                // Read/Write conflicts (reversed)
-                foreach (var otw in oWrite)
-                {
-                    foreach (var srt in readSpan)
-                        if (srt == otw) return true;
-                }
-            }
-
-            return false;
-        }
-        */
 
         /// <summary>
         /// Manually runs a specific system by type.
