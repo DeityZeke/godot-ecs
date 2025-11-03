@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using UltraSim.ECS.Threading;
@@ -18,6 +19,7 @@ namespace UltraSim.ECS.Systems
     {
         // Tick scheduling data structures
         private readonly Dictionary<TickRate, List<BaseSystem>> _tickBuckets = new();
+        private readonly List<(TickRate rate, List<BaseSystem> systems)> _tickBucketsList = new(); // Cached for zero-alloc iteration
         private readonly Dictionary<TickRate, double> _nextRunTime = new();
         private readonly List<BaseSystem> _manualSystems = new();
         private readonly Dictionary<BaseSystem, List<List<BaseSystem>>> _systemBatches = new();
@@ -53,8 +55,11 @@ namespace UltraSim.ECS.Systems
 
             _tickBuckets[rate].Add(system);
 
+            // Rebuild cached list for zero-alloc iteration
+            RebuildTickBucketsCache();
+
 #if USE_DEBUG
-            Logger.Log($"âœ“ System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
+            Logger.Log($"âœ" System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
 #endif
         }
 
@@ -89,6 +94,9 @@ namespace UltraSim.ECS.Systems
             {
                 _systemBatches.Remove(system);
             }
+
+            // Rebuild cached list for zero-alloc iteration
+            RebuildTickBucketsCache();
         }
 
         /// <summary>
@@ -114,11 +122,13 @@ namespace UltraSim.ECS.Systems
                 systemsToRun.AddRange(everyFrameSystems.Where(s => s.IsEnabled));
             }
 
-            // Check other tick buckets
-            foreach (var kvp in _tickBuckets)
+            // Check other tick buckets (optimized: use cached list for zero-alloc iteration)
+            var bucketsSpan = CollectionsMarshal.AsSpan(_tickBucketsList);
+            for (int i = 0; i < bucketsSpan.Length; i++)
             {
-                var rate = kvp.Key;
-                var systems = kvp.Value;
+                ref var bucket = ref bucketsSpan[i];
+                var rate = bucket.rate;
+                var systems = bucket.systems;
 
                 // Skip EveryFrame - already handled
                 if (rate == TickRate.EveryFrame)
@@ -392,6 +402,19 @@ namespace UltraSim.ECS.Systems
 #if USE_DEBUG
             Logger.Log("[TickScheduler] All tick timers reset");
 #endif
+        }
+
+        /// <summary>
+        /// Rebuilds the cached tick buckets list for zero-allocation iteration.
+        /// Called whenever buckets are added or removed.
+        /// </summary>
+        private void RebuildTickBucketsCache()
+        {
+            _tickBucketsList.Clear();
+            foreach (var kvp in _tickBuckets)
+            {
+                _tickBucketsList.Add((kvp.Key, kvp.Value));
+            }
         }
     }
 }

@@ -1,4 +1,6 @@
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,7 +80,7 @@ namespace UltraSim.ECS.Settings
             if (!_settings.TryGetValue(name, out var setting))
             {
                 Logger.Log($"Setting '{name}' not found!", LogSeverity.Error);
-                return default;
+                return default!;
             }
             return (T)((Setting<T>)setting).Value;//setting.GetValue();
         }

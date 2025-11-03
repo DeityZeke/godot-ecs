@@ -40,8 +40,10 @@ namespace UltraSim.ECS
             _list = capacity > 0 ? new List<T>(capacity) : new List<T>(65535);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddDefault() => _list.Add(default!);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddBoxed(object? boxed)
         {
             if (boxed is T t)
@@ -50,6 +52,7 @@ namespace UltraSim.ECS
                 _list.Add(default!);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddAtSlot(int slot, T value)
         {
             if (slot >= _list.Count)
@@ -61,16 +64,20 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetValue(int slot) => _list[slot];
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public object? GetValueBoxed(int slot) => _list[slot];
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValueBoxed(int slot, object value) => _list[slot] = (T)value;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SwapLastIntoSlot(int slot, int last)
         {
             if (slot != last)
                 _list[slot] = _list[last];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveLast() => _list.RemoveAt(_list.Count - 1);
 
         public int Count => _list.Count;

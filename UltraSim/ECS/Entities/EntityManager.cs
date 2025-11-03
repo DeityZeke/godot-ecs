@@ -40,6 +40,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Creates a new entity in the empty archetype.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Entity Create()
         {
             int idx = _freeIndices.Count > 0 ? _freeIndices.Pop() : _entityVersions.Count;
@@ -116,6 +117,7 @@ namespace UltraSim.ECS
         /// Gets the archetype and slot for an entity.
         /// Used by command buffers to set component values after creation.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetLocation(Entity entity, out Archetype archetype, out int slot)
         {
             if (!_entityLookup.TryGetValue(entity.Index, out var loc))
@@ -134,6 +136,7 @@ namespace UltraSim.ECS
         /// Updates the lookup table when an entity moves between archetypes.
         /// Called by World during component add/remove operations.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateLookup(int entityIndex, Archetype archetype, int slot)
         {
             int archetypeIdx = _archetypes.GetArchetypeIndex(archetype);

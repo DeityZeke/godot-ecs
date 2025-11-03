@@ -40,6 +40,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Gets the typed component list for zero-allocation parallel processing.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ComponentList<T>? GetComponentListTyped<T>(int componentTypeId)
         {
             if (!_componentLists.TryGetValue(componentTypeId, out var obj))

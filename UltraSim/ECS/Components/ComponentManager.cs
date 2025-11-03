@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 using UltraSim.Logging;
 
@@ -67,6 +68,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Gets or registers an ID for component type T.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetTypeId<T>() => RegisterType<T>();
 
         /// <summary>
