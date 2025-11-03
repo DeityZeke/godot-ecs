@@ -20,9 +20,10 @@ namespace UltraSim.ECS
         private Label? _lastSaveDataLabel;
         private Label? _fpsDataLabel;
         private Label? _frameTimeDataLabel;
+        private Label? _tickRateDataLabel;
         private Label? _nextSaveDataLabel;
         private Label? _memUsageDataLabel;
-        private Label? _saveRateDataLabel;
+        private SpinBox? _saveRateSpinBox;
         private CheckBox? _autoSaveCheckBox;
 
         // === THROTTLED UPDATE SYSTEM ===
@@ -42,56 +43,72 @@ namespace UltraSim.ECS
 
         public Control CreateUI()
         {
-            var grid = CreateGrid(columns: 8);
+            // Main HBox to hold left and right sections
+            var mainHBox = CreateHBox();
+            mainHBox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
 
-            // === ROW 1 ===
-            AddContainerLabel(grid, "Entities:");
-            _entitiesDataLabel = AddContainerLabel(grid, "0", hAlign: HorizontalAlignment.Right);
+            // === LEFT SECTION (ECS Stats + Performance) ===
+            var leftGrid = CreateGrid(columns: 4);
+            leftGrid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            mainHBox.AddChild(leftGrid);
 
-            AddContainerLabel(grid, "Archetypes:");
-            _archetypesDataLabel = AddContainerLabel(grid, "0", hAlign: HorizontalAlignment.Right);
+            // Row 1: Entities, Archetypes
+            AddContainerLabel(leftGrid, "Entities:");
+            _entitiesDataLabel = AddContainerLabel(leftGrid, "0", hAlign: HorizontalAlignment.Right);
 
-            grid.AddChild(new Control());
-            grid.AddChild(new Control());
+            AddContainerLabel(leftGrid, "Archetypes:");
+            _archetypesDataLabel = AddContainerLabel(leftGrid, "0", hAlign: HorizontalAlignment.Right);
 
-            AddContainerLabel(grid, "Last Save:");
-            _lastSaveDataLabel = AddContainerLabel(grid, "Never", hAlign: HorizontalAlignment.Right);
+            // Row 2: FPS, RAM
+            AddContainerLabel(leftGrid, "FPS:");
+            _fpsDataLabel = AddContainerLabel(leftGrid, "0", hAlign: HorizontalAlignment.Right);
 
-            // === ROW 2 ===
-            AddContainerLabel(grid, "FPS:");
-            _fpsDataLabel = AddContainerLabel(grid, "0", hAlign: HorizontalAlignment.Right);
+            AddContainerLabel(leftGrid, "RAM:");
+            _memUsageDataLabel = AddContainerLabel(leftGrid, "0 MB", hAlign: HorizontalAlignment.Right);
 
-            AddContainerLabel(grid, "Frame Time:");
-            _frameTimeDataLabel = AddContainerLabel(grid, "0.00ms", hAlign: HorizontalAlignment.Right);
+            // Row 3: Frame Time, Tick Rate
+            AddContainerLabel(leftGrid, "Frame Time:");
+            _frameTimeDataLabel = AddContainerLabel(leftGrid, "0.00ms", hAlign: HorizontalAlignment.Right);
 
-            grid.AddChild(new Control());
-            grid.AddChild(new Control());
+            AddContainerLabel(leftGrid, "Tick Rate:");
+            _tickRateDataLabel = AddContainerLabel(leftGrid, "0.000ms", hAlign: HorizontalAlignment.Right);
 
-            AddContainerLabel(grid, "Next Save:");
-            _nextSaveDataLabel = AddContainerLabel(grid, "N/A", hAlign: HorizontalAlignment.Right);
+            // === RIGHT SECTION (Save Info) ===
+            var rightGrid = CreateGrid(columns: 2);
+            rightGrid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            mainHBox.AddChild(rightGrid);
 
-            // === ROW 3 ===
-            AddContainerLabel(grid, "Mem Usage:");
-            _memUsageDataLabel = AddContainerLabel(grid, "0 MB", hAlign: HorizontalAlignment.Right);
+            AddContainerLabel(rightGrid, "Last Save:");
+            _lastSaveDataLabel = AddContainerLabel(rightGrid, "Never", hAlign: HorizontalAlignment.Right);
 
-            grid.AddChild(new Control());
-            grid.AddChild(new Control());
-            grid.AddChild(new Control());
-            grid.AddChild(new Control());
+            AddContainerLabel(rightGrid, "Next Save:");
+            _nextSaveDataLabel = AddContainerLabel(rightGrid, "N/A", hAlign: HorizontalAlignment.Right);
 
-            AddContainerLabel(grid, "Auto Save:");
-
+            AddContainerLabel(rightGrid, "Auto Save:");
             var autoSaveContainer = CreateHBox();
             _autoSaveCheckBox = CreateCheckBox(onToggled: OnAutoSaveToggled);
             _autoSaveCheckBox.FocusMode = FocusModeEnum.None;
             autoSaveContainer.AddChild(_autoSaveCheckBox);
 
             AddContainerLabel(autoSaveContainer, "Rate:", vAlign: VerticalAlignment.Center);
-            _saveRateDataLabel = AddContainerLabel(autoSaveContainer, "60.000s", vAlign: VerticalAlignment.Center);
 
-            grid.AddChild(autoSaveContainer);
+            _saveRateSpinBox = new SpinBox
+            {
+                MinValue = 1f,
+                MaxValue = 600f,
+                Step = 1f,
+                Value = _world.AutoSaveInterval,
+                CustomMinimumSize = new Vector2(100, 0),
+                TooltipText = "Auto-save interval in seconds (1-600s)",
+                SizeFlagsVertical = SizeFlags.ShrinkCenter
+            };
+            _saveRateSpinBox.GetLineEdit().AddThemeConstantOverride("minimum_character_width", 0);
+            _saveRateSpinBox.ValueChanged += OnSaveRateChanged;
+            autoSaveContainer.AddChild(_saveRateSpinBox);
 
-            return grid;
+            rightGrid.AddChild(autoSaveContainer);
+
+            return mainHBox;
         }
 
 public void Update(double delta)
@@ -99,31 +116,66 @@ public void Update(double delta)
     if (_world == null) return;
 
     // === ACCUMULATE SIMULATION FRAME DATA ===
-    _deltaSum += (float)delta;
+    float deltaF = (float)delta;
+    _deltaSum += deltaF;
     _frameCount++;
-    _updateTimer += (float)delta;
+    _updateTimer += deltaF;
 
     if (_updateTimer >= UPDATE_INTERVAL)
     {
+        // Optimize: cache reciprocal to avoid division in FPS calculation
         float avgDelta = _deltaSum / _frameCount;
         float simFps = avgDelta > 0 ? 1f / avgDelta : 0f;
-        float frameTimeMs = avgDelta * 1000f;
 
-        // Use Godot's *process* time (CPU) — NOT render FPS!
-        float cpuTimeMs = (float)Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000f;
-        ulong memoryMB = OS.GetStaticMemoryUsage() / 1024 / 1024;
+        // Calculate both frame time (full Godot process) and tick rate (ECS simulation only)
+        float frameTimeMs = avgDelta * 1000f;  // Full Godot frame time
+        float ecsTickTimeMs = (float)_world.LastTickTimeMs; // ECS simulation only
+        ulong memoryMB = OS.GetStaticMemoryUsage() / (1024u * 1024u);
 
-        // UPDATE UI — TRUTH ONLY
-        _entitiesDataLabel!.Text = $"{_world.EntityCount:N0}";
-        _archetypesDataLabel!.Text = $"{_world.ArchetypeCount:N0}";
-        _fpsDataLabel!.Text = $"{simFps:F1}";           // ← REAL SIM FPS
-        _frameTimeDataLabel!.Text = $"{frameTimeMs:F1}ms"; // ← REAL FRAME
+        // UPDATE UI — TRUTH ONLY (cache counts to avoid multiple property accesses)
+        int entityCount = _world.EntityCount;
+        int archetypeCount = _world.ArchetypeCount;
+
+        _entitiesDataLabel!.Text = entityCount.ToString("N0");
+        _archetypesDataLabel!.Text = archetypeCount.ToString("N0");
+        _fpsDataLabel!.Text = simFps.ToString("F1");
         _memUsageDataLabel!.Text = $"{memoryMB:N0} MB";
-        _saveRateDataLabel!.Text = $"{_world.AutoSaveInterval:F3}s";
+        _frameTimeDataLabel!.Text = frameTimeMs.ToString("F2") + "ms";
+        _tickRateDataLabel!.Text = ecsTickTimeMs.ToString("F3") + "ms";
+
+        // Update SpinBox only if value changed (avoid feedback loop)
+        float autoSaveInterval = _world.AutoSaveInterval;
+        if (Math.Abs((float)_saveRateSpinBox!.Value - autoSaveInterval) > 0.01f)
+            _saveRateSpinBox.Value = autoSaveInterval;
+
         _autoSaveCheckBox!.SetPressedNoSignal(_world.AutoSaveEnabled);
 
+        // Update Last Save time
+        var lastSaveTime = _world.LastSaveTime;
+        if (lastSaveTime.HasValue)
+        {
+            var localTime = lastSaveTime.Value.ToLocalTime();
+            _lastSaveDataLabel!.Text = localTime.ToString("HH:mm:ss");
+        }
+        else
+        {
+            _lastSaveDataLabel!.Text = "Never";
+        }
+
+        // Update Next Save time (optimize: combine GetNextSaveTime and GetTimeUntilNextSave calls)
+        var timeRemaining = _world.GetTimeUntilNextSave();
+        if (timeRemaining.HasValue)
+        {
+            int seconds = (int)timeRemaining.Value;
+            _nextSaveDataLabel!.Text = seconds.ToString() + "s";
+        }
+        else
+        {
+            _nextSaveDataLabel!.Text = "N/A";
+        }
+
         // DEBUG: Print truth
-        GD.Print($"[UI] SIM FPS: {simFps:F1} | CPU: {cpuTimeMs:F1}ms | Entities: {_world.EntityCount:N0}");
+        GD.Print($"[UI] FPS: {simFps:F1} | Frame: {frameTimeMs:F2}ms | Tick: {ecsTickTimeMs:F3}ms | Entities: {entityCount:N0}");
 
         // Reset
         _updateTimer = _deltaSum = 0f;
@@ -142,6 +194,13 @@ public void Update(double delta)
                 _world.DisableAutoSave();
 
             Logging.Logger.Log($"Auto-save {(enabled ? "enabled" : "disabled")}");
+        }
+
+        private void OnSaveRateChanged(double value)
+        {
+            float newInterval = (float)value;
+            _world.SetAutoSaveInterval(newInterval);
+            Logging.Logger.Log($"Auto-save interval changed to {newInterval:F0}s");
         }
     }
 }

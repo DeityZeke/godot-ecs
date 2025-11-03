@@ -141,12 +141,15 @@ namespace UltraSim.ECS
         /// </summary>
         private void SaveWorldState(ConfigFile config)
         {
+            // Record the save timestamp
+            LastSaveTime = DateTimeOffset.UtcNow;
+
             config.SetValue("World", "Version", "2.0");
             config.SetValue("World", "EntityCount", EntityCount);
             config.SetValue("World", "ArchetypeCount", ArchetypeCount);
             config.SetValue("World", "AutoSaveEnabled", AutoSaveEnabled);
             config.SetValue("World", "AutoSaveInterval", AutoSaveInterval);
-            config.SetValue("World", "SaveTimestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            config.SetValue("World", "SaveTimestamp", LastSaveTime.Value.ToUnixTimeSeconds());
         }
 
         /// <summary>
@@ -245,7 +248,13 @@ namespace UltraSim.ECS
             var savedArchetypeCount = (int)config.GetValue("World", "ArchetypeCount", 0);
             var timestamp = (long)config.GetValue("World", "SaveTimestamp", 0);
 
-            Logger.Log($"[World] ðŸ“‚ Loaded world state from {DateTimeOffset.FromUnixTimeSeconds(timestamp):yyyy-MM-dd HH:mm:ss}");
+            // Restore the last save timestamp
+            if (timestamp > 0)
+            {
+                LastSaveTime = DateTimeOffset.FromUnixTimeSeconds(timestamp);
+            }
+
+            Logger.Log($"[World] Loaded world state from {DateTimeOffset.FromUnixTimeSeconds(timestamp):yyyy-MM-dd HH:mm:ss}");
             Logger.Log($"[World]    Expected - Entities: {savedEntityCount}, Archetypes: {savedArchetypeCount}");
         }
 

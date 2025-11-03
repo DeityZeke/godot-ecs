@@ -46,6 +46,9 @@ namespace UltraSim.ECS
         public double TotalSeconds => _time.TotalSeconds;
         public long Microseconds => _time.Microseconds;
 
+        // Tick performance tracking
+        public double LastTickTimeMs { get; internal set; } = 0.0;
+
         public static World? Current { get; private set; }
 
         public SystemManager Systems => _systems;

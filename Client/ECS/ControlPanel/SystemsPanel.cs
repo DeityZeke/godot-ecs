@@ -73,9 +73,10 @@ namespace UltraSim.ECS
         {
             if (_showTimings)
             {
-                foreach (var entry in _systemEntries.Values)
+                // Optimize: use struct enumerator to avoid allocation
+                foreach (var kvp in _systemEntries)
                 {
-                    entry.UpdateTiming();
+                    kvp.Value.UpdateTiming();
                 }
             }
         }
@@ -181,13 +182,13 @@ namespace UltraSim.ECS
 
         private void OnSaveAllPressed()
         {
-            // Save all systems with pending changes
+            // Save all systems with pending changes (optimized: avoid enumerator allocation)
             int savedCount = 0;
-            foreach (var entry in _systemEntries.Values)
+            foreach (var kvp in _systemEntries)
             {
-                if (entry.IsDirty)
+                if (kvp.Value.IsDirty)
                 {
-                    entry.ApplySettings();
+                    kvp.Value.ApplySettings();
                     savedCount++;
                 }
             }
@@ -201,8 +202,16 @@ namespace UltraSim.ECS
             if (_saveAllButton == null)
                 return;
 
-            // Check if any system has unsaved changes
-            _anyDirty = _systemEntries.Values.Any(e => e.IsDirty);
+            // Check if any system has unsaved changes (optimized: manual loop instead of LINQ)
+            _anyDirty = false;
+            foreach (var kvp in _systemEntries)
+            {
+                if (kvp.Value.IsDirty)
+                {
+                    _anyDirty = true;
+                    break;
+                }
+            }
             _saveAllButton.Visible = _anyDirty;
         }
 
@@ -210,9 +219,10 @@ namespace UltraSim.ECS
         {
             _showTimings = enabled;
 
-            foreach (var entry in _systemEntries.Values)
+            // Optimize: use struct enumerator to avoid allocation
+            foreach (var kvp in _systemEntries)
             {
-                entry.SetTimingVisible(enabled);
+                kvp.Value.SetTimingVisible(enabled);
             }
         }
     }
@@ -322,11 +332,11 @@ namespace UltraSim.ECS
             _settingsContainer.Visible = false;
             vbox.AddChild(_settingsContainer);
 
-            // Generate settings UI in a 4-column grid (2 label-value pairs per row)
+            // Generate settings UI in a 4-column grid (label, control, label, control)
             if (_system.GetSettings() is SettingsManager settings)
             {
-                var settingsGrid = new GridContainer { Columns = 2 };
-                settingsGrid.AddThemeConstantOverride("h_separation", 24);
+                var settingsGrid = new GridContainer { Columns = 4 };
+                settingsGrid.AddThemeConstantOverride("h_separation", 16);
                 settingsGrid.AddThemeConstantOverride("v_separation", 10);
                 _settingsContainer.AddChild(settingsGrid);
 
@@ -338,18 +348,73 @@ namespace UltraSim.ECS
                     var settingUI = _getSettingUI(setting);
                     if (settingUI != null)
                     {
-                        Logging.Logger.Log($"[SystemEntryUI]     - Got UI wrapper, adding node to container");
+                        Logging.Logger.Log($"[SystemEntryUI]     - Got UI wrapper, unwrapping into grid cells");
 
-                        // Ensure both label and control expand to fill 25% each
-                        settingUI.Node.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                        settingUI.Node.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-                        settingsGrid.AddChild(settingUI.Node);
-                        settingUI.Bind();
+                        // Unwrap the HBox children into separate grid cells
+                        var hbox = settingUI.Node as HBoxContainer;
+                        if (hbox != null && hbox.GetChildCount() >= 1)
+                        {
+                            // Optimize: cache children in array (no LINQ, reuse for label + controls)
+                            int childCount = hbox.GetChildCount();
+                            var children = new Node[childCount];
+                            int idx = 0;
+                            foreach (Node child in hbox.GetChildren())
+                            {
+                                children[idx++] = child;
+                            }
 
-                        // Subscribe to setting value changes to show Apply button
-                        setting.ValueChanged += (_) => OnSettingChangedInternal(setting);
+                            // First child is the label
+                            var label = children[0] as Control;
+                            if (label != null)
+                            {
+                                hbox.RemoveChild(label);
+                                label.CustomMinimumSize = new Vector2(150, 0);
+                                label.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+                                label.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
 
-                        settingCount++;
+                                // Left-align labels for consistent column alignment
+                                if (label is Label labelControl)
+                                {
+                                    labelControl.HorizontalAlignment = HorizontalAlignment.Left;
+                                    labelControl.VerticalAlignment = VerticalAlignment.Center;
+                                }
+
+                                settingsGrid.AddChild(label);
+                            }
+
+                            // Remaining children go in a control container
+                            var controlContainer = new HBoxContainer
+                            {
+                                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter
+                            };
+                            controlContainer.AddThemeConstantOverride("separation", 8);
+
+                            for (int i = 1; i < children.Length; i++)
+                            {
+                                var child = children[i] as Control;
+                                if (child != null)
+                                {
+                                    hbox.RemoveChild(child);
+                                    child.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+                                    controlContainer.AddChild(child);
+                                }
+                            }
+
+                            settingsGrid.AddChild(controlContainer);
+
+                            // Bind after adding to grid
+                            settingUI.Bind();
+
+                            // Subscribe to setting value changes to show Apply button
+                            setting.ValueChanged += (_) => OnSettingChangedInternal(setting);
+
+                            settingCount++;
+                        }
+                        else
+                        {
+                            Logging.Logger.Log($"[SystemEntryUI]     - WARNING: Setting UI is not an HBoxContainer or has insufficient children", Logging.LogSeverity.Warning);
+                        }
                     }
                     else
                     {
@@ -439,10 +504,11 @@ namespace UltraSim.ECS
 
         public void UpdateTiming()
         {
+            // Optimize: avoid string interpolation allocation
             if (_timingLabel != null && _timingLabel.Visible)
             {
                 double ms = _system.Statistics.AverageUpdateTimeMs;
-                _timingLabel.Text = $"{ms:F3}ms";
+                _timingLabel.Text = ms.ToString("F3") + "ms";
             }
         }
 

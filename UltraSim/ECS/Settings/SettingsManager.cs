@@ -11,6 +11,7 @@ namespace UltraSim.ECS.Settings
     public class SettingsManager
     {
         private Dictionary<string, ISetting> _settings = new(32);
+        private ISetting[]? _cachedSettingsArray;
 
         // Registration
         protected void Register(ISetting setting)
@@ -21,6 +22,7 @@ namespace UltraSim.ECS.Settings
                 return;
             }
             _settings[setting.Name] = setting;
+            _cachedSettingsArray = null; // Invalidate cache when settings change
         }
 
         // Fluent registration helpers
@@ -94,8 +96,17 @@ namespace UltraSim.ECS.Settings
                 ((Setting<T>)setting).Value = value;//setting.SetValue(value);
         }
 
-        // GUI support
-        public List<ISetting> GetAllSettings() => _settings.Values.ToList();//.OrderBy(s => s.Name).ToList();
+        // GUI support (optimized: cache array to avoid allocations on repeated calls)
+        public IReadOnlyList<ISetting> GetAllSettings()
+        {
+            if (_cachedSettingsArray == null)
+            {
+                _cachedSettingsArray = new ISetting[_settings.Count];
+                _settings.Values.CopyTo(_cachedSettingsArray, 0);
+            }
+            return _cachedSettingsArray;
+        }
+
         public List<ISetting> GetAllSettingsSorted() => _settings.Values.OrderBy(s => s.Name).ToList();
 
         // Serialization

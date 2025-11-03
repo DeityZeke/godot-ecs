@@ -197,6 +197,7 @@ namespace UltraSim.WorldECS
             var end = Time.GetTicksUsec();
 
             double frameMs = (end - start) / 1000.0;
+            _world.LastTickTimeMs = frameMs; // Update for UI display
             _fpsAccum += frameMs;
             _fpsFrames++;
             _frameCount++;

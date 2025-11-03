@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using UltraSim.Logging;
 
 namespace UltraSim.ECS
@@ -20,6 +21,11 @@ namespace UltraSim.ECS
         /// Time in seconds between auto-saves.
         /// </summary>
         public float AutoSaveInterval { get; set; } = 60f; // Default: 1 minute
+
+        /// <summary>
+        /// Last save timestamp (UTC). Null if never saved.
+        /// </summary>
+        public DateTimeOffset? LastSaveTime { get; set; } = null;
 
         private float _autoSaveTimer = 0f;
         private int _autoSaveCounter = 0;
@@ -92,11 +98,36 @@ namespace UltraSim.ECS
         {
             AutoSaveInterval = intervalSeconds;
             _autoSaveTimer = 0f; // Reset timer
-            
+
             if (AutoSaveEnabled)
             {
-                Logger.Log($"[World] ðŸ”„ Auto-save interval changed to {intervalSeconds}s");
+                Logger.Log($"[World] Auto-save interval changed to {intervalSeconds}s");
             }
+        }
+
+        /// <summary>
+        /// Gets the time remaining until the next auto-save (in seconds).
+        /// Returns null if auto-save is disabled.
+        /// </summary>
+        public float? GetTimeUntilNextSave()
+        {
+            if (!AutoSaveEnabled)
+                return null;
+
+            return AutoSaveInterval - _autoSaveTimer;
+        }
+
+        /// <summary>
+        /// Gets the estimated timestamp of the next auto-save.
+        /// Returns null if auto-save is disabled.
+        /// </summary>
+        public DateTimeOffset? GetNextSaveTime()
+        {
+            if (!AutoSaveEnabled)
+                return null;
+
+            float timeRemaining = AutoSaveInterval - _autoSaveTimer;
+            return DateTimeOffset.UtcNow.AddSeconds(timeRemaining);
         }
 
         #endregion
