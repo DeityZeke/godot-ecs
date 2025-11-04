@@ -249,19 +249,18 @@ namespace UltraSim.ECS
                     continue;
                 }
 
-                // Build signature from all components, but ensure each type is registered
+                // Build signature from all components (typeId already computed in EntityBuilder)
                 var signature = new ComponentSignature();
                 foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
                 {
-                    // Derive the authoritative id from the boxed value's runtime Type.
-                    int canonicalId = ComponentManager.GetTypeId(component.value.GetType());
-                    signature = signature.Add(canonicalId);
+                    // Use pre-computed typeId from EntityBuilder (OPTIMIZED)
+                    signature = signature.Add(component.typeId);
                 }
 
                 // Create entity directly in target archetype (ONE archetype move!)
                 var entity = world.CreateEntityWithSignature(signature);
 
-                // Set all component values. Use canonical ids again to be safe.
+                // Set all component values using pre-computed typeIds
                 if (!world.TryGetEntityLocation(entity, out var archetype, out var slot))
                 {
                     Logger.Log($"[CommandBuffer] Failed to get location for entity {entity}", LogSeverity.Error);
@@ -270,8 +269,8 @@ namespace UltraSim.ECS
 
                 foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
                 {
-                    int canonicalId = ComponentManager.GetTypeId(component.value.GetType());
-                    archetype.SetComponentValueBoxed(canonicalId, slot, component.value);
+                    // Use pre-computed typeId (OPTIMIZED - eliminates redundant GetTypeId call)
+                    archetype.SetComponentValueBoxed(component.typeId, slot, component.value);
                 }
 
                 created++;

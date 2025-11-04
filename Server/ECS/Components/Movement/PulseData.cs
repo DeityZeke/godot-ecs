@@ -1,9 +1,13 @@
+using System.Runtime.InteropServices;
+
 namespace UltraSim.ECS.Components
 {
     /// <summary>
     /// Component for entities that pulse in/out from origin.
     /// Used by pulsing movement systems.
+    /// Sequential layout ensures predictable memory layout for SIMD operations.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct PulseData
     {
         /// <summary>Movement speed</summary>

@@ -4,6 +4,7 @@ using Godot;
 
 using UltraSim;
 using UltraSim.ECS;
+using UltraSim.ECS.SIMD;
 using UltraSim.ECS.Systems;
 using UltraSim.Logging;
 
@@ -156,6 +157,9 @@ namespace UltraSim.WorldECS
         public override void _Ready()
         {
             SimContext.Initialize(this);
+
+            // Initialize SIMD manager with detected hardware capabilities
+            SimdManager.Initialize(MaxSimdSupport);
 
             GD.Print("========================================");
             GD.Print("      ECS WORLD INITIALIZATION         ");

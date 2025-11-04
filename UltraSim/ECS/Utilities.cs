@@ -1,5 +1,7 @@
 using Godot;
 using System;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace UltraSim.ECS
 {
@@ -13,31 +15,34 @@ namespace UltraSim.ECS
         public const float PI = 3.14159265359f;
         public const float TWO_PI = 6.28318530718f;
         public const float HALF_PI = 1.57079632679f;
+        private const float INV_TWO_PI = 1f / TWO_PI;
 
         // Sine lookup table for performance optimization
         private const int LOOKUP_SIZE = 1024;
         public const float LOOKUP_SCALE = LOOKUP_SIZE / TWO_PI;
+        private const float RECIP_LOOKUP_SCALE = TWO_PI / LOOKUP_SIZE;
         private static readonly float[] _sinLookup;
 
         // Thread-local random for thread-safe random number generation
         [ThreadStatic]
-        private static Random _threadRandom;
+        private static Random? _threadRandom;
 
         /// <summary>
         /// Static constructor to initialize the sine lookup table.
         /// </summary>
         static Utilities()
         {
-            // Pre-compute sine lookup table
+            // Pre-compute sine lookup table using reciprocal to avoid division (OPTIMIZED)
             _sinLookup = new float[LOOKUP_SIZE];
             for (int i = 0; i < LOOKUP_SIZE; i++)
             {
-                _sinLookup[i] = Mathf.Sin(i / LOOKUP_SCALE);
+                _sinLookup[i] = Mathf.Sin(i * RECIP_LOOKUP_SCALE);
             }
         }
 
         /// <summary>
         /// Gets a thread-local Random instance for thread-safe random number generation.
+        /// Uses non-allocating seed based on TickCount and thread ID.
         /// </summary>
         private static Random ThreadRandom
         {
@@ -45,7 +50,9 @@ namespace UltraSim.ECS
             {
                 if (_threadRandom == null)
                 {
-                    _threadRandom = new Random(Guid.NewGuid().GetHashCode());
+                    // Non-allocating seed (OPTIMIZED - replaces Guid.NewGuid())
+                    int seed = System.Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId;
+                    _threadRandom = new Random(seed);
                 }
                 return _threadRandom;
             }
@@ -79,9 +86,12 @@ namespace UltraSim.ECS
 
             float u = (float)random.NextDouble();
             float v = (float)random.NextDouble();
+            float w = (float)random.NextDouble();
+
             float theta = u * TWO_PI;
             float phi = Mathf.Acos(2f * v - 1f);
-            float r = (float)Math.Pow(random.NextDouble(), 1.0 / 3.0) * radius;
+            // Use MathF.Pow for float cube-root (OPTIMIZED - avoids double precision)
+            float r = MathF.Pow(w, 1f / 3f) * radius;
 
             float sinTheta = Mathf.Sin(theta);
             float cosTheta = Mathf.Cos(theta);
@@ -98,24 +108,42 @@ namespace UltraSim.ECS
         /// <summary>
         /// Fast sine lookup using pre-computed table.
         /// Trades memory for speed with O(1) lookup time.
+        /// Handles negative angles and large angles robustly.
         /// </summary>
         /// <param name="angle">The angle in radians</param>
         /// <returns>Approximate sine value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FastSin(float angle)
         {
-            int index = (int)(angle * LOOKUP_SCALE) & (LOOKUP_SIZE - 1);
-            return _sinLookup[index];
+            // Normalize to [0, TWO_PI) (OPTIMIZED - robust wrapping)
+            float a = angle % TWO_PI;
+            if (a < 0f) a += TWO_PI;
+
+            // Compute index with safety clamp
+            int idx = (int)(a * LOOKUP_SCALE);
+            if ((uint)idx >= LOOKUP_SIZE) idx &= (LOOKUP_SIZE - 1);
+
+            return _sinLookup[idx];
         }
 
         /// <summary>
         /// Fast cosine lookup using pre-computed sine table.
-        /// Uses the identity: cos(x) = sin(x + PI/2)
+        /// Uses index offset by quarter-turn for better performance than sin(x + PI/2).
         /// </summary>
         /// <param name="angle">The angle in radians</param>
         /// <returns>Approximate cosine value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FastCos(float angle)
         {
-            return FastSin(angle + HALF_PI);
+            // Normalize to [0, TWO_PI) (OPTIMIZED - robust wrapping)
+            float a = angle % TWO_PI;
+            if (a < 0f) a += TWO_PI;
+
+            // Use index offset by quarter-turn (OPTIMIZED - avoids extra multiply)
+            int idx = (int)(a * LOOKUP_SCALE) + (LOOKUP_SIZE >> 2);
+            idx &= (LOOKUP_SIZE - 1);
+
+            return _sinLookup[idx];
         }
 
         /// <summary>

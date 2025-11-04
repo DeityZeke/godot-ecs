@@ -1,8 +1,12 @@
+using System.Runtime.InteropServices;
+
 namespace UltraSim.ECS.Components
 {
     /// <summary>
     /// 3D position in world space.
+    /// Sequential layout ensures predictable memory layout for SIMD operations.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct Position
     {
         public float X, Y, Z;

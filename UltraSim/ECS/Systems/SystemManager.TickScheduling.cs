@@ -24,6 +24,9 @@ namespace UltraSim.ECS.Systems
         private readonly List<BaseSystem> _manualSystems = new();
         private readonly Dictionary<BaseSystem, List<List<BaseSystem>>> _systemBatches = new();
 
+        // Reusable list to avoid per-frame allocation
+        private readonly List<BaseSystem> _systemsToRun = new(128);
+
         /// <summary>
         /// Registers a system and adds it to the appropriate tick bucket.
         /// Automatically detects tick rate and scheduling behavior.
@@ -109,17 +112,21 @@ namespace UltraSim.ECS.Systems
         {
             double currentTime = world.TotalSeconds; // From TimeTracker (self-contained)
 
-            // Collect all systems that should run this frame
-            var systemsToRun = new List<BaseSystem>();
+            // Collect all systems that should run this frame (reuse list to avoid allocation)
+            _systemsToRun.Clear();
 
 #if USE_DEBUG
             int systemsSkipped = 0;
 #endif
 
-            // Always include EveryFrame systems
+            // Always include EveryFrame systems (optimized: manual loop instead of LINQ)
             if (_tickBuckets.TryGetValue(TickRate.EveryFrame, out var everyFrameSystems))
             {
-                systemsToRun.AddRange(everyFrameSystems.Where(s => s.IsEnabled));
+                for (int i = 0; i < everyFrameSystems.Count; i++)
+                {
+                    if (everyFrameSystems[i].IsEnabled)
+                        _systemsToRun.Add(everyFrameSystems[i]);
+                }
             }
 
             // Check other tick buckets (optimized: use cached list for zero-alloc iteration)
@@ -141,23 +148,32 @@ namespace UltraSim.ECS.Systems
                     double intervalSeconds = rate.ToSeconds();
                     _nextRunTime[rate] = currentTime + intervalSeconds;
 
-                    // Add enabled systems from this bucket
-                    systemsToRun.AddRange(systems.Where(s => s.IsEnabled));
+                    // Add enabled systems from this bucket (optimized: manual loop instead of LINQ)
+                    for (int j = 0; j < systems.Count; j++)
+                    {
+                        if (systems[j].IsEnabled)
+                            _systemsToRun.Add(systems[j]);
+                    }
                 }
                 else
                 {
 #if USE_DEBUG
-                    systemsSkipped += systems.Count(s => s.IsEnabled);
+                    // Count skipped systems
+                    for (int j = 0; j < systems.Count; j++)
+                    {
+                        if (systems[j].IsEnabled)
+                            systemsSkipped++;
+                    }
 #endif
                 }
             }
 
             // If no systems need to run, early exit
-            if (systemsToRun.Count == 0)
+            if (_systemsToRun.Count == 0)
                 return;
 
             // Get or create batches for the systems that need to run
-            var batchesToRun = GetBatchesForSystems(systemsToRun);
+            var batchesToRun = GetBatchesForSystems(_systemsToRun);
 
             // Use the existing parallel scheduler!
             ParallelSystemScheduler.RunBatches(batchesToRun, world, delta, null, null);
@@ -166,7 +182,7 @@ namespace UltraSim.ECS.Systems
             // Log every 60 frames to avoid spam
             if (World.Current.tickCount % 60 == 0)
             {
-                Logger.Log($"[TickScheduler] Frame {World.Current.tickCount}: Ran {systemsToRun.Count} systems, skipped {systemsSkipped}");
+                Logger.Log($"[TickScheduler] Frame {World.Current.tickCount}: Ran {_systemsToRun.Count} systems, skipped {systemsSkipped}");
             }
 #endif
         }
@@ -352,8 +368,9 @@ namespace UltraSim.ECS.Systems
         /// </summary>
         public void ResetTickTimers()
         {
-            var keys = _nextRunTime.Keys.ToList();
-            foreach (var rate in keys)
+            // Optimize: iterate keys directly without ToList allocation
+            // Safe because we're only setting values, not modifying keys
+            foreach (var rate in _nextRunTime.Keys)
             {
                 _nextRunTime[rate] = 0.0; // Will run on next frame
             }
