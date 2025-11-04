@@ -8,6 +8,7 @@ using Godot;
 
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
+using UltraSim.ECS.SIMD;
 using UltraSim.ECS.Threading;
 
 namespace UltraSim.ECS.Systems
@@ -101,6 +102,7 @@ namespace UltraSim.ECS.Systems
 
                 float adjustedDelta = (float)delta * speedMultiplier;
 
+                // Use manual thread pool (zero allocations!)
                 _threadPool.ParallelFor(numChunks, chunkIndex =>
                 {
                     Span<Position> posSpan = CollectionsMarshal.AsSpan(posList);
@@ -109,12 +111,11 @@ namespace UltraSim.ECS.Systems
                     int start = chunkIndex * CHUNK_SIZE;
                     int end = Math.Min(start + CHUNK_SIZE, count);
 
-                    for (int i = start; i < end; i++)
-                    {
-                        posSpan[i].X += velSpan[i].X * adjustedDelta;
-                        posSpan[i].Y += velSpan[i].Y * adjustedDelta;
-                        posSpan[i].Z += velSpan[i].Z * adjustedDelta;
-                    }
+                    SimdOperations.ApplyVelocity(
+                        posSpan.Slice(start, end - start),
+                        velSpan.Slice(start, end - start),
+                        adjustedDelta
+                    );
                 });
             }
         }

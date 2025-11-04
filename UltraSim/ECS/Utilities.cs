@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using UltraSim.ECS.SIMD.Core;
 
 namespace UltraSim.ECS
 {
@@ -38,6 +39,9 @@ namespace UltraSim.ECS
             {
                 _sinLookup[i] = Mathf.Sin(i * RECIP_LOOKUP_SCALE);
             }
+
+            // Initialize SIMD math operations with sine lookup table
+            MathOperations.Initialize(_sinLookup);
         }
 
         /// <summary>

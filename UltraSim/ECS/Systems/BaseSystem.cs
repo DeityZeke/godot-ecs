@@ -30,14 +30,23 @@ namespace UltraSim.ECS.Systems
         // Custom metrics (systems can add their own)
         public Dictionary<string, double> CustomMetrics = new();
 
+        // EMA smoothing factor (0.1 = 10% new value, 90% old average)
+        // This gives roughly ~10-frame rolling average behavior
+        private const double EMA_ALPHA = 0.1;
+
         public void RecordUpdate(double timeMs)
         {
             LastUpdateTimeMs = timeMs;
             PeakUpdateTimeMs = Math.Max(PeakUpdateTimeMs, timeMs);
             MinUpdateTimeMs = Math.Min(MinUpdateTimeMs, timeMs);
 
-            // Running average
-            AverageUpdateTimeMs = (AverageUpdateTimeMs * UpdateCount + timeMs) / (UpdateCount + 1);
+            // Exponential Moving Average (EMA) - responsive to changes, prevents drift
+            // First update: use the actual value as baseline
+            if (UpdateCount == 0)
+                AverageUpdateTimeMs = timeMs;
+            else
+                AverageUpdateTimeMs = (EMA_ALPHA * timeMs) + ((1.0 - EMA_ALPHA) * AverageUpdateTimeMs);
+
             UpdateCount++;
         }
 

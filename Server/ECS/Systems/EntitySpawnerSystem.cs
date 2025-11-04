@@ -29,6 +29,7 @@ namespace UltraSim.ECS.Systems
             public ButtonSetting Spawn1000 { get; private set; }
             public ButtonSetting Spawn10000 { get; private set; }
             public ButtonSetting Spawn100000 { get; private set; }
+            public ButtonSetting Spawn1000000 { get; private set; }
             public ButtonSetting ClearAll { get; private set; }
 
             public Settings()
@@ -62,6 +63,9 @@ namespace UltraSim.ECS.Systems
                 Spawn100000 = RegisterButton("Spawn 100,000 Entities",
                     tooltip: "Spawn 100,000 entities with current settings");
 
+                Spawn1000000 = RegisterButton("Spawn 1,000,000 Entities",
+                    tooltip: "Spawn 1,000,000 entities with current settings");
+
                 ClearAll = RegisterButton("Clear All Entities",
                     tooltip: "Destroy all entities in the world");
             }
@@ -90,6 +94,7 @@ namespace UltraSim.ECS.Systems
             SystemSettings.Spawn1000.Clicked += () => SpawnEntities(1000);
             SystemSettings.Spawn10000.Clicked += () => SpawnEntities(10000);
             SystemSettings.Spawn100000.Clicked += () => SpawnEntities(100000);
+            SystemSettings.Spawn1000000.Clicked += () => SpawnEntities(1000000);
             SystemSettings.ClearAll.Clicked += ClearAllEntities;
 
             Logging.Logger.Log($"[{Name}] Initialized with spawn radius {SystemSettings.SpawnRadius.Value}");

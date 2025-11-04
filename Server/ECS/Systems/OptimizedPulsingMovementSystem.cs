@@ -8,7 +8,9 @@ using System.Runtime.InteropServices;
 using Godot;
 
 using UltraSim.ECS.Components;
+using UltraSim.ECS.Settings;
 using UltraSim.ECS.Threading;
+using UltraSim.ECS.SIMD;
 
 namespace UltraSim.ECS.Systems
 {
@@ -18,6 +20,24 @@ namespace UltraSim.ECS.Systems
     /// </summary>
     public sealed class OptimizedPulsingMovementSystem : BaseSystem
     {
+        #region Settings
+
+        public sealed class Settings : SettingsManager
+        {
+            public BoolSetting FreezePulsing { get; private set; }
+
+            public Settings()
+            {
+                FreezePulsing = RegisterBool("Freeze Pulsing", false,
+                    tooltip: "Completely freeze all pulsing movement (useful for debugging)");
+            }
+        }
+
+        public Settings SystemSettings { get; } = new();
+        public override SettingsManager? GetSettings() => SystemSettings;
+
+        #endregion
+
         public override string Name => "OptimizedPulsingMovementSystem";
         public override int SystemId => typeof(OptimizedPulsingMovementSystem).GetHashCode();
         public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(PulseData) };
@@ -35,6 +55,7 @@ namespace UltraSim.ECS.Systems
         public override void OnInitialize(World world)
         {
             _cachedQuery = world.Query(typeof(Position), typeof(Velocity), typeof(PulseData));
+            LoadSettings();
 #if USE_DEBUG
             GD.Print("[ManualThreadPoolPulsingSystem] Initialized.");
 #endif
@@ -42,6 +63,8 @@ namespace UltraSim.ECS.Systems
 
         public override void Update(World world, double delta)
         {
+            if (SystemSettings.FreezePulsing.Value)
+                return;
 
             float deltaF = (float)delta;
 
@@ -73,50 +96,15 @@ namespace UltraSim.ECS.Systems
                     int start = chunkIndex * CHUNK_SIZE;
                     int end = Math.Min(start + CHUNK_SIZE, count);
 
-                    ProcessChunk(posSpan, velSpan, pulseSpan, start, end, deltaF);
+                    // SIMD-optimized processing (delegates switch based on SIMD mode)
+                    SimdOperations.ProcessPulsing(
+                        posSpan.Slice(start, end - start),
+                        velSpan.Slice(start, end - start),
+                        pulseSpan.Slice(start, end - start),
+                        deltaF);
                 });
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void ProcessChunk(
-            Span<Position> pos,
-            Span<Velocity> vel,
-            Span<PulseData> pulse,
-            int start,
-            int end,
-            float delta)
-        {
-            for (int i = start; i < end; i++)
-            {
-                ref var p = ref pos[i];
-                ref var v = ref vel[i];
-                ref var pd = ref pulse[i];
-
-                pd.Phase += pd.Frequency * delta;
-                if (pd.Phase > Utilities.TWO_PI)
-                    pd.Phase -= Utilities.TWO_PI;
-
-                float pulseDirection = Utilities.FastSin(pd.Phase);
-
-                float distSq = p.X * p.X + p.Y * p.Y + p.Z * p.Z;
-
-                if (distSq > 0.0001f)
-                {
-                    float invDist = Utilities.FastInvSqrt(distSq);
-                    float speedFactor = pulseDirection * pd.Speed;
-
-                    v.X = p.X * invDist * speedFactor;
-                    v.Y = p.Y * invDist * speedFactor;
-                    v.Z = p.Z * invDist * speedFactor;
-                }
-                else
-                {
-                    v.X = Utilities.RandomRange(-0.5f, 0.5f) * pd.Speed;
-                    v.Y = Utilities.RandomRange(-0.5f, 0.5f) * pd.Speed;
-                    v.Z = Utilities.RandomRange(-0.5f, 0.5f) * pd.Speed;
-                }
-            }
-        }
     }
 }
