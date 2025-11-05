@@ -110,8 +110,6 @@ namespace UltraSim.ECS
                 return;
             }
 
-            Logging.Logger.Log("\n=== Refreshing Systems List ===", Logging.LogSeverity.Debug);
-
             int totalSystems = 0;
             int systemsWithSettings = 0;
 
@@ -122,18 +120,12 @@ namespace UltraSim.ECS
 
                 if (settings != null)
                 {
-                    Logging.Logger.Log($"  - {system.Name} has settings");
                     CreateSystemEntry(system);
                     systemsWithSettings++;
                 }
-                else
-                {
-                    Logging.Logger.Log($"  - {system.Name} has NO settings");
-                }
             }
 
-            Logging.Logger.Log($"Total: {totalSystems} systems, {systemsWithSettings} with settings");
-            Logging.Logger.Log($"Added {_systemEntries.Count} entries to UI");
+            Logging.Logger.Log($"Systems Panel: {systemsWithSettings}/{totalSystems} systems with settings");
         }
 
         private static ISettingUI? GetSettingUI(ISetting setting)
@@ -169,15 +161,12 @@ namespace UltraSim.ECS
             var settings = system.GetSettings();
             if (settings != null)
                 _systemEntries[settings] = entry;
-
-            Logging.Logger.Log($"  - Added SystemEntryUI to tree, total children: {_systemsContainer.GetChildCount()}");
         }
 
         private void OnSettingChanged(BaseSystem system)
         {
             // Setting changed - check if any system has pending changes
             UpdateSaveAllButton();
-            Logging.Logger.Log($"Setting changed in {system.Name}");
         }
 
         private void OnSaveAllPressed()
@@ -259,7 +248,7 @@ namespace UltraSim.ECS
 
             BuildUI(showTimings);
 
-            Logging.Logger.Log($"[SystemEntryUI] Created for {system.Name}, CustomMinSize: {CustomMinimumSize}");
+            // System entry UI created successfully
         }
 
         private void BuildUI(bool showTimings)
@@ -343,12 +332,9 @@ namespace UltraSim.ECS
                 int settingCount = 0;
                 foreach (var setting in settings.GetAllSettings())
                 {
-                    Logging.Logger.Log($"[SystemEntryUI]   - Creating UI for setting '{setting.Name}'");
-
                     var settingUI = _getSettingUI(setting);
                     if (settingUI != null)
                     {
-                        Logging.Logger.Log($"[SystemEntryUI]     - Got UI wrapper, unwrapping into grid cells");
 
                         // Unwrap the HBox children into separate grid cells
                         var hbox = settingUI.Node as HBoxContainer;
@@ -413,12 +399,12 @@ namespace UltraSim.ECS
                         }
                         else
                         {
-                            Logging.Logger.Log($"[SystemEntryUI]     - WARNING: Setting UI is not an HBoxContainer or has insufficient children", Logging.LogSeverity.Warning);
+                            Logging.Logger.Log($"Setting UI is not an HBoxContainer or has insufficient children for {_system.Name}", Logging.LogSeverity.Error);
                         }
                     }
                     else
                     {
-                        Logging.Logger.Log($"[SystemEntryUI]     - WARNING: No UI wrapper for setting type {setting.GetType().Name}", Logging.LogSeverity.Warning);
+                        Logging.Logger.Log($"No UI wrapper for setting type {setting.GetType().Name} in {_system.Name}", Logging.LogSeverity.Error);
                     }
                 }
 
@@ -428,8 +414,6 @@ namespace UltraSim.ECS
                     settingsGrid.AddChild(new Control());
                     settingsGrid.AddChild(new Control());
                 }
-
-                Logging.Logger.Log($"[SystemEntryUI] Added {settingCount} setting controls for {_system.Name}");
             }
 
             // Apply button container (for right alignment with padding)
@@ -467,8 +451,6 @@ namespace UltraSim.ECS
                 _settingsContainer.Visible = _isExpanded;
             if (_expandButton != null)
                 _expandButton.Text = _isExpanded ? "v" : ">";
-
-            Logging.Logger.Log($"[SystemEntryUI] {_system.Name} expanded: {_isExpanded}");
         }
 
         private void OnEnabledToggled(bool enabled)

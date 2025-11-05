@@ -55,7 +55,6 @@ namespace UltraSim.ECS.Systems
         public override void OnInitialize(World world)
         {
             _cachedQuery = world.Query(typeof(Position), typeof(Velocity), typeof(PulseData));
-            LoadSettings();
 #if USE_DEBUG
             GD.Print("[ManualThreadPoolPulsingSystem] Initialized.");
 #endif

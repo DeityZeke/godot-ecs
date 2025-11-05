@@ -61,8 +61,6 @@ namespace UltraSim.ECS.Systems
         {
             _cachedQuery = world.Query(typeof(Position), typeof(Velocity));
 
-            LoadSettings();
-
 #if USE_DEBUG
             GD.Print("[ManualThreadPoolMovementSystem] Initialized.");
                         GD.Print($"[MovementSystem] Settings - Speed: {SystemSettings.GlobalSpeedMultiplier.Value}, " +

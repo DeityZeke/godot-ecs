@@ -46,12 +46,7 @@ namespace UltraSim.ECS
             // If config exists, merge preferences (order, expanded state)
             if (FileAccess.FileExists(CONFIG_PATH))
             {
-                Logging.Logger.Log($"[PanelConfig] Merging discovered panels with config from {configPath}");
                 MergeConfigPreferences(discoveredPanels);
-            }
-            else
-            {
-                Logging.Logger.Log($"[PanelConfig] No config found, using discovered panel defaults");
             }
 
             return discoveredPanels.OrderBy(p => p.Order).ToList();
@@ -88,17 +83,15 @@ namespace UltraSim.ECS
 
                             panels.Add(settings);
                             _panelSettings[tempInstance.Id] = settings; // Cache by ID for merging
-                            Logging.Logger.Log($"[PanelConfig] Discovered panel: {type.Name} (id: {tempInstance.Id}, order: {attr.DefaultOrder})");
                         }
                     }
                     catch (Exception ex)
                     {
-                        Logging.Logger.Log($"[PanelConfig] Failed to instantiate panel {type.Name}: {ex.Message}", Logging.LogSeverity.Warning);
+                        Logging.Logger.Log($"Failed to instantiate panel {type.Name}: {ex.Message}", Logging.LogSeverity.Error);
                     }
                 }
             }
 
-            Logging.Logger.Log($"[PanelConfig] Auto-discovered {panels.Count} panels");
             return panels;
         }
 
@@ -111,13 +104,12 @@ namespace UltraSim.ECS
             var err = _config.Load(CONFIG_PATH);
             if (err != Error.Ok)
             {
-                Logging.Logger.Log($"[PanelConfig] Failed to load config: {err}, using defaults", Logging.LogSeverity.Warning);
+                Logging.Logger.Log($"Failed to load panel config: {err}", Logging.LogSeverity.Error);
                 return;
             }
 
             // Get all panel entries from config
             var keys = _config.GetSectionKeys(SECTION_PANELS);
-            var configuredPanelIds = new HashSet<string>();
 
             foreach (string key in keys)
             {
@@ -125,7 +117,6 @@ namespace UltraSim.ECS
                     continue;
 
                 string panelId = key.Replace("_order", "");
-                configuredPanelIds.Add(panelId);
 
                 // Find matching discovered panel
                 if (_panelSettings.TryGetValue(panelId, out var settings))
@@ -134,23 +125,6 @@ namespace UltraSim.ECS
                     settings.Order = _config.GetValue(SECTION_PANELS, panelId + "_order", settings.Order).AsInt32();
                     settings.Expanded = _config.GetValue(SECTION_PANELS, panelId + "_expanded", settings.Expanded).AsBool();
                     settings.Enabled = _config.GetValue(SECTION_PANELS, panelId + "_enabled", settings.Enabled).AsBool();
-
-                    Logging.Logger.Log($"[PanelConfig] Merged preferences for panel: {panelId}");
-                }
-                else
-                {
-                    // Panel in config but not in code - ignore it
-                    Logging.Logger.Log($"[PanelConfig] Ignoring removed panel from config: {panelId}", Logging.LogSeverity.Warning);
-                }
-            }
-
-            // Log any new panels that weren't in config
-            foreach (var panel in discoveredPanels)
-            {
-                var tempInstance = Activator.CreateInstance(Type.GetType(panel.TypeName), new object[] { null }) as IControlPanelSection;
-                if (tempInstance != null && !configuredPanelIds.Contains(tempInstance.Id))
-                {
-                    Logging.Logger.Log($"[PanelConfig] New panel detected (not in config): {tempInstance.Id}");
                 }
             }
         }
@@ -174,13 +148,9 @@ namespace UltraSim.ECS
             }
 
             var err = _config.Save(CONFIG_PATH);
-            if (err == Error.Ok)
+            if (err != Error.Ok)
             {
-                Logging.Logger.Log($"[PanelConfig] Saved panel config to {ProjectSettings.GlobalizePath(CONFIG_PATH)}");
-            }
-            else
-            {
-                Logging.Logger.Log($"[PanelConfig] Failed to save config: {err}", Logging.LogSeverity.Error);
+                Logging.Logger.Log($"Failed to save panel config: {err}", Logging.LogSeverity.Error);
             }
         }
 

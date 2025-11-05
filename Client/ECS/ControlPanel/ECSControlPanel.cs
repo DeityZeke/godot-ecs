@@ -30,7 +30,7 @@ namespace UltraSim.ECS
         public void Initialize(World world)
         {
             _world = world;
-            Logging.Logger.Log("ECSControlPanel initialized");
+            Logging.Logger.Log("Control Panel Initializing...");
         }
 
         public override void _Ready()
@@ -64,7 +64,7 @@ namespace UltraSim.ECS
             // Start hidden - press F12 to show
             Visible = false;
 
-            Logging.Logger.Log("ECSControlPanel ready! Press F12 to toggle.");
+            Logging.Logger.Log("Control Panel Ready! Press F12 to toggle");
 
             // Force initial layout calculation
             CallDeferred(MethodName.UpdateMinimumSize);
@@ -115,8 +115,6 @@ namespace UltraSim.ECS
             _panelsContainer = CreateVBox(separation: 8);
             _panelsContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             scrollContainer.AddChild(_panelsContainer);
-
-            Logging.Logger.Log("[ECSControlPanel] UI built successfully");
         }
 
         private void BuildStaticHeader(VBoxContainer parent)
@@ -156,8 +154,10 @@ namespace UltraSim.ECS
             _config = new PanelConfiguration();
             var panelSettings = _config.LoadOrDiscover();
 
-            Logging.Logger.Log($"[ECSControlPanel] Creating {panelSettings.Count} panels...");
+            Logging.Logger.Log($" - {panelSettings.Count} Panels Detected");
+            Logging.Logger.Log(" - Loaded and Applied Panel Settings");
 
+            int createdCount = 0;
             foreach (var settings in panelSettings)
             {
                 if (!settings.Enabled)
@@ -169,14 +169,14 @@ namespace UltraSim.ECS
                     var type = Type.GetType(settings.TypeName);
                     if (type == null)
                     {
-                        Logging.Logger.Log($"[ECSControlPanel] Failed to find type: {settings.TypeName}", Logging.LogSeverity.Warning);
+                        Logging.Logger.Log($"Failed to find panel type: {settings.TypeName}", Logging.LogSeverity.Error);
                         continue;
                     }
 
                     var panel = Activator.CreateInstance(type, _world) as IControlPanelSection;
                     if (panel == null)
                     {
-                        Logging.Logger.Log($"[ECSControlPanel] Failed to create instance of {type.Name}", Logging.LogSeverity.Warning);
+                        Logging.Logger.Log($"Failed to create panel instance: {type.Name}", Logging.LogSeverity.Error);
                         continue;
                     }
 
@@ -187,14 +187,15 @@ namespace UltraSim.ECS
                     var panelUI = new PanelSectionUI(panel);
                     _panelsContainer.AddChild(panelUI);
                     _panels.Add(panelUI);
-
-                    Logging.Logger.Log($"[ECSControlPanel] Created panel: {panel.Title}");
+                    createdCount++;
                 }
                 catch (Exception ex)
                 {
-                    Logging.Logger.Log($"[ECSControlPanel] Error creating panel {settings.TypeName}: {ex.Message}", Logging.LogSeverity.Error);
+                    Logging.Logger.Log($"Error creating panel {settings.TypeName}: {ex.Message}", Logging.LogSeverity.Error);
                 }
             }
+
+            Logging.Logger.Log(" - Built Panel UI's");
         }
 
         #endregion

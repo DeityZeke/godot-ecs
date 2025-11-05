@@ -87,7 +87,6 @@ namespace UltraSim.ECS.Systems
         public override void OnInitialize(World world)
         {
             _world = world;
-            LoadSettings();
 
             // Subscribe to button clicks
             SystemSettings.Spawn100.Clicked += () => SpawnEntities(100);

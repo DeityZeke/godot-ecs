@@ -273,7 +273,7 @@ namespace UltraSim.ECS.Systems
             }
 
 #if USE_DEBUG
-            Logger.Log($"â–¶ï¸ Running manual system: {system.Name}");
+            Logger.Log($"Running manual system: {system.Name}");
             var sw = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -281,7 +281,7 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             sw.Stop();
-            Logger.Log($"âœ“ {system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logger.Log($"{system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
 #endif
         }
 
@@ -299,7 +299,7 @@ namespace UltraSim.ECS.Systems
             }
 
 #if USE_DEBUG
-            Logger.Log($"â–¶ï¸ Running manual system: {system.Name}");
+            Logger.Log($"Running manual system: {system.Name}");
             var sw = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -307,7 +307,7 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             sw.Stop();
-            Logger.Log($"âœ“ {system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logger.Log($"{system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
 #endif
         }
 
@@ -333,7 +333,7 @@ namespace UltraSim.ECS.Systems
 
                 foreach (var system in systems)
                 {
-                    string status = system.IsEnabled ? "âœ“" : "âœ—";
+                    string status = system.IsEnabled ? "[ON]" : "[OFF]";
                     sb.AppendLine($"  {status} {system.Name}");
                 }
             }
@@ -346,7 +346,7 @@ namespace UltraSim.ECS.Systems
 
                 foreach (var system in _manualSystems)
                 {
-                    string status = system.IsEnabled ? "âœ“" : "âœ—";
+                    string status = system.IsEnabled ? "[ON]" : "[OFF]";
                     sb.AppendLine($"  {status} {system.Name}");
                 }
             }
