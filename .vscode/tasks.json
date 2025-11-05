@@ -1,18 +1,51 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "build",
-            "command": "D:/Program Files/Godot_v4.5-stable_mono_win64/Godot_v4.5-stable_mono_win64.exe",
-            "type": "process",
-            "args": [
-                "--build-solutions",
-                "--path",
-                "${workspaceRoot}",
-                "--no-window",
-                "-q"
-            ],
-            "problemMatcher": "$msCompile"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dotnet-trace: collect (speedscope)",
+      "type": "shell",
+      "command": "dotnet-trace collect --process-id ${input:pid} --format speedscope -o ${workspaceFolder}/${input:out}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "echo": true
+      }
+    },
+    {
+      "label": "Open speedscope trace (default app)",
+      "type": "shell",
+      "command": "${input:openCmd} ${workspaceFolder}/${input:out}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pid",
+      "type": "promptString",
+      "description": "PID of running Godot (Mono) process",
+      "default": ""
+    },
+    {
+      "id": "out",
+      "type": "promptString",
+      "description": "Output filename (e.g. trace.speedscope.json)",
+      "default": "trace.speedscope.json"
+    },
+    {
+      "id": "openCmd",
+      "type": "pickString",
+      "description": "Command to open a file (choose for your OS)",
+      "options": [
+        "code --open-url", 
+        "open", 
+        "xdg-open"
+      ],
+      "default": "code --open-url"
+    }
+  ]
 }

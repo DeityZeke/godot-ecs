@@ -6,6 +6,8 @@ using System;
 using Godot;
 
 using UltraSim.ECS.Components;
+using UltraSim.ECS.Systems;
+using UltraSim.ECS.Settings;
 
 namespace UltraSim.ECS.Systems
 {
@@ -18,6 +20,26 @@ namespace UltraSim.ECS.Systems
     /// </summary>
     public sealed class AdaptiveMultiMeshRenderSystem : BaseSystem
     {
+        #region Settings
+
+        public sealed class Settings : SettingsManager
+        {
+            public StringSetting EmptySetting { get; private set; }
+
+            public Settings()
+            {
+                EmptySetting = RegisterString("", "",
+                    tooltip: "");
+            }
+        }
+
+        // INTERNAL CLASS SETTINGS, NOT SETTINGSMANAGER GENERIC
+        public Settings SystemSettings { get; } = new();
+        public override SettingsManager? GetSettings() => SystemSettings;
+        //public override ISetting? GetSettings() => SystemSettings;
+
+        #endregion
+
         public override string Name => "AdaptiveMultiMeshRenderSystem";
         public override int SystemId => typeof(AdaptiveMultiMeshRenderSystem).GetHashCode();
         public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(RenderTag), typeof(Visible) };

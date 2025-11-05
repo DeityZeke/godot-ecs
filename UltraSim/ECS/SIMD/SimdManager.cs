@@ -12,7 +12,6 @@ namespace UltraSim.ECS.SIMD
     /// </summary>
     public static class SimdManager
     {
-        private static SimdMode _coreMode = SimdMode.Scalar;
         private static SimdMode _systemsMode = SimdMode.Scalar;
         private static bool _showcaseEnabled = false;
         private static SimdSupport _maxHardwareSupport = SimdSupport.Scalar;
@@ -28,15 +27,13 @@ namespace UltraSim.ECS.SIMD
             // If not in showcase mode, use max hardware capability
             if (!_showcaseEnabled)
             {
-                _coreMode = ConvertToSimdMode(maxSupport);
                 _systemsMode = ConvertToSimdMode(maxSupport);
             }
 
             // Initialize SIMD operation delegates
-            SimdOperations.InitializeCore(_coreMode);
             SimdOperations.InitializeSystems(_systemsMode, _showcaseEnabled, ConvertToSimdMode(_maxHardwareSupport));
 
-            Logger.Log($"[SIMD] Initialized - Hardware: {maxSupport}, Core: {_coreMode}, Systems: {_systemsMode}, Showcase: {_showcaseEnabled}");
+            Logger.Log($"[SIMD] Initialized - Hardware: {maxSupport}, Systems: {_systemsMode}, Showcase: {_showcaseEnabled}");
         }
 
         /// <summary>
@@ -52,39 +49,32 @@ namespace UltraSim.ECS.SIMD
                 if (!_showcaseEnabled)
                 {
                     // Auto mode: use optimal per-operation settings
-                    _coreMode = ConvertToSimdMode(_maxHardwareSupport);
                     _systemsMode = ConvertToSimdMode(_maxHardwareSupport);
                     Logger.Log($"[SIMD] Showcase Mode DISABLED - Using optimal modes per operation");
                 }
                 else
                 {
                     // Showcase mode: start at Scalar
-                    _coreMode = SimdMode.Scalar;
                     _systemsMode = SimdMode.Scalar;
                     Logger.Log($"[SIMD] Showcase Mode ENABLED - Manual mode starting at Scalar");
                 }
 
                 // Reinitialize SIMD operation delegates
-                SimdOperations.InitializeCore(_coreMode);
                 SimdOperations.InitializeSystems(_systemsMode, _showcaseEnabled, ConvertToSimdMode(_maxHardwareSupport));
             }
         }
 
         /// <summary>
-        /// Gets the currently active SIMD mode for a category.
+        /// Gets the currently active SIMD mode for Systems.
         /// </summary>
         public static SimdMode GetMode(SimdCategory category)
         {
-            return category switch
-            {
-                SimdCategory.Core => _coreMode,
-                SimdCategory.Systems => _systemsMode,
-                _ => SimdMode.Scalar
-            };
+            // Only Systems category exists now
+            return _systemsMode;
         }
 
         /// <summary>
-        /// Sets the SIMD mode for a category (only works in showcase mode).
+        /// Sets the SIMD mode for Systems (only works in showcase mode).
         /// </summary>
         public static bool SetMode(SimdCategory category, SimdMode mode)
         {
@@ -98,21 +88,10 @@ namespace UltraSim.ECS.SIMD
                 return false;
             }
 
-            switch (category)
-            {
-                case SimdCategory.Core:
-                    _coreMode = mode;
-                    SimdOperations.InitializeCore(mode); // Reinitialize Core delegates
-                    Logger.Log($"[SIMD] CORE mode changed to {mode}");
-                    return true;
-                case SimdCategory.Systems:
-                    _systemsMode = mode;
-                    SimdOperations.InitializeSystems(mode, true, ConvertToSimdMode(_maxHardwareSupport)); // Showcase mode = true
-                    Logger.Log($"[SIMD] SYSTEMS mode changed to {mode}");
-                    return true;
-                default:
-                    return false;
-            }
+            _systemsMode = mode;
+            SimdOperations.InitializeSystems(mode, true, ConvertToSimdMode(_maxHardwareSupport)); // Showcase mode = true
+            Logger.Log($"[SIMD] SYSTEMS mode changed to {mode}");
+            return true;
         }
 
         /// <summary>

@@ -61,17 +61,8 @@ namespace UltraSim.ECS.SIMD
         // (Reserved for future batch operations: BatchRandomPoints, etc.)
 
         /// <summary>
-        /// Initialize Core ECS SIMD operations based on selected mode.
-        /// Called once at startup and when showcase mode changes.
-        /// </summary>
-        public static void InitializeCore(SimdMode mode)
-        {
-            // Core ECS operations (currently none - all moved to Systems)
-        }
-
-        /// <summary>
         /// Initialize Mathematical SIMD operations based on selected mode.
-        /// Called once at startup and when showcase mode changes.
+        /// Used internally by InitializeSystems.
         /// </summary>
         public static void InitializeMath(SimdMode mode)
         {
