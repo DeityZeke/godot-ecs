@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS
 {
@@ -16,13 +16,15 @@ namespace UltraSim.ECS
     /// </summary>
     public sealed class ComponentManager
     {
-        #region Component Type Registry (Static - backward compatibility)
+        #region Component Type Registry (Shared)
 
-        // Keep as static for now since it's used throughout the codebase
-        // Can be refactored to instance methods later if needed
         private static readonly ConcurrentDictionary<Type, int> _typeToId = new();
         private static readonly List<Type> _idToType = new();
         private static readonly object _typeLock = new();
+        private static ComponentManager? _sharedInstance;
+
+        public static ComponentManager Instance =>
+            _sharedInstance ?? throw new InvalidOperationException("ComponentManager has not been initialized.");
 
         /// <summary>
         /// Registers a component type and returns its ID (thread-safe).
@@ -119,8 +121,8 @@ namespace UltraSim.ECS
         private readonly World _world;
 
         // Deferred component operation queues
-        private readonly ConcurrentQueue<(int entityIndex, int componentTypeId)> _removeQueue = new();
-        private readonly ConcurrentQueue<(int entityIndex, int componentTypeId, object boxedValue)> _addQueue = new();
+        private readonly ConcurrentQueue<(uint entityIndex, int componentTypeId)> _removeQueue = new();
+        private readonly ConcurrentQueue<(uint entityIndex, int componentTypeId, object boxedValue)> _addQueue = new();
 
         #endregion
 
@@ -129,6 +131,7 @@ namespace UltraSim.ECS
         public ComponentManager(World world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
+            _sharedInstance = this;
         }
 
         #endregion
@@ -138,7 +141,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Enqueues a component addition for the next frame.
         /// </summary>
-        public void EnqueueAdd(int entityIndex, int componentTypeId, object boxedValue)
+        public void EnqueueAdd(uint entityIndex, int componentTypeId, object boxedValue)
         {
             _addQueue.Enqueue((entityIndex, componentTypeId, boxedValue));
         }
@@ -146,7 +149,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Enqueues a component removal for the next frame.
         /// </summary>
-        public void EnqueueRemove(int entityIndex, int componentTypeId)
+        public void EnqueueRemove(uint entityIndex, int componentTypeId)
         {
             _removeQueue.Enqueue((entityIndex, componentTypeId));
         }
@@ -166,7 +169,7 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"[ComponentManager] Error removing component: {ex}", LogSeverity.Error);
+                    Logging.Log($"[ComponentManager] Error removing component: {ex}", LogSeverity.Error);
                 }
             }
 
@@ -179,7 +182,7 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"[ComponentManager] Error adding component: {ex}", LogSeverity.Error);
+                    Logging.Log($"[ComponentManager] Error adding component: {ex}", LogSeverity.Error);
                 }
             }
         }

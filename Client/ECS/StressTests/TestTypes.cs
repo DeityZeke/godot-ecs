@@ -1,8 +1,11 @@
 #nullable enable
 
+using UltraSim.ECS;
+using UltraSim;
+
 using System;
 
-namespace UltraSim.ECS.StressTests
+namespace Client.ECS.StressTests
 {
     /// <summary>
     /// Types of stress tests available.
@@ -160,3 +163,5 @@ Delta: {(EndMemoryBytes - StartMemoryBytes) / 1024.0 / 1024.0,31:F2} MB
         }
     }
 }
+
+

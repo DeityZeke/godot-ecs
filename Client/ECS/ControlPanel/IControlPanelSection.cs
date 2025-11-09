@@ -1,7 +1,7 @@
 
 using Godot;
 
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Interface for modular control panel sections.

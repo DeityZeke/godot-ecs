@@ -1,7 +1,7 @@
 
 using System;
 
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Marks a class as a control panel section for auto-discovery.

@@ -1,8 +1,9 @@
 using System;
 
 using Godot;
+using UltraSim.ECS.Settings;
 
-namespace UltraSim.ECS.Settings
+namespace Client.ECS.Settings
 {
     /// <summary>
     /// Optional UI extension for settings.

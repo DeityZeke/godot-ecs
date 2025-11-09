@@ -1,14 +1,14 @@
 #nullable enable
 
 using System;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS.SIMD
 {
     /// <summary>
     /// Manages SIMD mode selection and hardware capability detection.
     /// Provides centralized SIMD configuration for Core ECS and Systems.
-    /// Uses the existing SimdSupport enum from IEnvironmentInfo.
+    /// Uses the shared SimdSupport enum captured via HostEnvironment.
     /// </summary>
     public static class SimdManager
     {
@@ -33,7 +33,7 @@ namespace UltraSim.ECS.SIMD
             // Initialize SIMD operation delegates
             SimdOperations.InitializeSystems(_systemsMode, _showcaseEnabled, ConvertToSimdMode(_maxHardwareSupport));
 
-            Logger.Log($"[SIMD] Initialized - Hardware: {maxSupport}, Systems: {_systemsMode}, Showcase: {_showcaseEnabled}");
+            Logging.Log($"[SIMD] Initialized - Hardware: {maxSupport}, Systems: {_systemsMode}, Showcase: {_showcaseEnabled}");
         }
 
         /// <summary>
@@ -50,13 +50,13 @@ namespace UltraSim.ECS.SIMD
                 {
                     // Auto mode: use optimal per-operation settings
                     _systemsMode = ConvertToSimdMode(_maxHardwareSupport);
-                    Logger.Log($"[SIMD] Showcase Mode DISABLED - Using optimal modes per operation");
+                    Logging.Log($"[SIMD] Showcase Mode DISABLED - Using optimal modes per operation");
                 }
                 else
                 {
                     // Showcase mode: start at Scalar
                     _systemsMode = SimdMode.Scalar;
-                    Logger.Log($"[SIMD] Showcase Mode ENABLED - Manual mode starting at Scalar");
+                    Logging.Log($"[SIMD] Showcase Mode ENABLED - Manual mode starting at Scalar");
                 }
 
                 // Reinitialize SIMD operation delegates
@@ -84,13 +84,13 @@ namespace UltraSim.ECS.SIMD
             // Validate hardware support
             if (!IsModeSupported(mode))
             {
-                Logger.Log($"[SIMD] Mode change REJECTED - {mode} not supported by hardware", LogSeverity.Warning);
+                Logging.Log($"[SIMD] Mode change REJECTED - {mode} not supported by hardware", LogSeverity.Warning);
                 return false;
             }
 
             _systemsMode = mode;
             SimdOperations.InitializeSystems(mode, true, ConvertToSimdMode(_maxHardwareSupport)); // Showcase mode = true
-            Logger.Log($"[SIMD] SYSTEMS mode changed to {mode}");
+            Logging.Log($"[SIMD] SYSTEMS mode changed to {mode}");
             return true;
         }
 

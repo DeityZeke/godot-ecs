@@ -3,9 +3,9 @@
 using Godot;
 using UltraSim.ECS;
 using UltraSim.ECS.SIMD;
-using UltraSim.UI;
+using Client.UI;
 
-namespace UltraSim.Client.ECS.ControlPanel
+namespace Client.ECS.ControlPanel.Sections
 {
     /// <summary>
     /// Control panel section for SIMD performance showcase and benchmarking.

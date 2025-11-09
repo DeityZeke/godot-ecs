@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 using UltraSim.ECS.Threading;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS.Systems
 {
@@ -42,8 +42,8 @@ namespace UltraSim.ECS.Systems
                 _manualSystems.Add(system);
 
 #if USE_DEBUG
-                Logger.Log($"Manual system registered: {system.Name}");
-                Logger.Log($"   Call: systemManager.RunManual<{system.GetType().Name}>()");
+                Logging.Log($"Manual system registered: {system.Name}");
+                Logging.Log($"   Call: systemManager.RunManual<{system.GetType().Name}>()");
 #endif
 
                 return; // Don't add to tick buckets or batching
@@ -62,7 +62,7 @@ namespace UltraSim.ECS.Systems
             RebuildTickBucketsCache();
 
 #if USE_DEBUG
-            Logger.Log($"System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
+            Logging.Log($"System '{system.Name}' registered at {rate} ({rate.ToFrequencyString()})");
 #endif
         }
 
@@ -182,7 +182,7 @@ namespace UltraSim.ECS.Systems
             // Log every 60 frames to avoid spam
             if (World.Current.tickCount % 60 == 0)
             {
-                Logger.Log($"[TickScheduler] Frame {World.Current.tickCount}: Ran {_systemsToRun.Count} systems, skipped {systemsSkipped}");
+                Logging.Log($"[TickScheduler] Frame {World.Current.tickCount}: Ran {_systemsToRun.Count} systems, skipped {systemsSkipped}");
             }
 #endif
         }
@@ -261,19 +261,19 @@ namespace UltraSim.ECS.Systems
         {
             if (!_systemMap.TryGetValue(typeof(T), out var system))
             {
-                Logger.Log($"[SystemManager] System not found: {typeof(T).Name}", LogSeverity.Error);
+                Logging.Log($"[SystemManager] System not found: {typeof(T).Name}", LogSeverity.Error);
                 return;
             }
 
             if (system.Rate != TickRate.Manual)
             {
-                Logger.Log($"[SystemManager] Cannot manually run non-Manual system: {system.Name}", LogSeverity.Error);
-                Logger.Log($"   System has TickRate: {system.Rate}", LogSeverity.Error);
+                Logging.Log($"[SystemManager] Cannot manually run non-Manual system: {system.Name}", LogSeverity.Error);
+                Logging.Log($"   System has TickRate: {system.Rate}", LogSeverity.Error);
                 return;
             }
 
 #if USE_DEBUG
-            Logger.Log($"Running manual system: {system.Name}");
+            Logging.Log($"Running manual system: {system.Name}");
             var sw = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -281,7 +281,7 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             sw.Stop();
-            Logger.Log($"{system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logging.Log($"{system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
 #endif
         }
 
@@ -293,13 +293,13 @@ namespace UltraSim.ECS.Systems
         {
             if (system.Rate != TickRate.Manual)
             {
-                Logger.Log($"[SystemManager] Cannot manually run non-Manual system: {system.Name}", LogSeverity.Error);
-                Logger.Log($"   System has TickRate: {system.Rate}", LogSeverity.Error);
+                Logging.Log($"[SystemManager] Cannot manually run non-Manual system: {system.Name}", LogSeverity.Error);
+                Logging.Log($"   System has TickRate: {system.Rate}", LogSeverity.Error);
                 return;
             }
 
 #if USE_DEBUG
-            Logger.Log($"Running manual system: {system.Name}");
+            Logging.Log($"Running manual system: {system.Name}");
             var sw = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -307,7 +307,7 @@ namespace UltraSim.ECS.Systems
 
 #if USE_DEBUG
             sw.Stop();
-            Logger.Log($"{system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logging.Log($"{system.Name} completed in {sw.Elapsed.TotalMilliseconds:F3}ms");
 #endif
         }
 
@@ -376,7 +376,7 @@ namespace UltraSim.ECS.Systems
             }
 
 #if USE_DEBUG
-            Logger.Log("[TickScheduler] All tick timers reset");
+            Logging.Log("[TickScheduler] All tick timers reset");
 #endif
         }
 

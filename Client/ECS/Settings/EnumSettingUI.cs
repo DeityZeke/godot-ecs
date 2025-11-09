@@ -2,8 +2,9 @@
 using System;
 
 using Godot;
+using UltraSim.ECS.Settings;
 
-namespace UltraSim.ECS.Settings
+namespace Client.ECS.Settings
 {
     /// <summary>
     /// Non-generic wrapper for EnumSettingUI to enable creation from ISetting.

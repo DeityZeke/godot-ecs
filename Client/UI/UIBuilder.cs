@@ -3,7 +3,7 @@
 using System;
 using Godot;
 
-namespace UltraSim.UI
+namespace Client.UI
 {
     /// <summary>
     /// Base class for UI panels with helper methods for quick widget creation.

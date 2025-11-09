@@ -3,17 +3,32 @@
 
 using System;
 
-using UltraSim.Logging;
+using UltraSim;
 using UltraSim.IO;
 
 namespace UltraSim
 {
     /// <summary>
     /// Defines the interface any engine or runtime host must implement to integrate UltraSim.
-    /// Extends IEnvironmentInfo to provide hardware and build information.
+    /// Provides access to runtime/environment metadata and logging hooks.
     /// </summary>
-    public interface IHost : IEnvironmentInfo
+    public interface IHost
     {
+        /// <summary>
+        /// Runtime context containing environment info, build metadata, and reflection helpers.
+        /// </summary>
+        RuntimeContext Runtime { get; }
+
+        /// <summary>
+        /// Host classification (server/client/hybrid).
+        /// </summary>
+        EnvironmentType Environment { get; }
+
+        /// <summary>
+        /// Snapshot of hardware/environment information captured at startup.
+        /// </summary>
+        HostEnvironment EnvironmentInfo => Runtime.Environment;
+
         /// <summary>
         /// Returns a handle to the root object of the engine's scene tree or context.
         /// May return null for headless/test scenarios.

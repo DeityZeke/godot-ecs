@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS
 {
@@ -19,12 +19,13 @@ namespace UltraSim.ECS
         private readonly ArchetypeManager _archetypes;
         
         // Entity storage
-        private readonly Stack<int> _freeIndices = new();
-        private readonly List<int> _entityVersions = new();
-        private readonly Dictionary<int, (int archetypeIdx, int slot)> _entityLookup = new();
+        private readonly Stack<uint> _freeIndices = new();
+        private readonly List<uint> _entityVersions = new() { 0 }; // Index 0 is reserved for Invalid entity (version 0)
+        private readonly Dictionary<uint, (int archetypeIdx, int slot)> _entityLookup = new();
+        private uint _nextEntityIndex = 1; // Start at 1 (0 is reserved for Invalid)
         
         // Deferred operation queues
-        private readonly ConcurrentQueue<int> _destroyQueue = new();
+        private readonly ConcurrentQueue<uint> _destroyQueue = new();
         private readonly ConcurrentQueue<Action<Entity>> _createQueue = new();
 
         public int EntityCount => _entityLookup.Count;
@@ -43,18 +44,28 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Entity Create()
         {
-            int idx = _freeIndices.Count > 0 ? _freeIndices.Pop() : _entityVersions.Count;
-            if (idx == _entityVersions.Count)
-                _entityVersions.Add(0);
+            uint idx;
+            if (_freeIndices.Count > 0)
+            {
+                // Reuse a recycled index - increment its version
+                idx = _freeIndices.Pop();
+                _entityVersions[(int)idx]++;
+            }
+            else
+            {
+                // Allocate a new index - add version 1 to the list
+                idx = _nextEntityIndex++;
+                _entityVersions.Add(1); // First version is 1, not 0
+            }
 
-            var entity = new Entity(idx, _entityVersions[idx]);
-            
+            var entity = new Entity(idx, _entityVersions[(int)idx]);
+
             // Get empty archetype from ArchetypeManager
             var baseArch = _archetypes.GetEmptyArchetype();
-            
+
             baseArch.AddEntity(entity);
             _entityLookup[idx] = (0, baseArch.Count - 1);
-            
+
             return entity;
         }
 
@@ -65,11 +76,21 @@ namespace UltraSim.ECS
         public Entity CreateWithSignature(ComponentSignature signature)
         {
             // Allocate entity ID
-            int idx = _freeIndices.Count > 0 ? _freeIndices.Pop() : _entityVersions.Count;
-            if (idx == _entityVersions.Count)
-                _entityVersions.Add(0);
+            uint idx;
+            if (_freeIndices.Count > 0)
+            {
+                // Reuse a recycled index - increment its version
+                idx = _freeIndices.Pop();
+                _entityVersions[(int)idx]++;
+            }
+            else
+            {
+                // Allocate a new index - add version 1 to the list at position idx
+                idx = _nextEntityIndex++;
+                _entityVersions.Add(1); // First version is 1, not 0
+            }
 
-            var entity = new Entity(idx, _entityVersions[idx]);
+            var entity = new Entity(idx, _entityVersions[(int)idx]);
 
             // Get or create archetype from ArchetypeManager
             var archetype = _archetypes.GetOrCreate(signature);
@@ -98,7 +119,7 @@ namespace UltraSim.ECS
             arch.RemoveAtSwap(loc.slot);
             _entityLookup.Remove(entity.Index);
             _freeIndices.Push(entity.Index);
-            _entityVersions[entity.Index]++;
+            _entityVersions[(int)entity.Index]++;
         }
 
         /// <summary>
@@ -107,9 +128,9 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsAlive(Entity entity)
         {
-            return entity.Index >= 0 &&
+            return entity.Index > 0 &&
                    entity.Index < _entityVersions.Count &&
-                   _entityVersions[entity.Index] == entity.Version &&
+                   _entityVersions[(int)entity.Index] == entity.Version &&
                    _entityLookup.ContainsKey(entity.Index);
         }
 
@@ -137,7 +158,7 @@ namespace UltraSim.ECS
         /// Called by World during component add/remove operations.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UpdateLookup(int entityIndex, Archetype archetype, int slot)
+        public void UpdateLookup(uint entityIndex, Archetype archetype, int slot)
         {
             int archetypeIdx = _archetypes.GetArchetypeIndex(archetype);
             _entityLookup[entityIndex] = (archetypeIdx, slot);
@@ -173,7 +194,7 @@ namespace UltraSim.ECS
             // Process destructions first
             while (_destroyQueue.TryDequeue(out var idx))
             {
-                var entity = new Entity(idx, _entityVersions[idx]);
+                var entity = new Entity(idx, _entityVersions[(int)idx]);
                 Destroy(entity);
             }
 
@@ -187,7 +208,7 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex) 
                 { 
-                    Logger.Log($"[EntityManager] Entity builder exception: {ex}", LogSeverity.Error); 
+                    Logging.Log($"[EntityManager] Entity builder exception: {ex}", LogSeverity.Error); 
                 }
             }
         }

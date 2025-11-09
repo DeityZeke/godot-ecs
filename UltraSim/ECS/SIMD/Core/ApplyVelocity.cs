@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using UltraSim.ECS.Components;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS.SIMD.Core
 {
@@ -29,7 +29,7 @@ namespace UltraSim.ECS.SIMD.Core
         {
             if (!_scalarLogged)
             {
-                Logger.Log("[SIMD] ApplyVelocity_Scalar CALLED (1 entity per iteration)");
+                Logging.Log("[SIMD] ApplyVelocity_Scalar CALLED (1 entity per iteration)");
                 _scalarLogged = true;
             }
 
@@ -56,7 +56,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_sseLogged)
                 {
-                    Logger.Log("[SIMD] ApplyVelocity_SSE CALLED but SSE NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
+                    Logging.Log("[SIMD] ApplyVelocity_SSE CALLED but SSE NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
                     _sseLogged = true;
                 }
                 ApplyVelocity_Scalar(positions, velocities, delta);
@@ -65,7 +65,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_sseLogged)
             {
-                Logger.Log("[SIMD] ApplyVelocity_SSE CALLED (4 entities per iteration) - SSE hardware confirmed");
+                Logging.Log("[SIMD] ApplyVelocity_SSE CALLED (4 entities per iteration) - SSE hardware confirmed");
                 _sseLogged = true;
             }
 
@@ -149,7 +149,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_avx2Logged)
                 {
-                    Logger.Log("[SIMD] ApplyVelocity_AVX2 CALLED but AVX2 NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
+                    Logging.Log("[SIMD] ApplyVelocity_AVX2 CALLED but AVX2 NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
                     _avx2Logged = true;
                 }
                 ApplyVelocity_Scalar(positions, velocities, delta);
@@ -158,7 +158,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_avx2Logged)
             {
-                Logger.Log("[SIMD] ApplyVelocity_AVX2 CALLED (8 entities per iteration) - AVX2 hardware confirmed");
+                Logging.Log("[SIMD] ApplyVelocity_AVX2 CALLED (8 entities per iteration) - AVX2 hardware confirmed");
                 _avx2Logged = true;
             }
 
@@ -260,7 +260,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_avx512Logged)
                 {
-                    Logger.Log("[SIMD] ApplyVelocity_AVX512 CALLED but AVX-512 NOT SUPPORTED - falling back to AVX2", LogSeverity.Warning);
+                    Logging.Log("[SIMD] ApplyVelocity_AVX512 CALLED but AVX-512 NOT SUPPORTED - falling back to AVX2", LogSeverity.Warning);
                     _avx512Logged = true;
                 }
                 ApplyVelocity_AVX2(positions, velocities, delta);
@@ -269,7 +269,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_avx512Logged)
             {
-                Logger.Log("[SIMD] ApplyVelocity_AVX512 CALLED (16 entities per iteration) - AVX-512 hardware confirmed");
+                Logging.Log("[SIMD] ApplyVelocity_AVX512 CALLED (16 entities per iteration) - AVX-512 hardware confirmed");
                 _avx512Logged = true;
             }
 

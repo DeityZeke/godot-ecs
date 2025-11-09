@@ -1,19 +1,20 @@
-
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 
 using UltraSim;
 
-namespace UltraSim.Logging
+namespace UltraSim
 {
     /// <summary>
     /// Thread-safe logging system. 
     /// Producers enqueue lightweight log entries from any thread.
     /// The host drains them periodically (e.g. each frame).
     /// </summary>
-    public static class Logger
+    public static class Logging
     {
         private static readonly ConcurrentQueue<LogEntry> _queue = new();
+        private static IHost? _host;
         private static LogSeverity _minSeverity = LogSeverity.Info;
 
         /// <summary>
@@ -41,17 +42,22 @@ namespace UltraSim.Logging
         /// </summary>
         public static bool TryDequeue(out LogEntry entry) => _queue.TryDequeue(out entry);
 
+        public static IHost? Host
+        {
+            get => _host;
+            set => _host = value;
+        }
+
         /// <summary>
         /// Drains all queued logs and forwards them to the host.
         /// </summary>
         public static void DrainToHost()
         {
-            var host = SimContext.Host;
-            if (host == null)
+            if (_host == null)
                 return;
 
             while (_queue.TryDequeue(out var entry))
-                host.Log(entry);
+                _host.Log(entry);
         }
 
         /// <summary>
@@ -60,3 +66,29 @@ namespace UltraSim.Logging
         public static void Clear() => _queue.Clear();
     }
 }
+    public readonly struct LogEntry
+    {
+        public readonly DateTime Timestamp;
+        public readonly string Message;
+        public readonly LogSeverity Severity;
+        public readonly string? Source;
+
+        public LogEntry(string message, LogSeverity severity = LogSeverity.Info, string? source = null)
+        {
+            Timestamp = DateTime.UtcNow;
+            Message = message;
+            Severity = severity;
+            Source = source;
+        }
+
+        public override string ToString()
+            => $"[{Timestamp:HH:mm:ss}] [{Severity}] {Source ?? "ECS"}: {Message}";
+    }
+
+    public enum LogSeverity
+    {
+        Debug,
+        Info,
+        Warning,
+        Error,
+    }

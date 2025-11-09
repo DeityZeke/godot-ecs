@@ -5,8 +5,9 @@ using System.Linq;
 using System.Reflection;
 
 using Godot;
+using UltraSim;
 
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Manages control panel section configuration, loading from config file or auto-discovery.
@@ -87,7 +88,7 @@ namespace UltraSim.ECS
                     }
                     catch (Exception ex)
                     {
-                        Logging.Logger.Log($"Failed to instantiate panel {type.Name}: {ex.Message}", Logging.LogSeverity.Error);
+                        Logging.Log($"Failed to instantiate panel {type.Name}: {ex.Message}", LogSeverity.Error);
                     }
                 }
             }
@@ -104,7 +105,7 @@ namespace UltraSim.ECS
             var err = _config.Load(CONFIG_PATH);
             if (err != Error.Ok)
             {
-                Logging.Logger.Log($"Failed to load panel config: {err}", Logging.LogSeverity.Error);
+                Logging.Log($"Failed to load panel config: {err}", LogSeverity.Error);
                 return;
             }
 
@@ -150,7 +151,7 @@ namespace UltraSim.ECS
             var err = _config.Save(CONFIG_PATH);
             if (err != Error.Ok)
             {
-                Logging.Logger.Log($"Failed to save panel config: {err}", Logging.LogSeverity.Error);
+                Logging.Log($"Failed to save panel config: {err}", LogSeverity.Error);
             }
         }
 
@@ -163,3 +164,5 @@ namespace UltraSim.ECS
         }
     }
 }
+
+

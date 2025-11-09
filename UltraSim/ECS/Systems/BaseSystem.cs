@@ -8,7 +8,7 @@ using System.IO;
 using UltraSim.IO;
 using UltraSim.Configuration;
 using UltraSim.ECS.Settings;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS.Systems
 {
@@ -134,10 +134,10 @@ namespace UltraSim.ECS.Systems
             var error = config.Save(path);
 
             if (error != Error.Ok)
-                Logger.Log($"[BaseSystem] Failed to save settings for {Name}: {error}", LogSeverity.Error);
+                Logging.Log($"[BaseSystem] Failed to save settings for {Name}: {error}", LogSeverity.Error);
 #if USE_DEBUG
     else
-        Logger.Log($"[BaseSystem] Saved settings for {Name} to {path}");
+        Logging.Log($"[BaseSystem] Saved settings for {Name} to {path}");
 #endif
         }
 
@@ -154,7 +154,7 @@ namespace UltraSim.ECS.Systems
             if (!File.Exists(path))
             {
 #if USE_DEBUG
-        Logger.Log($"[BaseSystem] No settings file found for {Name}, using defaults");
+        Logging.Log($"[BaseSystem] No settings file found for {Name}, using defaults");
 #endif
                 return;
             }
@@ -164,13 +164,13 @@ namespace UltraSim.ECS.Systems
 
             if (error != Error.Ok)
             {
-                Logger.Log($"[BaseSystem] Failed to load settings for {Name}: {error}", LogSeverity.Error);
+                Logging.Log($"[BaseSystem] Failed to load settings for {Name}: {error}", LogSeverity.Error);
                 return;
             }
 
             settings.Deserialize(config, Name);
 #if USE_DEBUG
-    Logger.Log($"[BaseSystem] Loaded settings for {Name} from {path}");
+    Logging.Log($"[BaseSystem] Loaded settings for {Name} from {path}");
 #endif
         }
 

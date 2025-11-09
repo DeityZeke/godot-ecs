@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS
 {
@@ -46,7 +46,7 @@ namespace UltraSim.ECS
             public enum Type { AddComponent, RemoveComponent, DestroyEntity }
 
             public Type CommandType;
-            public int EntityIndex;
+            public uint EntityIndex;
             public int ComponentTypeId;
             public object? BoxedValue;
         }
@@ -124,7 +124,7 @@ namespace UltraSim.ECS
         /// Queues an entity for destruction by index.
         /// Thread-safe: Can be called from parallel systems.
         /// </summary>
-        public void DestroyEntity(int entityIndex)
+        public void DestroyEntity(uint entityIndex)
         {
             _threadLocalBuffers.Value!.Add(new ThreadCommand
             {
@@ -141,7 +141,7 @@ namespace UltraSim.ECS
         /// Thread-safe: Queue component addition from any thread.
         /// Used primarily in parallel systems.
         /// </summary>
-        public void AddComponent(int entityIndex, int componentTypeId, object boxedValue)
+        public void AddComponent(uint entityIndex, int componentTypeId, object boxedValue)
         {
             _threadLocalBuffers.Value!.Add(new ThreadCommand
             {
@@ -156,7 +156,7 @@ namespace UltraSim.ECS
         /// Thread-safe: Queue component removal from any thread.
         /// Used primarily in parallel systems.
         /// </summary>
-        public void RemoveComponent(int entityIndex, int componentTypeId)
+        public void RemoveComponent(uint entityIndex, int componentTypeId)
         {
             _threadLocalBuffers.Value!.Add(new ThreadCommand
             {
@@ -197,7 +197,7 @@ namespace UltraSim.ECS
 
             if (created > 0 || destroyed > 0)
             {
-                Logger.Log($"[CommandBuffer] Applied: {created} created, {destroyed} destroyed in {sw.Elapsed.TotalMilliseconds:F3}ms");
+                Logging.Log($"[CommandBuffer] Applied: {created} created, {destroyed} destroyed in {sw.Elapsed.TotalMilliseconds:F3}ms");
             }
 
             Clear();
@@ -224,7 +224,7 @@ namespace UltraSim.ECS
                             break;
 
                         case ThreadCommand.Type.DestroyEntity:
-                            world.EnqueueDestroyEntity(new Entity(cmd.EntityIndex, 0)); // Version not needed for queue
+                            world.EnqueueDestroyEntity(new Entity(cmd.EntityIndex, 1)); // Version 1 as placeholder (lookup uses index only)
                             break;
                     }
                 }
@@ -263,7 +263,7 @@ namespace UltraSim.ECS
                 // Set all component values using pre-computed typeIds
                 if (!world.TryGetEntityLocation(entity, out var archetype, out var slot))
                 {
-                    Logger.Log($"[CommandBuffer] Failed to get location for entity {entity}", LogSeverity.Error);
+                    Logging.Log($"[CommandBuffer] Failed to get location for entity {entity}", LogSeverity.Error);
                     continue;
                 }
 

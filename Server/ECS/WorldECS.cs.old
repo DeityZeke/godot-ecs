@@ -1,12 +1,13 @@
 #nullable enable
 
+using System.Diagnostics;
 using Godot;
 
 using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.SIMD;
 using UltraSim.ECS.Systems;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.WorldECS
 {
@@ -27,6 +28,8 @@ namespace UltraSim.WorldECS
         private int _frameCount = 0;
 
         #region IHost Implementation
+
+        public RuntimeContext Runtime { get; private set; } = null!;
 
         public object GetRootHandle() => GetTree().Root;
 
@@ -156,6 +159,9 @@ namespace UltraSim.WorldECS
 
         public override void _Ready()
         {
+            // Create RuntimeContext with environment capture
+            Runtime = new RuntimeContext(HostEnvironment.Capture(), "Server");
+
             SimContext.Initialize(this);
 
             // Initialize SIMD manager with detected hardware capabilities
@@ -186,6 +192,17 @@ namespace UltraSim.WorldECS
             // Initialize world (processes system queues)
             _world.Initialize();
 
+            // Subscribe to OnFrameComplete to connect hybrid render systems after frame 1
+            int frameCount = 0;
+            _world.OnFrameComplete += () =>
+            {
+                frameCount++;
+                if (frameCount == 2) // Wait for frame 2 to ensure all systems are registered
+                {
+                    ConnectHybridRenderSystems();
+                }
+            };
+
             GD.Print("========================================");
             GD.Print("         ECS WORLD READY                ");
             GD.Print("  Press F12 to open Control Panel      ");
@@ -194,7 +211,10 @@ namespace UltraSim.WorldECS
 
         public override void _Process(double delta)
         {
-            UltraSim.Logging.Logger.DrainToHost();
+            UltraSim.Logging.DrainToHost();
+
+            // Cache camera on main thread for systems that need it (avoids thread issues)
+            CacheCamera();
 
             var start = Time.GetTicksUsec();
             _world.Tick(delta);
@@ -253,20 +273,102 @@ namespace UltraSim.WorldECS
 
         private void RegisterSystems()
         {
+            // Chunk system (runs first for spatial partitioning)
+            _world.EnqueueSystemCreate<UltraSim.Server.ECS.Systems.ChunkSystem>();
+            _world.EnqueueSystemEnable<UltraSim.Server.ECS.Systems.ChunkSystem>();
+
             // Entity spawner (for on-demand entity creation)
-            _world.EnqueueSystemCreate(new EntitySpawnerSystem());
+            _world.EnqueueSystemCreate<EntitySpawnerSystem>();
             _world.EnqueueSystemEnable<EntitySpawnerSystem>();
 
             // Movement systems
-            _world.EnqueueSystemCreate(new OptimizedMovementSystem());
+            _world.EnqueueSystemCreate<OptimizedMovementSystem>();
             _world.EnqueueSystemEnable<OptimizedMovementSystem>();
 
-            _world.EnqueueSystemCreate(new OptimizedPulsingMovementSystem());
+            _world.EnqueueSystemCreate<OptimizedPulsingMovementSystem>();
             _world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
 
-            // Rendering system
-            _world.EnqueueSystemCreate(new AdaptiveMultiMeshRenderSystem());
-            _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
+            // Hybrid rendering system (zone assignment based on camera position)
+            _world.EnqueueSystemCreate<UltraSim.Client.ECS.Systems.HybridRenderSystem>();
+            _world.EnqueueSystemEnable<UltraSim.Client.ECS.Systems.HybridRenderSystem>();
+
+            // Core bubble rendering (individual MeshInstance3D per entity)
+            _world.EnqueueSystemCreate<UltraSim.Client.ECS.Systems.MeshInstanceBubbleManager>();
+            _world.EnqueueSystemEnable<UltraSim.Client.ECS.Systems.MeshInstanceBubbleManager>();
+
+            // Near zone rendering (MultiMesh batching per chunk)
+            _world.EnqueueSystemCreate<UltraSim.Client.ECS.Systems.MultiMeshZoneManager>();
+            _world.EnqueueSystemEnable<UltraSim.Client.ECS.Systems.MultiMeshZoneManager>();
+
+            // Old rendering system (DISABLED - replaced by hybrid renderer)
+            // _world.EnqueueSystemCreate<AdaptiveMultiMeshRenderSystem>();
+            // _world.EnqueueSystemEnable<AdaptiveMultiMeshRenderSystem>();
+        }
+
+        private void ConnectHybridRenderSystems()
+        {
+            // Get ChunkManager from ChunkSystem
+            var chunkSystemBase = _world.Systems.GetSystem<UltraSim.Server.ECS.Systems.ChunkSystem>();
+
+            // Debug: List all registered systems if lookup fails
+            if (chunkSystemBase == null)
+            {
+                GD.Print("[WorldECS] ChunkSystem lookup failed. Registered systems:");
+                foreach (var sys in _world.Systems.Systems)
+                {
+                    GD.Print($"  - {sys.GetType().FullName} ({sys.Name})");
+                }
+                GD.PushWarning("[WorldECS] ChunkSystem not found - hybrid rendering disabled!");
+                return;
+            }
+
+            var chunkSystem = chunkSystemBase as UltraSim.Server.ECS.Systems.ChunkSystem;
+            if (chunkSystem == null)
+            {
+                GD.PushWarning("[WorldECS] ChunkSystem cast failed - hybrid rendering disabled!");
+                return;
+            }
+
+            var chunkManager = chunkSystem.GetChunkManager();
+            if (chunkManager == null)
+            {
+                GD.PushWarning("[WorldECS] ChunkManager not initialized - hybrid rendering disabled!");
+                return;
+            }
+
+            // Connect HybridRenderSystem
+            var hybridRenderSystemBase = _world.Systems.GetSystem<UltraSim.Client.ECS.Systems.HybridRenderSystem>();
+            var hybridRenderSystem = hybridRenderSystemBase as UltraSim.Client.ECS.Systems.HybridRenderSystem;
+            if (hybridRenderSystem != null)
+            {
+                hybridRenderSystem.SetChunkManager(chunkManager);
+                GD.Print("[WorldECS] Connected HybridRenderSystem to ChunkManager");
+            }
+
+            // Connect MultiMeshZoneManager
+            var multiMeshManagerBase = _world.Systems.GetSystem<UltraSim.Client.ECS.Systems.MultiMeshZoneManager>();
+            var multiMeshManager = multiMeshManagerBase as UltraSim.Client.ECS.Systems.MultiMeshZoneManager;
+            if (multiMeshManager != null)
+            {
+                multiMeshManager.SetChunkManager(chunkManager);
+                GD.Print("[WorldECS] Connected MultiMeshZoneManager to ChunkManager");
+            }
+        }
+
+        private void CacheCamera()
+        {
+            var camera = GetViewport()?.GetCamera3D();
+            if (camera != null)
+            {
+                CameraCache.Position = camera.GlobalPosition;
+                CameraCache.FrustumPlanes = camera.GetFrustum();
+                CameraCache.IsValid = true;
+            }
+            else
+            {
+                CameraCache.IsValid = false;
+                CameraCache.FrustumPlanes = null;
+            }
         }
 
         private void CreateControlPanel()

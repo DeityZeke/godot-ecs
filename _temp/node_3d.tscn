@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://k24se2kqd1v8"]
+
+[ext_resource type="Script" uid="uid://bi33y4llt3udl" path="res://_temp/WorldBenchmark.cs" id="1_lwtxh"]
+
+[node name="Node3D" type="Node3D"]
+script = ExtResource("1_lwtxh")

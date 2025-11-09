@@ -5,11 +5,12 @@ using System;
 
 using Godot;
 
+using UltraSim.ECS;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Systems;
 using UltraSim.ECS.Settings;
 
-namespace UltraSim.ECS.Systems
+namespace Client.ECS.Systems
 {
     /// <summary>
     /// FPS-ADAPTIVE MultiMesh rendering system.
@@ -95,7 +96,7 @@ namespace UltraSim.ECS.Systems
         {
             GD.Print("[AdaptiveMultiMeshRenderSystem] Initializing with FPS-adaptive scaling.");
 
-            _cachedQuery = world.Query(typeof(Position), typeof(RenderTag), typeof(Visible));
+            _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible));
 
             // ZERO-ALLOCATION: Pre-allocate to MaxCapacity to avoid resize GC
             _transforms = new Transform3D[MaxCapacity];

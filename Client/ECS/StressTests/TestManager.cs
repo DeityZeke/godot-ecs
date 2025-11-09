@@ -1,11 +1,14 @@
 #nullable enable
 
+using UltraSim.ECS;
+using UltraSim;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace UltraSim.ECS.StressTests
+namespace Client.ECS.StressTests
 {
     /// <summary>
     /// Manages stress test execution, sequencing, and results reporting.
@@ -48,7 +51,7 @@ namespace UltraSim.ECS.StressTests
         public void QueueTest(StressTestBase test)
         {
             testQueue.Enqueue(test);
-            Logging.Logger.Log($"[TestManager] Queued: {test.TestName}");
+            Logging.Log($"[TestManager] Queued: {test.TestName}");
         }
 
         /// <summary>
@@ -58,7 +61,7 @@ namespace UltraSim.ECS.StressTests
         {
             if (testQueue.Count == 0)
             {
-                Logging.Logger.Log("[TestManager] No tests queued", Logging.LogSeverity.Warning);
+                Logging.Log("[TestManager] No tests queued", LogSeverity.Warning);
                 return;
             }
 
@@ -93,7 +96,7 @@ namespace UltraSim.ECS.StressTests
                 var result = currentTest.GetResults();
                 completedResults.Add(result);
 
-                Logging.Logger.Log(result.GenerateReport());
+                Logging.Log(result.GenerateReport());
 
                 currentTest.Cleanup();
                 currentTest = null;
@@ -101,12 +104,12 @@ namespace UltraSim.ECS.StressTests
                 // Start next test if any
                 if (testQueue.Count > 0)
                 {
-                    Logging.Logger.Log("\n[TestManager] Starting next test...\n");
+                    Logging.Log("\n[TestManager] Starting next test...\n");
                     StartNextTest();
                 }
                 else
                 {
-                    Logging.Logger.Log("\n[TestManager] ALL TESTS COMPLETED\n");
+                    Logging.Log("\n[TestManager] ALL TESTS COMPLETED\n");
                     PrintSummary();
 
                     // Final export
@@ -131,13 +134,13 @@ namespace UltraSim.ECS.StressTests
         {
             if (completedResults.Count == 0)
             {
-                Logging.Logger.Log("[TestManager] No completed tests to summarize.");
+                Logging.Log("[TestManager] No completed tests to summarize.");
                 return;
             }
 
-            Logging.Logger.Log("\n=================================================");
-            Logging.Logger.Log("         TEST SUITE SUMMARY                 ");
-            Logging.Logger.Log("=================================================");
+            Logging.Log("\n=================================================");
+            Logging.Log("         TEST SUITE SUMMARY                 ");
+            Logging.Log("=================================================");
 
             int passed = 0;
             int failed = 0;
@@ -147,14 +150,14 @@ namespace UltraSim.ECS.StressTests
                 string status = result.Crashed ? "FAIL" : "PASS";
                 if (result.Crashed) failed++; else passed++;
 
-                Logging.Logger.Log($"{result.TestType,-15} {status,-8} {result.AverageFrameTimeMs,8:F2}ms");
+                Logging.Log($"{result.TestType,-15} {status,-8} {result.AverageFrameTimeMs,8:F2}ms");
             }
 
-            Logging.Logger.Log("=================================================");
-            Logging.Logger.Log($"Total Tests: {completedResults.Count,-29}");
-            Logging.Logger.Log($"Passed: {passed,-34}");
-            Logging.Logger.Log($"Failed: {failed,-34}");
-            Logging.Logger.Log("=================================================\n");
+            Logging.Log("=================================================");
+            Logging.Log($"Total Tests: {completedResults.Count,-29}");
+            Logging.Log($"Passed: {passed,-34}");
+            Logging.Log($"Failed: {failed,-34}");
+            Logging.Log("=================================================\n");
         }
 
         /// <summary>
@@ -164,7 +167,7 @@ namespace UltraSim.ECS.StressTests
         {
             if (completedResults.Count == 0)
             {
-                Logging.Logger.Log($"[TestManager] WARNING: No results to export (0 completed tests)");
+                Logging.Log($"[TestManager] WARNING: No results to export (0 completed tests)");
                 return;
             }
 
@@ -185,26 +188,26 @@ namespace UltraSim.ECS.StressTests
 
                 // Print FULL path so user can find it
                 string fullPath = Path.GetFullPath(filePath);
-                Logging.Logger.Log($"");
-                Logging.Logger.Log($"============================================================");
-                Logging.Logger.Log($" CSV EXPORTED");
-                Logging.Logger.Log($"============================================================");
-                Logging.Logger.Log($" Results: {completedResults.Count} tests");
-                Logging.Logger.Log($" Frames:  {totalFrames}");
-                Logging.Logger.Log($" Path:    {fullPath}");
-                Logging.Logger.Log($"============================================================");
-                Logging.Logger.Log($"");
+                Logging.Log($"");
+                Logging.Log($"============================================================");
+                Logging.Log($" CSV EXPORTED");
+                Logging.Log($"============================================================");
+                Logging.Log($" Results: {completedResults.Count} tests");
+                Logging.Log($" Frames:  {totalFrames}");
+                Logging.Log($" Path:    {fullPath}");
+                Logging.Log($"============================================================");
+                Logging.Log($"");
             }
             catch (Exception ex)
             {
-                Logging.Logger.Log($"", Logging.LogSeverity.Error);
-                Logging.Logger.Log($"============================================================", Logging.LogSeverity.Error);
-                Logging.Logger.Log($" CSV EXPORT FAILED", Logging.LogSeverity.Error);
-                Logging.Logger.Log($"============================================================", Logging.LogSeverity.Error);
-                Logging.Logger.Log($" Path:  {filePath}", Logging.LogSeverity.Error);
-                Logging.Logger.Log($" Error: {ex.Message}", Logging.LogSeverity.Error);
-                Logging.Logger.Log($"============================================================", Logging.LogSeverity.Error);
-                Logging.Logger.Log($"", Logging.LogSeverity.Error);
+                Logging.Log($"", LogSeverity.Error);
+                Logging.Log($"============================================================", LogSeverity.Error);
+                Logging.Log($" CSV EXPORT FAILED", LogSeverity.Error);
+                Logging.Log($"============================================================", LogSeverity.Error);
+                Logging.Log($" Path:  {filePath}", LogSeverity.Error);
+                Logging.Log($" Error: {ex.Message}", LogSeverity.Error);
+                Logging.Log($"============================================================", LogSeverity.Error);
+                Logging.Log($"", LogSeverity.Error);
             }
         }
 
@@ -228,7 +231,7 @@ namespace UltraSim.ECS.StressTests
                 ExportCSV(path);
             }
 
-            Logging.Logger.Log("[TestManager] Stopped");
+            Logging.Log("[TestManager] Stopped");
         }
 
         /// <summary>
@@ -239,7 +242,9 @@ namespace UltraSim.ECS.StressTests
             completedResults.Clear();
             totalFrames = 0;
             csvExportedAt1000 = false;
-            Logging.Logger.Log("[TestManager] Results cleared");
+            Logging.Log("[TestManager] Results cleared");
         }
     }
 }
+
+

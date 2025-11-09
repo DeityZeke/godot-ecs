@@ -1,9 +1,12 @@
 #nullable enable
 
+using UltraSim.ECS;
+using UltraSim;
+
 using System;
 using UltraSim.ECS.Components;
 
-namespace UltraSim.ECS.StressTests
+namespace Client.ECS.StressTests
 {
     /// <summary>
     /// Tests pure entity creation throughput.
@@ -66,7 +69,7 @@ namespace UltraSim.ECS.StressTests
                 float progress = (float)currentCount / config.TargetEntityCount * 100f;
                 if (frameCount % 60 == 0) // Every second at 60fps
                 {
-                    Logging.Logger.Log($"[SpawnTest] Progress: {progress:F1}% ({currentCount:N0}/{config.TargetEntityCount:N0})");
+                    Logging.Log($"[SpawnTest] Progress: {progress:F1}% ({currentCount:N0}/{config.TargetEntityCount:N0})");
                 }
             }
         }
@@ -87,3 +90,5 @@ namespace UltraSim.ECS.StressTests
         }
     }
 }
+
+

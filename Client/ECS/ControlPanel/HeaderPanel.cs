@@ -1,10 +1,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Godot;
-using UltraSim.UI;
+using UltraSim;
+using UltraSim.ECS;
+using Client.UI;
 
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Header panel displaying ECS statistics in an 8-column grid (4 label-data pairs).
@@ -193,14 +196,16 @@ public void Update(double delta)
             else
                 _world.DisableAutoSave();
 
-            Logging.Logger.Log($"Auto-save {(enabled ? "enabled" : "disabled")}");
+            Logging.Log($"Auto-save {(enabled ? "enabled" : "disabled")}");
         }
 
         private void OnSaveRateChanged(double value)
         {
             float newInterval = (float)value;
             _world.SetAutoSaveInterval(newInterval);
-            Logging.Logger.Log($"Auto-save interval changed to {newInterval:F0}s");
+            Logging.Log($"Auto-save interval changed to {newInterval:F0}s");
         }
     }
 }
+
+

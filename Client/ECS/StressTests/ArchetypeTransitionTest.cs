@@ -1,10 +1,13 @@
 #nullable enable
 
+using UltraSim.ECS;
+using UltraSim;
+
 using System;
 using System.Collections.Generic;
 using UltraSim.ECS.Components;
 
-namespace UltraSim.ECS.StressTests
+namespace Client.ECS.StressTests
 {
     // Test components for archetype transitions
     public struct Temperature
@@ -50,7 +53,7 @@ namespace UltraSim.ECS.StressTests
             base.Initialize();
 
             // Spawn initial entities with base components
-            Logging.Logger.Log($"[ArchetypeTest] Spawning {config.TargetEntityCount:N0} base entities...");
+            Logging.Log($"[ArchetypeTest] Spawning {config.TargetEntityCount:N0} base entities...");
 
             for (int i = 0; i < config.TargetEntityCount; i++)
             {
@@ -80,7 +83,7 @@ namespace UltraSim.ECS.StressTests
             }
 
             result.TotalEntitiesCreated = testEntities.Count;
-            Logging.Logger.Log($"[ArchetypeTest] Spawned {testEntities.Count:N0} entities");
+            Logging.Log($"[ArchetypeTest] Spawned {testEntities.Count:N0} entities");
         }
 
         protected override void UpdateTest(float deltaTime)
@@ -152,16 +155,16 @@ namespace UltraSim.ECS.StressTests
             if (frameCount % 60 == 0)
             {
                 float opsPerSec = (totalComponentAdds + totalComponentRemoves) / elapsedTime;
-                Logging.Logger.Log($"[ArchetypeTest] Frame {frameCount}: Archetypes={archetypeCount}, Peak={peakArchetypeCount}, Ops/sec={opsPerSec:F0}");
+                Logging.Log($"[ArchetypeTest] Frame {frameCount}: Archetypes={archetypeCount}, Peak={peakArchetypeCount}, Ops/sec={opsPerSec:F0}");
             }
         }
 
         protected override void Complete()
         {
             base.Complete();
-            Logging.Logger.Log($"[ArchetypeTest] Total Component Adds: {totalComponentAdds:N0}");
-            Logging.Logger.Log($"[ArchetypeTest] Total Component Removes: {totalComponentRemoves:N0}");
-            Logging.Logger.Log($"[ArchetypeTest] Peak Archetype Count: {peakArchetypeCount}");
+            Logging.Log($"[ArchetypeTest] Total Component Adds: {totalComponentAdds:N0}");
+            Logging.Log($"[ArchetypeTest] Total Component Removes: {totalComponentRemoves:N0}");
+            Logging.Log($"[ArchetypeTest] Peak Archetype Count: {peakArchetypeCount}");
         }
 
         public override void Cleanup()
@@ -172,3 +175,5 @@ namespace UltraSim.ECS.StressTests
         }
     }
 }
+
+

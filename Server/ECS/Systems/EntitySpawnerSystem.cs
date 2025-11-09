@@ -6,6 +6,7 @@ using Godot;
 
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
+using UltraSim.ECS.Chunk;
 
 namespace UltraSim.ECS.Systems
 {
@@ -79,7 +80,7 @@ namespace UltraSim.ECS.Systems
         public override string Name => "Entity Spawner";
         public override int SystemId => typeof(EntitySpawnerSystem).GetHashCode();
         public override Type[] ReadSet { get; } = Array.Empty<Type>();
-        public override Type[] WriteSet { get; } = Array.Empty<Type>();
+        public override Type[] WriteSet { get; } = new[] { typeof(Position), typeof(ChunkOwner) };
         public override TickRate Rate => TickRate.Manual; // Only runs when triggered
 
         private World? _world;
@@ -96,7 +97,8 @@ namespace UltraSim.ECS.Systems
             SystemSettings.Spawn1000000.Clicked += () => SpawnEntities(1000000);
             SystemSettings.ClearAll.Clicked += ClearAllEntities;
 
-            Logging.Logger.Log($"[{Name}] Initialized with spawn radius {SystemSettings.SpawnRadius.Value}");
+            Logging.Log($"[{Name}] Initialized with spawn radius {SystemSettings.SpawnRadius.Value}");
+            Logging.Log($"[{Name}] Note: Entities will be assigned to chunks by ChunkSystem");
         }
 
         public override void Update(World world, double delta)
@@ -108,7 +110,7 @@ namespace UltraSim.ECS.Systems
         {
             if (_world == null)
             {
-                Logging.Logger.Log($"[{Name}] Cannot spawn - world is null!", Logging.LogSeverity.Error);
+                Logging.Log($"[{Name}] Cannot spawn - world is null!", LogSeverity.Error);
                 return;
             }
 
@@ -121,7 +123,7 @@ namespace UltraSim.ECS.Systems
             float minFreq = SystemSettings.PulseFrequencyMin.Value;
             float maxFreq = SystemSettings.PulseFrequencyMax.Value;
 
-            Logging.Logger.Log($"[{Name}] Spawning {count} entities...");
+            Logging.Log($"[{Name}] Spawning {count} entities...");
 
             for (int i = 0; i < count; i++)
             {
@@ -134,6 +136,7 @@ namespace UltraSim.ECS.Systems
                 float phaseOffset = Utilities.RandomRange(0f, Utilities.TWO_PI);
 
                 // Create entity with ALL components at once (NO archetype thrashing!)
+                // ChunkSystem will automatically assign entities to chunks based on Position
                 buffer.CreateEntity(builder =>
                 {
                     builder.Add(new Position
@@ -171,19 +174,20 @@ namespace UltraSim.ECS.Systems
             sw.Stop();
             double applyTime = sw.Elapsed.TotalMilliseconds;
 
-            Logging.Logger.Log($"[{Name}] Spawned {count} entities - Queue: {queueTime:F3}ms, Apply: {applyTime:F3}ms, Total: {queueTime + applyTime:F3}ms");
+            Logging.Log($"[{Name}] Spawned {count} entities - Queue: {queueTime:F3}ms, Apply: {applyTime:F3}ms, Total: {queueTime + applyTime:F3}ms");
+            Logging.Log($"[{Name}] ChunkSystem will assign entities to chunks on next assignment cycle");
         }
 
         private void ClearAllEntities()
         {
             if (_world == null)
             {
-                Logging.Logger.Log($"[{Name}] Cannot clear - world is null!", Logging.LogSeverity.Error);
+                Logging.Log($"[{Name}] Cannot clear - world is null!", LogSeverity.Error);
                 return;
             }
 
             int entityCount = _world.EntityCount;
-            Logging.Logger.Log($"[{Name}] Clearing {entityCount} entities...");
+            Logging.Log($"[{Name}] Clearing {entityCount} entities...");
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -199,7 +203,7 @@ namespace UltraSim.ECS.Systems
             }
 
             sw.Stop();
-            Logging.Logger.Log($"[{Name}] Cleared {entityCount} entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logging.Log($"[{Name}] Cleared {entityCount} entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
         }
     }
 }

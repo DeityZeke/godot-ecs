@@ -1,10 +1,13 @@
 #nullable enable
 
+using UltraSim.ECS;
+using UltraSim;
+
 using System;
 using System.Linq;
 using UltraSim.ECS.Components;
 
-namespace UltraSim.ECS.StressTests
+namespace Client.ECS.StressTests
 {
     /// <summary>
     /// Tests rapid create/destroy cycles.
@@ -31,7 +34,7 @@ namespace UltraSim.ECS.StressTests
             base.Initialize();
 
             // Initial spawn to reach target
-            Logging.Logger.Log($"[ChurnTest] Pre-spawning {config.TargetEntityCount:N0} entities...");
+            Logging.Log($"[ChurnTest] Pre-spawning {config.TargetEntityCount:N0} entities...");
 
             for (int i = 0; i < config.TargetEntityCount; i++)
             {
@@ -41,7 +44,7 @@ namespace UltraSim.ECS.StressTests
             buffer.Apply(world);
             result.TotalEntitiesCreated = config.TargetEntityCount;
 
-            Logging.Logger.Log($"[ChurnTest] Initial spawn complete");
+            Logging.Log($"[ChurnTest] Initial spawn complete");
         }
 
         protected override void UpdateTest(float deltaTime)
@@ -93,7 +96,7 @@ namespace UltraSim.ECS.StressTests
             if (frameCount % 60 == 0)
             {
                 float churnRate = (result.TotalEntitiesCreated + result.TotalEntitiesDestroyed) / elapsedTime;
-                Logging.Logger.Log($"[ChurnTest] Frame {frameCount}: Entities={currentCount:N0}, ChurnRate={churnRate:F0} ops/sec");
+                Logging.Log($"[ChurnTest] Frame {frameCount}: Entities={currentCount:N0}, ChurnRate={churnRate:F0} ops/sec");
             }
         }
 
@@ -122,3 +125,5 @@ namespace UltraSim.ECS.StressTests
         }
     }
 }
+
+

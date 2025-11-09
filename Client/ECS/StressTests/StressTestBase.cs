@@ -1,10 +1,13 @@
 #nullable enable
 
+using UltraSim.ECS;
+using UltraSim;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace UltraSim.ECS.StressTests
+namespace Client.ECS.StressTests
 {
     /// <summary>
     /// Base class for all stress test modules.
@@ -46,12 +49,12 @@ namespace UltraSim.ECS.StressTests
 
         public virtual void Initialize()
         {
-            Logging.Logger.Log("==============================================");
-            Logging.Logger.Log($" STRESS TEST: {TestName,-24}");
-            Logging.Logger.Log("==============================================");
-            Logging.Logger.Log($" Intensity: {config.Intensity,-26}");
-            Logging.Logger.Log($" Target: {config.TargetEntityCount,30:N0}");
-            Logging.Logger.Log("==============================================");
+            Logging.Log("==============================================");
+            Logging.Log($" STRESS TEST: {TestName,-24}");
+            Logging.Log("==============================================");
+            Logging.Log($" Intensity: {config.Intensity,-26}");
+            Logging.Log($" Target: {config.TargetEntityCount,30:N0}");
+            Logging.Log("==============================================");
         }
 
         public void Update(float deltaTime)
@@ -124,10 +127,10 @@ namespace UltraSim.ECS.StressTests
             result.EndTime = DateTime.UtcNow;
             result.EndMemoryBytes = GC.GetTotalMemory(false);
 
-            Logging.Logger.Log($"\n[{TestName}] COMPLETED");
-            Logging.Logger.Log($"Duration: {result.Duration.TotalSeconds:F2}s");
-            Logging.Logger.Log($"Peak Entities: {result.PeakEntityCount:N0}");
-            Logging.Logger.Log($"Avg Frame: {result.AverageFrameTimeMs:F3}ms");
+            Logging.Log($"\n[{TestName}] COMPLETED");
+            Logging.Log($"Duration: {result.Duration.TotalSeconds:F2}s");
+            Logging.Log($"Peak Entities: {result.PeakEntityCount:N0}");
+            Logging.Log($"Avg Frame: {result.AverageFrameTimeMs:F3}ms");
         }
 
         protected virtual void Fail(string reason, Exception? ex = null)
@@ -138,9 +141,9 @@ namespace UltraSim.ECS.StressTests
             result.Exception = ex;
             result.EndTime = DateTime.UtcNow;
 
-            Logging.Logger.Log($"\n[{TestName}] FAILED: {reason}", Logging.LogSeverity.Error);
+            Logging.Log($"\n[{TestName}] FAILED: {reason}", LogSeverity.Error);
             if (ex != null)
-                Logging.Logger.Log($"Exception: {ex.Message}", Logging.LogSeverity.Error);
+                Logging.Log($"Exception: {ex.Message}", LogSeverity.Error);
         }
 
         public StressTestResult GetResults() => result;
@@ -152,3 +155,5 @@ namespace UltraSim.ECS.StressTests
         }
     }
 }
+
+

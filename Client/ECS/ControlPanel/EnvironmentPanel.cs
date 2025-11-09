@@ -1,13 +1,15 @@
-
 #nullable enable
 
 using System;
-
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
+using UltraSim;
+using UltraSim.ECS;
+using UltraSim.ECS.SIMD;
+using Client.UI;
 
-using UltraSim.UI;
-
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Environment and hardware information panel.
@@ -16,7 +18,7 @@ namespace UltraSim.ECS
     [ControlPanelSection(defaultOrder: 5, defaultExpanded: false)]
     public partial class EnvironmentPanel : UIBuilder, IControlPanelSection
     {
-        private IEnvironmentInfo? _env;
+        private IHost? _host;
 
         // UI References
         private Label? _ramLabel;
@@ -27,10 +29,7 @@ namespace UltraSim.ECS
 
         public EnvironmentPanel(World? world)
         {
-            if (world != null)
-            {
-                _env = SimContext.Host;
-            }
+            _host = world?.Host;
         }
 
         public Control? CreateHeaderButtons() => null;
@@ -51,20 +50,22 @@ namespace UltraSim.ECS
 
             AddGridHeader(buildGrid, "Build & Platform");
 
+            var envInfo = _host?.Runtime.Environment;
+
             AddContainerLabel(buildGrid, "Environment:");
-            AddContainerLabel(buildGrid, _env!.Environment.ToString());
+            AddContainerLabel(buildGrid, (_host?.Environment ?? EnvironmentType.Client).ToString());
 
             AddContainerLabel(buildGrid, "Build Type:");
-            AddContainerLabel(buildGrid, _env.IsDebugBuild ? "Debug" : "Release");
+            AddContainerLabel(buildGrid, envInfo?.IsDebugBuild == true ? "Debug" : "Release");
 
             AddContainerLabel(buildGrid, "Platform:");
-            AddContainerLabel(buildGrid, _env.Platform);
+            AddContainerLabel(buildGrid, envInfo?.Platform ?? "Unknown");
 
             AddContainerLabel(buildGrid, "Engine:");
-            AddContainerLabel(buildGrid, _env.Engine);
+            AddContainerLabel(buildGrid, envInfo?.Engine ?? "Unknown");
 
             AddContainerLabel(buildGrid, ".NET Runtime:");
-            AddContainerLabel(buildGrid, _env.DotNetVersion);
+            AddContainerLabel(buildGrid, envInfo?.DotNetVersion ?? "Unknown");
 
             // MEMORY Section
             var memoryGrid = CreateGrid(columns: 2);
@@ -73,10 +74,10 @@ namespace UltraSim.ECS
             AddGridHeader(memoryGrid, "Memory");
 
             AddContainerLabel(memoryGrid, "Godot RAM:");
-            _ramLabel = AddContainerLabel(memoryGrid, $"{_env.AvailableRamMB:N0} MB");
+            _ramLabel = AddContainerLabel(memoryGrid, FormatRam(envInfo?.AvailableRamMB));
 
             AddContainerLabel(memoryGrid, "Peak:");
-            AddContainerLabel(memoryGrid, $"{_env.TotalRamMB:N0} MB");
+            AddContainerLabel(memoryGrid, FormatRam(envInfo?.TotalRamMB));
 
             // === RIGHT COLUMN ===
             var rightColumn = CreateVBox(separation: 16);
@@ -90,15 +91,18 @@ namespace UltraSim.ECS
             AddGridHeader(cpuGrid, "CPU");
 
             AddContainerLabel(cpuGrid, "Processor:");
-            var processorLabel = AddContainerLabel(cpuGrid, _env.ProcessorName);
+            var processorLabel = AddContainerLabel(cpuGrid, envInfo?.ProcessorName ?? "Unknown");
             processorLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             processorLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 
             AddContainerLabel(cpuGrid, "Cores:");
-            AddContainerLabel(cpuGrid, $"{_env.PhysicalCores} Physical / {_env.LogicalCores} Logical");
+            if (envInfo != null)
+                AddContainerLabel(cpuGrid, $"{envInfo.PhysicalCores} Physical / {envInfo.LogicalCores} Logical");
+            else
+                AddContainerLabel(cpuGrid, "Unknown");
 
             AddContainerLabel(cpuGrid, "Max SIMD:");
-            AddContainerLabel(cpuGrid, _env.MaxSimdSupport.ToString());
+            AddContainerLabel(cpuGrid, (envInfo?.SimdSupport ?? SimdSupport.Scalar).ToString());
 
             // GPU Section
             var gpuGrid = CreateGrid(columns: 2);
@@ -107,25 +111,26 @@ namespace UltraSim.ECS
             AddGridHeader(gpuGrid, "GPU");
 
             AddContainerLabel(gpuGrid, "GPU:");
-            var gpuLabel = AddContainerLabel(gpuGrid, $"{_env.GpuVendor} {_env.GpuName}");
+            var gpuLabel = AddContainerLabel(gpuGrid,
+                envInfo != null ? $"{envInfo.GpuVendor} {envInfo.GpuName}" : "Unknown");
             gpuLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             gpuLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 
             AddContainerLabel(gpuGrid, "VRAM Used:");
-            AddContainerLabel(gpuGrid, $"{_env.TotalVramMB:N0} MB");
+            AddContainerLabel(gpuGrid, FormatRam(envInfo?.TotalVramMB));
 
             AddContainerLabel(gpuGrid, "Graphics API:");
-            AddContainerLabel(gpuGrid, _env.GraphicsAPI);
+            AddContainerLabel(gpuGrid, envInfo?.GraphicsAPI ?? "Unknown");
 
             return mainHBox;
         }
 
         public void Update(double delta)
         {
-            if (_env != null && _ramLabel != null)
+            var envInfo = _host?.Runtime.Environment;
+            if (envInfo != null && _ramLabel != null)
             {
-                // Update current RAM usage
-                _ramLabel.Text = $"{_env.AvailableRamMB:N0} MB";
+                _ramLabel.Text = FormatRam(envInfo.AvailableRamMB);
             }
         }
 
@@ -138,5 +143,8 @@ namespace UltraSim.ECS
         {
             // Nothing to do on hide
         }
+
+        private static string FormatRam(long? value) =>
+            value.HasValue ? $"{value.Value:N0} MB" : "Unknown";
     }
 }

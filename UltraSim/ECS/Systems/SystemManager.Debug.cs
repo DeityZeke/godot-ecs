@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-using UltraSim.Logging;
+using UltraSim;
 using UltraSim.ECS.SIMD;
 
 namespace UltraSim.ECS.Systems
@@ -48,14 +48,14 @@ namespace UltraSim.ECS.Systems
 
             // DEBUG: Verify this method is being called
             if (_frameIndex == 0)
-                Logger.Log("[SystemManager.Debug] ProfileUpdateAll() ACTIVE - Debug profiling enabled", LogSeverity.Info);
+                Logging.Log("[SystemManager.Debug] ProfileUpdateAll() ACTIVE - Debug profiling enabled", LogSeverity.Info);
 
             _gcBefore = GC.GetTotalMemory(false);
             _frameSw.Restart();
 
             // Use the tick scheduling system (same as production)
             // This calls UpdateWithTiming() which populates EMA statistics
-            UpdateTicked(world, delta);
+            Update(world, delta);
 
             _frameSw.Stop();
             double totalFrameMs = _frameSw.Elapsed.TotalMilliseconds;
@@ -73,7 +73,7 @@ namespace UltraSim.ECS.Systems
 
                     // Alert on systems over budget (using average, not last)
                     if (avgMs > SYSTEM_BUDGET_MS)
-                        Logger.Log($"WARNING: {system.Name} over per-system budget: {avgMs:F3} ms avg", LogSeverity.Error);
+                        Logging.Log($"WARNING: {system.Name} over per-system budget: {avgMs:F3} ms avg", LogSeverity.Error);
                 }
             }
 
@@ -82,7 +82,7 @@ namespace UltraSim.ECS.Systems
 
             // Frame Budget Alerts
             if (totalFrameMs > ECS_BUDGET_MS)
-                Logger.Log($"WARNING: ECS over total frame budget: {totalFrameMs:F3}ms / {ECS_BUDGET_MS}ms", LogSeverity.Error);
+                Logging.Log($"WARNING: ECS over total frame budget: {totalFrameMs:F3}ms / {ECS_BUDGET_MS}ms", LogSeverity.Error);
 
             // Periodic logging
             if (_frameIndex <= 10 || _frameIndex % 30 == 0)
@@ -91,7 +91,7 @@ namespace UltraSim.ECS.Systems
                     ? $"Showcase:{SimdManager.GetMode(SimdCategory.Systems)}"
                     : "Optimal";
 
-                Logger.Log($"[ECS Debug] Frame {_frameIndex}: ECS {totalFrameMs:F3}ms | Entities {world.EntityCount} | SIMD {simdMode} | GC Δ {_gcAfter - _gcBefore} bytes", LogSeverity.Info);
+                Logging.Log($"[ECS Debug] Frame {_frameIndex}: ECS {totalFrameMs:F3}ms | Entities {world.EntityCount} | SIMD {simdMode} | GC Δ {_gcAfter - _gcBefore} bytes", LogSeverity.Info);
             }
 
             // Store frame for offline export
@@ -142,7 +142,7 @@ namespace UltraSim.ECS.Systems
 
                     double imbalance = avg > 0 ? max / avg : 0;
                     if (imbalance > 2.5)
-                        Logger.Log($"WARNING: Batch {batchIndex} imbalance: {imbalance:F2}x (min {min:F3}ms, max {max:F3}ms, avg {avg:F3}ms)", LogSeverity.Error);
+                        Logging.Log($"WARNING: Batch {batchIndex} imbalance: {imbalance:F2}x (min {min:F3}ms, max {max:F3}ms, avg {avg:F3}ms)", LogSeverity.Error);
                 }
                 else
                 {
@@ -189,11 +189,11 @@ namespace UltraSim.ECS.Systems
                     writer.WriteLine();
                 }
 
-                Logger.Log($"[ECS Debug] Exported {_frameHistory.Count} frames to {path}");
+                Logging.Log($"[ECS Debug] Exported {_frameHistory.Count} frames to {path}");
             }
             catch (Exception ex)
             {
-                Logger.Log($"[ECS Debug] Failed to export profiling data: {ex.Message}", LogSeverity.Error);
+                Logging.Log($"[ECS Debug] Failed to export profiling data: {ex.Message}", LogSeverity.Error);
             }
         }
 
@@ -204,7 +204,7 @@ namespace UltraSim.ECS.Systems
         {
             _frameHistory.Clear();
             _frameIndex = 0;
-            Logger.Log("[ECS Debug] Profiling history cleared");
+            Logging.Log("[ECS Debug] Profiling history cleared");
         }
 
         #endregion

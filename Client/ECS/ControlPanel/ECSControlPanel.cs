@@ -1,15 +1,14 @@
-
 #nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Godot;
+using UltraSim;
+using UltraSim.ECS;
+using Client.UI;
 
-using UltraSim.UI;
-
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Modular ECS Control Panel - lightweight container for panel sections.
@@ -30,7 +29,7 @@ namespace UltraSim.ECS
         public void Initialize(World world)
         {
             _world = world;
-            Logging.Logger.Log("Control Panel Initializing...");
+            Logging.Log("Control Panel Initializing...");
         }
 
         public override void _Ready()
@@ -64,7 +63,7 @@ namespace UltraSim.ECS
             // Start hidden - press F12 to show
             Visible = false;
 
-            Logging.Logger.Log("Control Panel Ready! Press F12 to toggle");
+            Logging.Log("Control Panel Ready! Press F12 to toggle");
 
             // Force initial layout calculation
             CallDeferred(MethodName.UpdateMinimumSize);
@@ -154,8 +153,8 @@ namespace UltraSim.ECS
             _config = new PanelConfiguration();
             var panelSettings = _config.LoadOrDiscover();
 
-            Logging.Logger.Log($" - {panelSettings.Count} Panels Detected");
-            Logging.Logger.Log(" - Loaded and Applied Panel Settings");
+            Logging.Log($" - {panelSettings.Count} Panels Detected");
+            Logging.Log(" - Loaded and Applied Panel Settings");
 
             int createdCount = 0;
             foreach (var settings in panelSettings)
@@ -169,14 +168,14 @@ namespace UltraSim.ECS
                     var type = Type.GetType(settings.TypeName);
                     if (type == null)
                     {
-                        Logging.Logger.Log($"Failed to find panel type: {settings.TypeName}", Logging.LogSeverity.Error);
+                        Logging.Log($"Failed to find panel type: {settings.TypeName}", LogSeverity.Error);
                         continue;
                     }
 
                     var panel = Activator.CreateInstance(type, _world) as IControlPanelSection;
                     if (panel == null)
                     {
-                        Logging.Logger.Log($"Failed to create panel instance: {type.Name}", Logging.LogSeverity.Error);
+                        Logging.Log($"Failed to create panel instance: {type.Name}", LogSeverity.Error);
                         continue;
                     }
 
@@ -191,11 +190,11 @@ namespace UltraSim.ECS
                 }
                 catch (Exception ex)
                 {
-                    Logging.Logger.Log($"Error creating panel {settings.TypeName}: {ex.Message}", Logging.LogSeverity.Error);
+                    Logging.Log($"Error creating panel {settings.TypeName}: {ex.Message}", LogSeverity.Error);
                 }
             }
 
-            Logging.Logger.Log(" - Built Panel UI's");
+            Logging.Log(" - Built Panel UI's");
         }
 
         #endregion
@@ -364,3 +363,5 @@ namespace UltraSim.ECS
         }
     }
 }
+
+

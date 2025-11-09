@@ -1,10 +1,12 @@
 #nullable enable
 
 using Godot;
-using UltraSim.ECS.StressTests;
-using UltraSim.UI;
+using UltraSim;
+using UltraSim.ECS;
+using Client.ECS.StressTests;
+using Client.UI;
 
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel.Sections
 {
     /// <summary>
     /// Control panel section for running ECS stress tests.
@@ -107,7 +109,7 @@ namespace UltraSim.ECS
         {
             if (_testManager == null || _testManager.IsRunning)
             {
-                Logging.Logger.Log("Test already running", Logging.LogSeverity.Warning);
+                Logging.Log("Test already running", LogSeverity.Warning);
                 return;
             }
 
@@ -197,3 +199,5 @@ namespace UltraSim.ECS
         }
     }
 }
+
+

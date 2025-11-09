@@ -1,7 +1,7 @@
 #nullable enable
 
 using System;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS
 {
@@ -60,7 +60,7 @@ namespace UltraSim.ECS
             _autoSaveCounter++;
             string filename = $"autosave_{_autoSaveCounter % 3}.sav"; // Rotate: autosave_0, autosave_1, autosave_2
 
-            Logger.Log($"\nðŸ• AUTO-SAVE #{_autoSaveCounter}", LogSeverity.Debug);
+            Logging.Log($"\nðŸ• AUTO-SAVE #{_autoSaveCounter}", LogSeverity.Debug);
             Save(filename);
         }
 
@@ -78,7 +78,7 @@ namespace UltraSim.ECS
             AutoSaveInterval = intervalSeconds;
             _autoSaveTimer = 0f;
 
-            Logger.Log($"[World] âœ… Auto-save enabled (interval: {intervalSeconds}s)");
+            Logging.Log($"[World] âœ… Auto-save enabled (interval: {intervalSeconds}s)");
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace UltraSim.ECS
         public void DisableAutoSave()
         {
             AutoSaveEnabled = false;
-            Logger.Log("[World] â¸ï¸ Auto-save disabled");
+            Logging.Log("[World] â¸ï¸ Auto-save disabled");
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace UltraSim.ECS
 
             if (AutoSaveEnabled)
             {
-                Logger.Log($"[World] Auto-save interval changed to {intervalSeconds}s");
+                Logging.Log($"[World] Auto-save interval changed to {intervalSeconds}s");
             }
         }
 

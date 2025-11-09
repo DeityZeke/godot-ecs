@@ -59,7 +59,7 @@ namespace UltraSim.ECS.Systems
 
         public override void OnInitialize(World world)
         {
-            _cachedQuery = world.Query(typeof(Position), typeof(Velocity));
+            _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(Velocity));
 
 #if USE_DEBUG
             GD.Print("[ManualThreadPoolMovementSystem] Initialized.");

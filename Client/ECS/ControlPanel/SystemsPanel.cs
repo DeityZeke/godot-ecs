@@ -3,15 +3,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-
 using Godot;
-
-using UltraSim.ECS.Systems;
+using UltraSim;
+using UltraSim.ECS;
 using UltraSim.ECS.Settings;
-using UltraSim.UI;
+using UltraSim.ECS.Systems;
+using Client.ECS.Settings;
+using Client.UI;
 
-namespace UltraSim.ECS
+namespace Client.ECS.ControlPanel
 {
     /// <summary>
     /// Systems panel displaying all ECS systems with their settings.
@@ -106,7 +106,7 @@ namespace UltraSim.ECS
 
             if (_systemManager == null)
             {
-                Logging.Logger.Log("SystemManager is null! Cannot refresh systems list.", Logging.LogSeverity.Error);
+                Logging.Log("SystemManager is null! Cannot refresh systems list.", LogSeverity.Error);
                 return;
             }
 
@@ -125,7 +125,7 @@ namespace UltraSim.ECS
                 }
             }
 
-            Logging.Logger.Log($"Systems Panel: {systemsWithSettings}/{totalSystems} systems with settings");
+            Logging.Log($"Systems Panel: {systemsWithSettings}/{totalSystems} systems with settings");
         }
 
         private static ISettingUI? GetSettingUI(ISetting setting)
@@ -183,7 +183,7 @@ namespace UltraSim.ECS
             }
 
             UpdateSaveAllButton();
-            Logging.Logger.Log($"Saved settings for {savedCount} system(s)");
+            Logging.Log($"Saved settings for {savedCount} system(s)");
         }
 
         private void UpdateSaveAllButton()
@@ -399,12 +399,12 @@ namespace UltraSim.ECS
                         }
                         else
                         {
-                            Logging.Logger.Log($"Setting UI is not an HBoxContainer or has insufficient children for {_system.Name}", Logging.LogSeverity.Error);
+                            Logging.Log($"Setting UI is not an HBoxContainer or has insufficient children for {_system.Name}", LogSeverity.Error);
                         }
                     }
                     else
                     {
-                        Logging.Logger.Log($"No UI wrapper for setting type {setting.GetType().Name} in {_system.Name}", Logging.LogSeverity.Error);
+                        Logging.Log($"No UI wrapper for setting type {setting.GetType().Name} in {_system.Name}", LogSeverity.Error);
                     }
                 }
 
@@ -456,7 +456,7 @@ namespace UltraSim.ECS
         private void OnEnabledToggled(bool enabled)
         {
             _system.IsEnabled = enabled;
-            Logging.Logger.Log($"System '{_system.Name}' {(enabled ? "enabled" : "disabled")}");
+            Logging.Log($"System '{_system.Name}' {(enabled ? "enabled" : "disabled")}");
         }
 
         private void OnSettingChangedInternal(ISetting setting)
@@ -478,7 +478,7 @@ namespace UltraSim.ECS
             _isDirty = false;
             if (_applyButton != null)
                 _applyButton.Visible = false;
-            Logging.Logger.Log($"Applied settings for {_system.Name}");
+            Logging.Log($"Applied settings for {_system.Name}");
 
             // Notify parent that dirty state changed
             _onSettingChanged?.Invoke(_system);
@@ -501,3 +501,5 @@ namespace UltraSim.ECS
         }
     }
 }
+
+

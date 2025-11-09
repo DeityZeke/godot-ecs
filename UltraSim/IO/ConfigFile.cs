@@ -7,7 +7,7 @@ using System.Linq;
 using System.Globalization;
 using System.Text;
 
-using UltraSim.Logging;
+using UltraSim;
 using UltraSim.IO;
 
 namespace UltraSim.Configuration
@@ -88,7 +88,7 @@ namespace UltraSim.Configuration
             }
             catch (Exception ex)
             {
-                Logger.Log($"[ConfigFile] Failed to parse value '{raw}' as {typeof(T).Name}: {ex.Message}", LogSeverity.Warning);
+                Logging.Log($"[ConfigFile] Failed to parse value '{raw}' as {typeof(T).Name}: {ex.Message}", LogSeverity.Warning);
                 return defaultValue;
             }
         }
@@ -158,7 +158,7 @@ namespace UltraSim.Configuration
             }
             catch (Exception ex)
             {
-                Logger.Log($"[ConfigFile] Failed to load: {resolvedPath} - {ex.Message}", LogSeverity.Error);
+                Logging.Log($"[ConfigFile] Failed to load: {resolvedPath} - {ex.Message}", LogSeverity.Error);
                 return Error.FileCorrupt;
             }
         }
@@ -185,7 +185,7 @@ namespace UltraSim.Configuration
             }
             catch (Exception ex)
             {
-                Logger.Log($"[ConfigFile] Failed to save: {resolvedPath} - {ex.Message}", LogSeverity.Error);
+                Logging.Log($"[ConfigFile] Failed to save: {resolvedPath} - {ex.Message}", LogSeverity.Error);
                 return Error.Failed;
             }
         }

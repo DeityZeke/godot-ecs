@@ -5,4 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="CONCEPT REFERENCE\**\*.cs" />
+  </ItemGroup>
 </Project>

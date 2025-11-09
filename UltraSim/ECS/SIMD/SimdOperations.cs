@@ -156,9 +156,9 @@ namespace UltraSim.ECS.SIMD
             // Log effective modes in debug builds (only when not in showcase mode)
             if (!showcaseMode)
             {
-                Logging.Logger.Log($"[SIMD] Systems initialized with optimal modes:");
-                Logging.Logger.Log($"  - ApplyVelocity: {applyVelocityMode} (optimal: {ApplyVelocityOptimalMode})");
-                Logging.Logger.Log($"  - ProcessPulsing: {processPulsingMode} (optimal: {ProcessPulsingOptimalMode})");
+                Logging.Log($"[SIMD] Systems initialized with optimal modes:");
+                Logging.Log($"  - ApplyVelocity: {applyVelocityMode} (optimal: {ApplyVelocityOptimalMode})");
+                Logging.Log($"  - ProcessPulsing: {processPulsingMode} (optimal: {ProcessPulsingOptimalMode})");
             }
 #endif
 

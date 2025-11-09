@@ -1,0 +1,41 @@
+
+#nullable enable
+
+using System;
+using System.Runtime.CompilerServices;
+
+namespace UltraSim.ECS
+{
+    /// <summary>
+    /// Lightweight entity handle with index and version for safe references.
+    /// Index and Version are uint - entities never have negative IDs.
+    /// Invalid entity is represented as (0, 0).
+    /// Valid entities start at (1, 1) and increment from there.
+    /// </summary>
+    public readonly struct Entity : IEquatable<Entity>
+    {
+        public readonly uint Index;
+        public readonly uint Version;
+
+        public static readonly Entity Invalid = new(0, 0);
+
+        public Entity(uint index, uint version)
+        {
+            Index = index;
+            Version = version;
+        }
+
+        public bool IsValid => Index > 0 && Version > 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(Entity other) => Index == other.Index && Version == other.Version;
+        public override bool Equals(object? obj) => obj is Entity e && Equals(e);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override int GetHashCode() => HashCode.Combine(Index, Version);
+        public override string ToString() => $"Entity({Index},v{Version})";
+
+        public static bool operator ==(Entity left, Entity right) => left.Equals(right);
+        public static bool operator !=(Entity left, Entity right) => !left.Equals(right);
+    }
+}

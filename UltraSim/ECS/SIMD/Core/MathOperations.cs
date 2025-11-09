@@ -4,7 +4,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS.SIMD.Core
 {
@@ -50,7 +50,7 @@ namespace UltraSim.ECS.SIMD.Core
         {
             if (!_sinScalarLogged)
             {
-                Logger.Log("[SIMD] BatchFastSin_Scalar CALLED (1 angle per iteration)");
+                Logging.Log("[SIMD] BatchFastSin_Scalar CALLED (1 angle per iteration)");
                 _sinScalarLogged = true;
             }
 
@@ -79,7 +79,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_sinSseLogged)
                 {
-                    Logger.Log("[SIMD] BatchFastSin_SSE CALLED but SSE NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
+                    Logging.Log("[SIMD] BatchFastSin_SSE CALLED but SSE NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
                     _sinSseLogged = true;
                 }
                 BatchFastSin_Scalar(angles, results);
@@ -88,7 +88,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_sinSseLogged)
             {
-                Logger.Log("[SIMD] BatchFastSin_SSE CALLED (4 angles per iteration) - SSE hardware confirmed");
+                Logging.Log("[SIMD] BatchFastSin_SSE CALLED (4 angles per iteration) - SSE hardware confirmed");
                 _sinSseLogged = true;
             }
 
@@ -154,7 +154,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_sinAvx2Logged)
                 {
-                    Logger.Log("[SIMD] BatchFastSin_AVX2 CALLED but AVX2 NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
+                    Logging.Log("[SIMD] BatchFastSin_AVX2 CALLED but AVX2 NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
                     _sinAvx2Logged = true;
                 }
                 BatchFastSin_Scalar(angles, results);
@@ -163,7 +163,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_sinAvx2Logged)
             {
-                Logger.Log("[SIMD] BatchFastSin_AVX2 CALLED (8 angles per iteration) - AVX2 hardware confirmed");
+                Logging.Log("[SIMD] BatchFastSin_AVX2 CALLED (8 angles per iteration) - AVX2 hardware confirmed");
                 _sinAvx2Logged = true;
             }
 
@@ -208,7 +208,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_sinAvx512Logged)
                 {
-                    Logger.Log("[SIMD] BatchFastSin_AVX512 CALLED but AVX-512 NOT SUPPORTED - falling back to AVX2", LogSeverity.Warning);
+                    Logging.Log("[SIMD] BatchFastSin_AVX512 CALLED but AVX-512 NOT SUPPORTED - falling back to AVX2", LogSeverity.Warning);
                     _sinAvx512Logged = true;
                 }
                 BatchFastSin_AVX2(angles, results);
@@ -217,7 +217,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_sinAvx512Logged)
             {
-                Logger.Log("[SIMD] BatchFastSin_AVX512 CALLED (16 angles per iteration) - AVX-512 hardware confirmed");
+                Logging.Log("[SIMD] BatchFastSin_AVX512 CALLED (16 angles per iteration) - AVX-512 hardware confirmed");
                 _sinAvx512Logged = true;
             }
 
@@ -264,7 +264,7 @@ namespace UltraSim.ECS.SIMD.Core
         {
             if (!_invSqrtScalarLogged)
             {
-                Logger.Log("[SIMD] BatchFastInvSqrt_Scalar CALLED (1 value per iteration)");
+                Logging.Log("[SIMD] BatchFastInvSqrt_Scalar CALLED (1 value per iteration)");
                 _invSqrtScalarLogged = true;
             }
 
@@ -293,7 +293,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_invSqrtSseLogged)
                 {
-                    Logger.Log("[SIMD] BatchFastInvSqrt_SSE CALLED but SSE NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
+                    Logging.Log("[SIMD] BatchFastInvSqrt_SSE CALLED but SSE NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
                     _invSqrtSseLogged = true;
                 }
                 BatchFastInvSqrt_Scalar(values, results);
@@ -302,7 +302,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_invSqrtSseLogged)
             {
-                Logger.Log("[SIMD] BatchFastInvSqrt_SSE CALLED (4 values per iteration) - SSE hardware confirmed");
+                Logging.Log("[SIMD] BatchFastInvSqrt_SSE CALLED (4 values per iteration) - SSE hardware confirmed");
                 _invSqrtSseLogged = true;
             }
 
@@ -348,7 +348,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_invSqrtAvx2Logged)
                 {
-                    Logger.Log("[SIMD] BatchFastInvSqrt_AVX2 CALLED but AVX NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
+                    Logging.Log("[SIMD] BatchFastInvSqrt_AVX2 CALLED but AVX NOT SUPPORTED - falling back to Scalar", LogSeverity.Warning);
                     _invSqrtAvx2Logged = true;
                 }
                 BatchFastInvSqrt_Scalar(values, results);
@@ -357,7 +357,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_invSqrtAvx2Logged)
             {
-                Logger.Log("[SIMD] BatchFastInvSqrt_AVX2 CALLED (8 values per iteration) - AVX hardware confirmed");
+                Logging.Log("[SIMD] BatchFastInvSqrt_AVX2 CALLED (8 values per iteration) - AVX hardware confirmed");
                 _invSqrtAvx2Logged = true;
             }
 
@@ -409,7 +409,7 @@ namespace UltraSim.ECS.SIMD.Core
             {
                 if (!_invSqrtAvx512Logged)
                 {
-                    Logger.Log("[SIMD] BatchFastInvSqrt_AVX512 CALLED but AVX-512 NOT SUPPORTED - falling back to AVX2", LogSeverity.Warning);
+                    Logging.Log("[SIMD] BatchFastInvSqrt_AVX512 CALLED but AVX-512 NOT SUPPORTED - falling back to AVX2", LogSeverity.Warning);
                     _invSqrtAvx512Logged = true;
                 }
                 BatchFastInvSqrt_AVX2(values, results);
@@ -418,7 +418,7 @@ namespace UltraSim.ECS.SIMD.Core
 
             if (!_invSqrtAvx512Logged)
             {
-                Logger.Log("[SIMD] BatchFastInvSqrt_AVX512 CALLED (16 values per iteration) - AVX-512 hardware confirmed");
+                Logging.Log("[SIMD] BatchFastInvSqrt_AVX512 CALLED (16 values per iteration) - AVX-512 hardware confirmed");
                 _invSqrtAvx512Logged = true;
             }
 

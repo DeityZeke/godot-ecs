@@ -3,9 +3,9 @@
 using System;
 using System.IO;
 
+using UltraSim;
 using UltraSim.IO;
 using UltraSim.Configuration;
-using UltraSim.Logging;
 
 namespace UltraSim.ECS
 {
@@ -15,23 +15,14 @@ namespace UltraSim.ECS
     /// </summary>
     public sealed partial class World
     {
-        #region Events
-
-        public event Action? OnBeforeSave;
-        public event Action? OnAfterSave;
-        public event Action? OnBeforeLoad;
-        public event Action? OnAfterLoad;
-
-        #endregion
-
         #region IOProfile Integration
 
         /// <summary>
         /// Gets the active IOProfile from the Host, or falls back to DefaultIOProfile.
         /// </summary>
-        private static IIOProfile GetIOProfile()
+        private IIOProfile GetIOProfile()
         {
-            return SimContext.Host?.GetIOProfile() ?? DefaultIOProfile.Instance;
+            return Host.GetIOProfile() ?? DefaultIOProfile.Instance;
         }
 
         #endregion
@@ -92,7 +83,7 @@ namespace UltraSim.ECS
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             
-            OnBeforeSave?.Invoke();
+            EventSink.InvokeWorldSave();
             
             try
             {
@@ -117,22 +108,22 @@ namespace UltraSim.ECS
                 var error = config.Save(savePath);
                 if (error != Error.Ok)
                 {
-                    Logger.Log($"[World] âŒ Failed to save: {error}", LogSeverity.Error);
+                    Logging.Log($"[World] âŒ Failed to save: {error}", LogSeverity.Error);
                     return;
                 }
 
                 sw.Stop();
-                Logger.Log($"\nðŸ’¾ WORLD SAVED");
-                Logger.Log($"   Path: {savePath}");
-                Logger.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
-                Logger.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
+                Logging.Log($"\nðŸ’¾ WORLD SAVED");
+                Logging.Log($"   Path: {savePath}");
+                Logging.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
+                Logging.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
                 
-                OnAfterSave?.Invoke();
+                EventSink.InvokeWorldSaved();
             }
             catch (Exception ex)
             {
-                Logger.Log($"[World] âŒ Save failed with exception: {ex.Message}", LogSeverity.Error);
-                Logger.Log(ex.StackTrace, LogSeverity.Error);
+                Logging.Log($"[World] âŒ Save failed with exception: {ex.Message}", LogSeverity.Error);
+                Logging.Log(ex.StackTrace, LogSeverity.Error);
             }
         }
 
@@ -183,7 +174,7 @@ namespace UltraSim.ECS
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             
-            OnBeforeLoad?.Invoke();
+            EventSink.InvokeWorldLoad();
             
             try
             {
@@ -191,7 +182,7 @@ namespace UltraSim.ECS
                 
                 if (!File.Exists(loadPath))
                 {
-                    Logger.Log($"[World] âŒ Save file not found: {loadPath}", LogSeverity.Error);
+                    Logging.Log($"[World] âŒ Save file not found: {loadPath}", LogSeverity.Error);
                     return;
                 }
 
@@ -199,7 +190,7 @@ namespace UltraSim.ECS
                 var error = config.Load(loadPath);
                 if (error != Error.Ok)
                 {
-                    Logger.Log($"[World] âŒ Failed to load: {error}", LogSeverity.Error);
+                    Logging.Log($"[World] âŒ Failed to load: {error}", LogSeverity.Error);
                     return;
                 }
 
@@ -215,17 +206,17 @@ namespace UltraSim.ECS
                 LoadAllSystemStates(config);
 
                 sw.Stop();
-                Logger.Log($"\nðŸ“‚ WORLD LOADED");
-                Logger.Log($"   Path: {loadPath}");
-                Logger.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
-                Logger.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
+                Logging.Log($"\nðŸ“‚ WORLD LOADED");
+                Logging.Log($"   Path: {loadPath}");
+                Logging.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
+                Logging.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
                 
-                OnAfterLoad?.Invoke();
+                EventSink.InvokeWorldLoaded();
             }
             catch (Exception ex)
             {
-                Logger.Log($"[World] âŒ Load failed with exception: {ex.Message}", LogSeverity.Error);
-                Logger.Log(ex.StackTrace, LogSeverity.Error);
+                Logging.Log($"[World] âŒ Load failed with exception: {ex.Message}", LogSeverity.Error);
+                Logging.Log(ex.StackTrace, LogSeverity.Error);
             }
         }
 
@@ -236,7 +227,7 @@ namespace UltraSim.ECS
         {
             if (!config.HasSection("World"))
             {
-                Logger.Log("[World] âš ï¸ No World section found in save file", LogSeverity.Error);
+                Logging.Log("[World] âš ï¸ No World section found in save file", LogSeverity.Error);
                 return;
             }
 
@@ -254,8 +245,8 @@ namespace UltraSim.ECS
                 LastSaveTime = DateTimeOffset.FromUnixTimeSeconds(timestamp);
             }
 
-            Logger.Log($"[World] Loaded world state from {DateTimeOffset.FromUnixTimeSeconds(timestamp):yyyy-MM-dd HH:mm:ss}");
-            Logger.Log($"[World]    Expected - Entities: {savedEntityCount}, Archetypes: {savedArchetypeCount}");
+            Logging.Log($"[World] Loaded world state from {DateTimeOffset.FromUnixTimeSeconds(timestamp):yyyy-MM-dd HH:mm:ss}");
+            Logging.Log($"[World]    Expected - Entities: {savedEntityCount}, Archetypes: {savedArchetypeCount}");
         }
 
         /// <summary>
@@ -276,7 +267,7 @@ namespace UltraSim.ECS
                 statesLoaded++;
             }
 
-            Logger.Log($"[World] ðŸ“‚ Loaded {statesLoaded} system states");
+            Logging.Log($"[World] ðŸ“‚ Loaded {statesLoaded} system states");
         }
 
         #endregion

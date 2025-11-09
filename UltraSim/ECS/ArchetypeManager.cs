@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Reflection;
 
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS
 {
@@ -17,13 +17,15 @@ namespace UltraSim.ECS
     /// </summary>
     public sealed class ArchetypeManager
     {
+        private readonly World _world;
         private readonly List<Archetype> _archetypes = new();
         private readonly Dictionary<ComponentSignature, Archetype> _signatureCache = new();
 
         public int ArchetypeCount => _archetypes.Count;
 
-        public ArchetypeManager()
+        public ArchetypeManager(World world)
         {
+            _world = world ?? throw new ArgumentNullException(nameof(world));
             // Create empty archetype (archetype 0)
             var emptyArch = new Archetype();
             _archetypes.Add(emptyArch);
@@ -62,7 +64,7 @@ namespace UltraSim.ECS
             {
                 if (typeId < 0 || typeId >= ComponentManager.TypeCount)
                 {
-                    Logger.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
+                    Logging.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
                     throw new ArgumentOutOfRangeException(nameof(typeId), $"Invalid component type ID: {typeId} (signature={signature})");
                 }
 
@@ -111,7 +113,7 @@ namespace UltraSim.ECS
             {
                 if (typeId < 0 || typeId >= ComponentManager.TypeCount)
                 {
-                    Logger.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
+                    Logging.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
                     throw new ArgumentOutOfRangeException(nameof(typeId), $"Invalid component type ID: {typeId} (signature={signature})");
                 }
 
@@ -235,7 +237,7 @@ namespace UltraSim.ECS
             foreach (var arch in _archetypes)
             {
                 foreach (var error in arch.DebugValidate())
-                    Logger.Log($"[ArchetypeManager] Validation error: {error}", LogSeverity.Error);
+                    Logging.Log($"[ArchetypeManager] Validation error: {error}", LogSeverity.Error);
             }
 #endif
         }

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using UltraSim.Configuration;
-using UltraSim.Logging;
+using UltraSim;
 
 namespace UltraSim.ECS.Settings
 {
@@ -21,7 +21,7 @@ namespace UltraSim.ECS.Settings
         {
             if (_settings.ContainsKey(setting.Name))
             {
-                Logger.Log($"Setting '{setting.Name}' already registered!", LogSeverity.Warning);
+                Logging.Log($"Setting '{setting.Name}' already registered!", LogSeverity.Warning);
                 return;
             }
             _settings[setting.Name] = setting;
@@ -81,7 +81,7 @@ namespace UltraSim.ECS.Settings
         {
             if (!_settings.TryGetValue(name, out var setting))
             {
-                Logger.Log($"Setting '{name}' not found!", LogSeverity.Error);
+                Logging.Log($"Setting '{name}' not found!", LogSeverity.Error);
                 return default!;
             }
             return (T)((Setting<T>)setting).Value;//setting.GetValue();
