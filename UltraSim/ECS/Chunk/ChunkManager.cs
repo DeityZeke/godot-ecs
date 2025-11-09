@@ -292,6 +292,15 @@ namespace UltraSim.ECS.Chunk
             return result;
         }
 
+        /// <summary>
+        /// Enumerate all active chunks with their locations.
+        /// </summary>
+        public IEnumerable<KeyValuePair<ChunkLocation, Entity>> EnumerateChunks()
+        {
+            foreach (var kvp in _locationToEntity)
+                yield return kvp;
+        }
+
         // === DEBUGGING / STATISTICS ===
 
         public string GetStatistics()

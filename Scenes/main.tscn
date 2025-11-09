@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://dpdngux01ogyp"]
 
-[ext_resource type="Script" uid="uid://6ewt134sgjtr" path="res://Server/ECS/WorldECS.cs" id="1_bo1nx"]
+[ext_resource type="Script" uid="uid://ccoexd7034ge6" path="res://_temp/HybridBootstrapper.cs" id="1_bo1nx"]
 [ext_resource type="Script" uid="uid://c0bmkl4wjtvou" path="res://UltraSim/CameraController.cs" id="2_bo1nx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u77a"]
@@ -29,11 +29,12 @@ environment = SubResource("Environment_bo1nx")
 
 [node name="WorldECS" type="Node3D" parent="."]
 script = ExtResource("1_bo1nx")
-EntityCount = 10000
+EnablePulsingMovement = true
 
 [node name="Camera3D" type="Camera3D" parent="."]
 current = true
 script = ExtResource("2_bo1nx")
+InitialPosition = Vector3(0, 1.8, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_bo1nx")

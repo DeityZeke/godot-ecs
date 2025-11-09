@@ -71,9 +71,11 @@ namespace Client.ECS.Systems
         private CommandBuffer _buffer = new();
         private int _frameCounter = 0;
         private ChunkLocation _lastCameraChunk = new(int.MaxValue, int.MaxValue, int.MaxValue);
+        private readonly Dictionary<ChunkLocation, RenderZoneType> _chunkZoneCache = new();
         private static readonly int ChunkLocationTypeId = ComponentManager.GetTypeId<ChunkLocation>();
         private static readonly int ChunkBoundsTypeId = ComponentManager.GetTypeId<ChunkBounds>();
         private static readonly int RenderZoneTypeId = ComponentManager.GetTypeId<RenderZone>();
+        private static readonly int ChunkOwnerTypeId = ComponentManager.GetTypeId<ChunkOwner>();
         public override void OnInitialize(World world)
         {
             // ChunkManager will be accessed via static service locator pattern
@@ -156,53 +158,45 @@ namespace Client.ECS.Systems
             // Get frustum planes from cache if culling is enabled
             Godot.Collections.Array<Plane>? frustumPlanes = enableFrustumCulling ? CameraCache.FrustumPlanes : null;
             // First, build a map of chunk location -> render zone
-            var chunkZones = new Dictionary<ChunkLocation, RenderZoneType>();
-            // Query all chunk entities to determine their zones
-            var chunkArchetypes = world.QueryArchetypes(typeof(ChunkLocation));
-            foreach (var arch in chunkArchetypes)
+            _chunkZoneCache.Clear();
+            foreach (var kvp in _chunkManager.EnumerateChunks())
             {
-                if (arch.Count == 0) continue;
-                var locations = arch.GetComponentSpan<ChunkLocation>(ChunkLocationTypeId);
-                // Check if this archetype has ChunkBounds for frustum culling
-                bool hasBounds = arch.HasComponent(ChunkBoundsTypeId);
-                Span<ChunkBounds> bounds = hasBounds ? arch.GetComponentSpan<ChunkBounds>(ChunkBoundsTypeId) : Span<ChunkBounds>.Empty;
-                for (int i = 0; i < locations.Length; i++)
+                var location = kvp.Key;
+
+                int dx = Math.Abs(location.X - cameraChunk.X);
+                int dy = Math.Abs(location.Y - cameraChunk.Y);
+                int dz = Math.Abs(location.Z - cameraChunk.Z);
+                int maxDist = Math.Max(Math.Max(dx, dz), dy);
+
+                RenderZoneType zone;
+                if (maxDist <= coreBubbleRadius)
                 {
-                    var location = locations[i];
-                    // Calculate chunk distance from camera chunk (Manhattan distance in chunk space)
-                    int dx = Math.Abs(location.X - cameraChunk.X);
-                    int dy = Math.Abs(location.Y - cameraChunk.Y);
-                    int dz = Math.Abs(location.Z - cameraChunk.Z);
-                    int maxDist = Math.Max(Math.Max(dx, dz), dy); // Use max for cube-shaped zones
-                    // Determine zone based on distance
-                    RenderZoneType zone;
-                    if (maxDist <= coreBubbleRadius)
-                    {
-                        zone = RenderZoneType.Core;
-                    }
-                    else if (maxDist <= coreBubbleRadius + nearDistance)
-                    {
-                        zone = RenderZoneType.Near;
-                    }
-                    else if (enableFarZone && maxDist <= coreBubbleRadius + farDistance)
-                    {
-                        zone = RenderZoneType.Far;
-                    }
-                    else
+                    zone = RenderZoneType.Core;
+                }
+                else if (maxDist <= coreBubbleRadius + nearDistance)
+                {
+                    zone = RenderZoneType.Near;
+                }
+                else if (enableFarZone && maxDist <= coreBubbleRadius + farDistance)
+                {
+                    zone = RenderZoneType.Far;
+                }
+                else
+                {
+                    zone = RenderZoneType.None;
+                }
+
+                // Only cull far-zone chunks; keep core/near populated so turning the camera shows nearby entities immediately.
+                if (zone == RenderZoneType.Far && enableFrustumCulling && frustumPlanes != null)
+                {
+                    var chunkBounds = _chunkManager.ChunkToWorldBounds(location);
+                    if (!IsInFrustum(chunkBounds, frustumPlanes))
                     {
                         zone = RenderZoneType.None;
                     }
-                    // Frustum culling (only if zone is not None)
-                    if (zone != RenderZoneType.None && enableFrustumCulling && hasBounds && frustumPlanes != null)
-                    {
-                        var chunkBounds = bounds[i];
-                        if (!IsInFrustum(chunkBounds, frustumPlanes))
-                        {
-                            zone = RenderZoneType.None;
-                        }
-                    }
-                    chunkZones[location] = zone;
                 }
+
+                _chunkZoneCache[location] = zone;
             }
             // Now assign render zones to entities based on their chunk
             var entityArchetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(ChunkOwner));
@@ -211,7 +205,9 @@ namespace Client.ECS.Systems
             foreach (var arch in entityArchetypes)
             {
                 if (arch.Count == 0) continue;
-                var chunkOwners = arch.GetComponentSpan<ChunkOwner>(ComponentManager.GetTypeId<ChunkOwner>());
+                var chunkOwners = arch.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                bool hasRenderZone = arch.HasComponent(RenderZoneTypeId);
+                Span<RenderZone> existingZones = hasRenderZone ? arch.GetComponentSpan<RenderZone>(RenderZoneTypeId) : Span<RenderZone>.Empty;
                 var entities = arch.GetEntityArray();
                 for (int i = 0; i < entities.Length; i++)
                 {
@@ -221,30 +217,44 @@ namespace Client.ECS.Systems
                         continue;
                     totalEntities++;
                     // Look up the zone for this entity's chunk
-                    if (chunkZones.TryGetValue(chunkOwner.Location, out var zone))
+                    RenderZoneType zone = RenderZoneType.None;
+                    if (_chunkZoneCache.TryGetValue(chunkOwner.Location, out var mappedZone))
                     {
-                        // Assign zone to entity
-                        _buffer.AddComponent(entity.Index, RenderZoneTypeId, new RenderZone(zone, (ulong)_frameCounter));
-                        // Track stats
-                        switch (zone)
-                        {
-                            case RenderZoneType.Core: coreCount++; break;
-                            case RenderZoneType.Near: nearCount++; break;
-                            case RenderZoneType.Far: farCount++; break;
-                            case RenderZoneType.None: culledCount++; break;
-                        }
+                        zone = mappedZone;
                     }
-                    else
+
+                    bool needsUpdate = true;
+                    if (hasRenderZone)
                     {
-                        // Chunk not found, assign None zone
-                        _buffer.AddComponent(entity.Index, RenderZoneTypeId, new RenderZone(RenderZoneType.None, (ulong)_frameCounter));
-                        culledCount++;
+                        var currentZone = existingZones[i];
+                        needsUpdate = currentZone.Zone != zone || currentZone.LastUpdateFrame != (ulong)_frameCounter;
+                    }
+
+                    if (needsUpdate)
+                    {
+                        _buffer.AddComponent(entity.Index, RenderZoneTypeId, new RenderZone(zone, (ulong)_frameCounter));
+                    }
+
+                    switch (zone)
+                    {
+                        case RenderZoneType.Core:
+                            coreCount++;
+                            break;
+                        case RenderZoneType.Near:
+                            nearCount++;
+                            break;
+                        case RenderZoneType.Far:
+                            farCount++;
+                            break;
+                        default:
+                            culledCount++;
+                            break;
                     }
                 }
             }
             if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 60 == 0)
             {
-                Logging.Log($"[{Name}] Zone distribution: Core={coreCount}, Near={nearCount}, Far={farCount}, Culled={culledCount} (Total: {totalEntities} entities, {chunkZones.Count} chunks)");
+                Logging.Log($"[{Name}] Zone distribution: Core={coreCount}, Near={nearCount}, Far={farCount}, Culled={culledCount} (Total: {totalEntities} entities, {_chunkZoneCache.Count} chunks)");
             }
         }
         /// <summary>
@@ -252,18 +262,24 @@ namespace Client.ECS.Systems
         /// </summary>
         private bool IsInFrustum(ChunkBounds bounds, Godot.Collections.Array<Plane> frustumPlanes)
         {
-            // Convert ChunkBounds to Godot AABB
-            var aabb = new Aabb(
-                new Vector3(bounds.MinX, bounds.MinY, bounds.MinZ),
-                new Vector3(bounds.MaxX - bounds.MinX, bounds.MaxY - bounds.MinY, bounds.MaxZ - bounds.MinZ)
-            );
-            // Test against all 6 frustum planes
+            var min = new Vector3(bounds.MinX, bounds.MinY, bounds.MinZ);
+            var max = new Vector3(bounds.MaxX, bounds.MaxY, bounds.MaxZ);
+            var center = (min + max) * 0.5f;
+            var extents = (max - min) * 0.5f;
+
             foreach (var plane in frustumPlanes)
             {
-                // If AABB is completely outside any plane, it's culled
-                if (!aabb.IntersectsPlane(plane))
+                var normal = plane.Normal;
+                float r =
+                    extents.X * Math.Abs(normal.X) +
+                    extents.Y * Math.Abs(normal.Y) +
+                    extents.Z * Math.Abs(normal.Z);
+
+                float dist = normal.Dot(center) + plane.D;
+                if (dist + r < 0)
                     return false;
             }
+
             return true;
         }
         public override void OnShutdown(World world)

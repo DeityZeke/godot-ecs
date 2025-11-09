@@ -5,13 +5,30 @@ using System.Collections.Generic;
 
 namespace UltraSim.ECS
 {
+    internal readonly struct ComponentInit
+    {
+        public readonly int TypeId;
+        public readonly object Value;
+
+        public ComponentInit(int typeId, object value)
+        {
+            TypeId = typeId;
+            Value = value;
+        }
+    }
+
     /// <summary>
     /// Fluent API for building entities with multiple components.
     /// Collects all components before creating the entity, avoiding archetype thrashing.
     /// </summary>
     public sealed class EntityBuilder
     {
-        private readonly List<(int typeId, object value)> _components = new();
+        private readonly List<ComponentInit> _components;
+
+        internal EntityBuilder(List<ComponentInit> backingList)
+        {
+            _components = backingList ?? throw new ArgumentNullException(nameof(backingList));
+        }
 
         /// <summary>
         /// Adds a component to the entity being built.
@@ -19,7 +36,7 @@ namespace UltraSim.ECS
         public EntityBuilder Add<T>(T component) where T : struct
         {
             int typeId = ComponentManager.GetTypeId<T>();
-            _components.Add((typeId, component));
+            _components.Add(new ComponentInit(typeId, component));
             return this;
         }
 
@@ -31,18 +48,10 @@ namespace UltraSim.ECS
         public EntityBuilder Add(int typeId, object value)
         {
             int canonicalId = ComponentManager.GetTypeId(value.GetType());
-            _components.Add((canonicalId, value));
+            _components.Add(new ComponentInit(canonicalId, value));
             return this;
         }
 
-        /// <summary>
-        /// Returns all components added to this builder.
-        /// </summary>
-        internal IReadOnlyList<(int typeId, object value)> GetComponents() => _components;
-
-        /// <summary>
-        /// Clears all components from this builder for reuse.
-        /// </summary>
-        public void Clear() => _components.Clear();
+        internal List<ComponentInit> GetComponents() => _components;
     }
 }

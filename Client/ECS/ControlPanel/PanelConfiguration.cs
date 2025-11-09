@@ -45,7 +45,7 @@ namespace Client.ECS.ControlPanel
             var discoveredPanels = AutoDiscoverPanels();
 
             // If config exists, merge preferences (order, expanded state)
-            if (FileAccess.FileExists(CONFIG_PATH))
+            if (Godot.FileAccess.FileExists(CONFIG_PATH))
             {
                 MergeConfigPreferences(discoveredPanels);
             }

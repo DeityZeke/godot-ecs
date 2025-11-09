@@ -186,24 +186,23 @@ namespace UltraSim.ECS.Systems
                 return;
             }
 
-            int entityCount = _world.EntityCount;
-            Logging.Log($"[{Name}] Clearing {entityCount} entities...");
-
             var sw = System.Diagnostics.Stopwatch.StartNew();
+            int destroyed = 0;
 
-            // Destroy all entities by querying all archetypes
-            var archetypes = _world.GetArchetypes();
+            // Only destroy entities spawned for rendering (RenderTag is added during Spawn)
+            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
             foreach (var archetype in archetypes)
             {
                 var entities = archetype.GetEntityArray();
                 foreach (var entity in entities)
                 {
                     _world.EnqueueDestroyEntity(entity);
+                    destroyed++;
                 }
             }
 
             sw.Stop();
-            Logging.Log($"[{Name}] Cleared {entityCount} entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
+            Logging.Log($"[{Name}] Cleared {destroyed} spawned entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
         }
     }
 }

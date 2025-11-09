@@ -1,0 +1,32 @@
+==============================================
+ Entity & ComponentSignature Performance Tests
+==============================================
+Entities: 5,000,000
+Signatures: 200,000
+Components/Signature: 12
+
+
+Scenario               Variant    Ops             Time (ms)    Ops/s           Alloc (MB)   Gen0/1/2  
+------------------------------------------------------------------------------------------------
+Entity.Create          Bitpacked        5,000,000        98.02   51,007,812.36        15.26 5/4/3
+Entity.Create          Legacy           5,000,000         9.20  543,454,632.41         0.00 2/2/2
+Entity.Dictionary      Bitpacked       10,000,000       296.38   33,740,183.72         0.00 3/3/3
+Entity.Dictionary      Legacy          10,000,000       800.90   12,485,965.77         0.00 3/3/3
+Entity.Recycle         Bitpacked       80,000,000       119.91  667,190,967.57         0.00 3/3/3
+Entity.Recycle         Legacy          80,000,000       106.27  752,790,972.53         0.00 3/3/3
+Signature.Build        Bitpacked        2,400,000       237.80   10,092,518.96        61.04 20/12/4
+Signature.Build        Legacy           2,400,000       666.52    3,600,812.70        80.87 35/14/3
+Signature.Contains     Bitpacked        4,800,000         4.83  993,974,032.43         0.00 1/1/1
+Signature.Contains     Legacy           4,800,000        41.11  116,746,565.10         0.00 1/1/1
+CmdBuffer.Commands     Legacy           6,000,000        61.34   97,813,222.39         0.00 2/2/2
+CmdBuffer.Commands     Packed           6,000,000        32.43  185,016,158.08         0.00 2/2/2
+CompQueue.Enqueue+Drain Legacy           8,000,000       295.64   27,059,901.15         0.00 4/3/3
+CompQueue.Enqueue+Drain Packed           8,000,000       318.17   25,144,043.94         0.00 4/3/3
+System.Toggle          Legacy           2,000,000        11.94  167,483,147.01         0.00 1/1/1
+System.Toggle          Packed           2,000,000         2.68  745,073,203.44         0.00 1/1/1
+Archetype.Shift        Legacy           3,000,000      2940.90    1,020,095.37         0.00 1777/95/2
+Archetype.Shift        Packed           3,000,000       126.55   23,706,719.43         0.00 20/2/2
+Aggregate.All          Legacy         118,800,000      4668.26   25,448,478.56         0.00 1815/111/4
+Aggregate.All          Optimized      118,800,000       911.79  130,292,473.70         0.00 41/15/4
+
+Sink Value (prevents dead-code elimination): 1734299859663680

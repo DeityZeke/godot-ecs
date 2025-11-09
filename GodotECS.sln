@@ -2,6 +2,10 @@
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotECS", "GodotECS.csproj", "{5CCE3AEC-6A0D-4C11-9875-EE505ADB6640}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotECS.Tests", "Tests\GodotECS.Tests\GodotECS.Tests.csproj", "{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntitySignatureBench", "Tests\Benchmarks\EntitySignatureBench\EntitySignatureBench.csproj", "{C04CF899-5FC9-4753-A354-E01F689AE994}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 	Debug|Any CPU = Debug|Any CPU
@@ -15,5 +19,17 @@ Global
 		{5CCE3AEC-6A0D-4C11-9875-EE505ADB6640}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
 		{5CCE3AEC-6A0D-4C11-9875-EE505ADB6640}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
 		{5CCE3AEC-6A0D-4C11-9875-EE505ADB6640}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+		{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
+		{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}.ExportRelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B8F9F46-8CD3-4CA0-932D-B82631BE7CD0}.ExportRelease|Any CPU.Build.0 = Debug|Any CPU
+		{C04CF899-5FC9-4753-A354-E01F689AE994}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C04CF899-5FC9-4753-A354-E01F689AE994}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C04CF899-5FC9-4753-A354-E01F689AE994}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C04CF899-5FC9-4753-A354-E01F689AE994}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
+		{C04CF899-5FC9-4753-A354-E01F689AE994}.ExportRelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{C04CF899-5FC9-4753-A354-E01F689AE994}.ExportRelease|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -30,6 +30,7 @@ namespace Client.ECS.Systems
             public IntSetting Rings { get; private set; }
             public BoolSetting CastShadows { get; private set; }
             public BoolSetting EnableDebugLogs { get; private set; }
+            public IntSetting MaxMeshInstances { get; private set; }
 
             public Settings()
             {
@@ -50,6 +51,10 @@ namespace Client.ECS.Systems
 
                 EnableDebugLogs = RegisterBool("Enable Debug Logs", false,
                     tooltip: "Log node creation/destruction operations");
+
+                MaxMeshInstances = RegisterInt("Max MeshInstances", 25000,
+                    min: 1000, max: 200000, step: 1000,
+                    tooltip: "Hard cap to prevent freezing when too many MeshInstances would be created");
             }
         }
 
@@ -69,17 +74,21 @@ namespace Client.ECS.Systems
         private Node3D? _bubbleContainer;
         private SphereMesh? _sphereMesh;
 
-        // Track entity -> MeshInstance3D mapping
-        private readonly Dictionary<uint, MeshInstance3D> _entityNodes = new();
-
-        // Track which entities were in core zone last frame (for cleanup)
+        private readonly Dictionary<uint, EntityVisualBinding> _entityBindings = new();
+        private readonly Dictionary<ChunkLocation, ChunkVisualPool<MeshInstance3D>> _chunkPools = new();
+        private readonly List<uint> _releaseBuffer = new();
         private readonly HashSet<uint> _coreEntitiesLastFrame = new();
         private readonly HashSet<uint> _coreEntitiesThisFrame = new();
 
         private static readonly int PositionTypeId = ComponentManager.GetTypeId<Position>();
         private static readonly int RenderZoneTypeId = ComponentManager.GetTypeId<RenderZone>();
+        private static readonly int ChunkOwnerTypeId = ComponentManager.GetTypeId<ChunkOwner>();
+        private static readonly Vector3 HiddenPosition = new(0, -10000, 0);
+
+        private int _totalAllocatedMeshInstances = 0;
 
         private int _frameCounter = 0;
+        private bool _loggedMaxWarning = false;
 
         public override void OnInitialize(World world)
         {
@@ -117,144 +126,215 @@ namespace Client.ECS.Systems
                 return;
 
             _frameCounter++;
-
-            // Swap frame tracking sets
             _coreEntitiesThisFrame.Clear();
 
-            // Query entities with Position + RenderTag + Visible + RenderZone
-            var archetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible), typeof(RenderZone));
+            var archetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible), typeof(ChunkOwner), typeof(RenderZone));
 
             foreach (var arch in archetypes)
             {
-                if (arch.Count == 0) continue;
+                if (arch.Count == 0)
+                    continue;
 
                 var positions = arch.GetComponentSpan<Position>(PositionTypeId);
                 var renderZones = arch.GetComponentSpan<RenderZone>(RenderZoneTypeId);
+                var chunkOwners = arch.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
                 var entities = arch.GetEntityArray();
 
                 for (int i = 0; i < entities.Length; i++)
                 {
-                    var entity = entities[i];
-                    var zone = renderZones[i];
-
-                    // Only process entities in Core zone
-                    if (zone.Zone != RenderZoneType.Core)
+                    if (renderZones[i].Zone != RenderZoneType.Core)
                         continue;
 
-                    var pos = positions[i];
+                    var owner = chunkOwners[i];
+                    if (!owner.IsAssigned)
+                        continue;
+
+                    var entity = entities[i];
                     uint entityIndex = entity.Index;
                     _coreEntitiesThisFrame.Add(entityIndex);
 
-                    // Create or update MeshInstance3D
-                    if (!_entityNodes.TryGetValue(entityIndex, out var meshInstance))
-                    {
-                        // Create new MeshInstance3D for this entity
-                        meshInstance = CreateMeshInstance(entityIndex);
-                        _entityNodes[entityIndex] = meshInstance;
-
-                        if (SystemSettings.EnableDebugLogs.Value)
-                        {
-                            Logging.Log($"[{Name}] Created MeshInstance for entity {entity.Index} at {pos}");
-                        }
-                    }
-
-                    // Update position
-                    if (meshInstance.IsInsideTree())
-                    {
-                        meshInstance.GlobalPosition = new Vector3(pos.X, pos.Y, pos.Z);
-                    }
+                    UpdateOrAttachVisual(entityIndex, owner.Location, positions[i]);
                 }
             }
 
-            // Remove entities that left the core zone
             RemoveOutsideCoreZone();
 
-            // Debug stats every 60 frames
             if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 60 == 0)
             {
-                Logging.Log($"[{Name}] Active MeshInstances: {_entityNodes.Count}");
+                Logging.Log($"[{Name}] Active MeshInstances: {_entityBindings.Count}, Pools: {_chunkPools.Count}");
             }
         }
 
-        /// <summary>
-        /// Create a new MeshInstance3D for an entity.
-        /// </summary>
-        private MeshInstance3D CreateMeshInstance(uint entityIndex)
-        {
-            if (_bubbleContainer == null || _sphereMesh == null)
-                throw new InvalidOperationException("Bubble container or sphere mesh not initialized");
-
-            var meshInstance = new MeshInstance3D
-            {
-                Name = $"Entity_{entityIndex}",
-                Mesh = _sphereMesh,
-                CastShadow = SystemSettings.CastShadows.Value
-                    ? GeometryInstance3D.ShadowCastingSetting.On
-                    : GeometryInstance3D.ShadowCastingSetting.Off,
-                GIMode = GeometryInstance3D.GIModeEnum.Disabled
-            };
-
-            _bubbleContainer.CallDeferred("add_child", meshInstance);
-            return meshInstance;
-        }
-
-        /// <summary>
-        /// Remove MeshInstance3D nodes for entities that left the core zone.
-        /// </summary>
-        private void RemoveOutsideCoreZone()
+        private void UpdateOrAttachVisual(uint entityIndex, ChunkLocation chunkLocation, Position position)
         {
             if (_bubbleContainer == null)
                 return;
 
-            // Find entities that were in core last frame but not this frame
-            var toRemove = new List<uint>();
+            if (_entityBindings.TryGetValue(entityIndex, out var binding))
+            {
+                if (binding.Chunk == chunkLocation)
+                {
+                    UpdateVisualPosition(binding.Visual, position);
+                    return;
+                }
+
+                ReleaseEntityVisual(entityIndex);
+            }
+
+            var pool = GetOrCreateChunkPool(chunkLocation);
+            var visual = pool.Acquire();
+
+            if (visual == null)
+            {
+                if (!_loggedMaxWarning)
+                {
+                    Logging.Log($"[{Name}] MeshInstance limit of {SystemSettings.MaxMeshInstances.Value:N0} reached. Additional core entities will render via MultiMesh.", LogSeverity.Warning);
+                    _loggedMaxWarning = true;
+                }
+                return;
+            }
+
+            _entityBindings[entityIndex] = new EntityVisualBinding(chunkLocation, visual);
+            UpdateVisualPosition(visual, position);
+        }
+
+        private ChunkVisualPool<MeshInstance3D> GetOrCreateChunkPool(ChunkLocation chunkLocation)
+        {
+            if (_bubbleContainer == null)
+                throw new InvalidOperationException("Bubble container not initialized");
+
+            if (_chunkPools.TryGetValue(chunkLocation, out var existing))
+                return existing;
+
+            var chunkContainer = new Node3D
+            {
+                Name = $"CoreChunk_{chunkLocation.X}_{chunkLocation.Z}_{chunkLocation.Y}"
+            };
+            _bubbleContainer.CallDeferred("add_child", chunkContainer);
+
+            MeshInstance3D? Factory(ChunkLocation _) => TryCreateMeshInstance(chunkContainer);
+            void OnAcquire(MeshInstance3D visual) => ActivateVisual(visual);
+            void OnRelease(MeshInstance3D visual) => DeactivateVisual(visual);
+
+            var pool = new ChunkVisualPool<MeshInstance3D>(chunkLocation, Factory, OnAcquire, OnRelease);
+            _chunkPools[chunkLocation] = pool;
+            return pool;
+        }
+
+        private MeshInstance3D? TryCreateMeshInstance(Node3D parent)
+        {
+            if (_sphereMesh == null)
+                return null;
+
+            if (_totalAllocatedMeshInstances >= SystemSettings.MaxMeshInstances.Value)
+                return null;
+
+            var meshInstance = new MeshInstance3D
+            {
+                Name = $"CoreEntity_{_totalAllocatedMeshInstances}",
+                Mesh = _sphereMesh,
+                CastShadow = SystemSettings.CastShadows.Value
+                    ? GeometryInstance3D.ShadowCastingSetting.On
+                    : GeometryInstance3D.ShadowCastingSetting.Off,
+                GIMode = GeometryInstance3D.GIModeEnum.Disabled,
+                Visible = false
+            };
+
+            parent.CallDeferred("add_child", meshInstance);
+            meshInstance.GlobalPosition = HiddenPosition;
+
+            _totalAllocatedMeshInstances++;
+            if (_totalAllocatedMeshInstances < SystemSettings.MaxMeshInstances.Value)
+            {
+                _loggedMaxWarning = false;
+            }
+
+            return meshInstance;
+        }
+
+        private static void ActivateVisual(MeshInstance3D visual)
+        {
+            if (!visual.Visible)
+            {
+                visual.Visible = true;
+            }
+        }
+
+        private static void DeactivateVisual(MeshInstance3D visual)
+        {
+            if (!visual.IsInsideTree())
+                return;
+
+            visual.Visible = false;
+            visual.CallDeferred(Node3D.MethodName.SetGlobalPosition, HiddenPosition);
+        }
+
+        private static void UpdateVisualPosition(MeshInstance3D visual, Position position)
+        {
+            if (!visual.IsInsideTree())
+                return;
+
+            visual.CallDeferred(Node3D.MethodName.SetGlobalPosition, new Vector3(position.X, position.Y, position.Z));
+        }
+
+        private void ReleaseEntityVisual(uint entityIndex)
+        {
+            if (!_entityBindings.TryGetValue(entityIndex, out var binding))
+                return;
+
+            if (_chunkPools.TryGetValue(binding.Chunk, out var pool))
+            {
+                pool.Release(binding.Visual);
+            }
+
+            _entityBindings.Remove(entityIndex);
+        }
+
+        /// <summary>
+        /// Return MeshInstances for entities that left the core zone.
+        /// </summary>
+        private void RemoveOutsideCoreZone()
+        {
+            _releaseBuffer.Clear();
+
             foreach (var entityIndex in _coreEntitiesLastFrame)
             {
                 if (!_coreEntitiesThisFrame.Contains(entityIndex))
                 {
-                    toRemove.Add(entityIndex);
+                    _releaseBuffer.Add(entityIndex);
                 }
             }
 
-            // Remove MeshInstances for entities outside core zone
-            foreach (var entityIndex in toRemove)
+            foreach (var entityIndex in _releaseBuffer)
             {
-                if (_entityNodes.TryGetValue(entityIndex, out var meshInstance))
-                {
-                    if (meshInstance.IsInsideTree())
-                    {
-                        meshInstance.QueueFree();
-                    }
-                    _entityNodes.Remove(entityIndex);
+                ReleaseEntityVisual(entityIndex);
 
-                    if (SystemSettings.EnableDebugLogs.Value)
-                    {
-                        Logging.Log($"[{Name}] Removed MeshInstance for entity {entityIndex}");
-                    }
+                if (SystemSettings.EnableDebugLogs.Value)
+                {
+                    Logging.Log($"[{Name}] Returned MeshInstance for entity {entityIndex} to pool");
                 }
             }
 
-            // Update tracking set for next frame
             _coreEntitiesLastFrame.Clear();
             foreach (var entityIndex in _coreEntitiesThisFrame)
             {
                 _coreEntitiesLastFrame.Add(entityIndex);
             }
+
+            if (_entityBindings.Count < SystemSettings.MaxMeshInstances.Value)
+            {
+                _loggedMaxWarning = false;
+            }
         }
 
         public override void OnShutdown(World world)
         {
-            // Clean up all MeshInstances
-            foreach (var meshInstance in _entityNodes.Values)
-            {
-                if (meshInstance.IsInsideTree())
-                {
-                    meshInstance.QueueFree();
-                }
-            }
-            _entityNodes.Clear();
+            _entityBindings.Clear();
+            _chunkPools.Clear();
+            _coreEntitiesLastFrame.Clear();
+            _coreEntitiesThisFrame.Clear();
+            _releaseBuffer.Clear();
 
-            // Remove bubble container
             if (_bubbleContainer != null && _bubbleContainer.IsInsideTree())
             {
                 _bubbleContainer.QueueFree();
@@ -262,7 +342,19 @@ namespace Client.ECS.Systems
 
             if (SystemSettings.EnableDebugLogs.Value)
             {
-                Logging.Log($"[{Name}] Shutdown complete - cleaned up {_entityNodes.Count} MeshInstances");
+                Logging.Log($"[{Name}] Shutdown complete - recycled {_totalAllocatedMeshInstances} MeshInstances");
+            }
+        }
+
+        private readonly struct EntityVisualBinding
+        {
+            public ChunkLocation Chunk { get; }
+            public MeshInstance3D Visual { get; }
+
+            public EntityVisualBinding(ChunkLocation chunk, MeshInstance3D visual)
+            {
+                Chunk = chunk;
+                Visual = visual;
             }
         }
     }

@@ -95,6 +95,9 @@ namespace UltraSim.ECS
             return hc.ToHashCode();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal ReadOnlySpan<ulong> GetRawBits() => _bits;
+
         /// <summary>
         /// Get all component IDs in this signature (allocates a list).
         /// Use sparingly - only for debugging or initialization.

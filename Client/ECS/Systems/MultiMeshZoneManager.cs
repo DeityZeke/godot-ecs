@@ -73,16 +73,15 @@ namespace Client.ECS.Systems
         private Node3D? _multiMeshContainer;
         private SphereMesh? _sphereMesh;
         private ChunkManager? _chunkManager;
-        private World? _world;
 
         // Track chunk -> MultiMeshInstance3D + data
         private class ChunkMultiMesh
         {
             public MultiMeshInstance3D Instance = null!;
             public MultiMesh MultiMesh = null!;
-            public List<uint> EntityIndices = new(); // Track which entities are in this chunk
             public Transform3D[] Transforms = Array.Empty<Transform3D>(); // Pre-allocated transform buffer
             public int Capacity = 0;
+            public int Count = 0;
         }
 
         private readonly Dictionary<ChunkLocation, ChunkMultiMesh> _chunkMultiMeshes = new();
@@ -97,8 +96,6 @@ namespace Client.ECS.Systems
 
         public override void OnInitialize(World world)
         {
-            _world = world;
-
             var tree = Engine.GetMainLoop() as SceneTree;
             _rootNode = tree?.CurrentScene as Node3D;
 
@@ -150,7 +147,7 @@ namespace Client.ECS.Systems
             _activeChunksThisFrame.Clear();
             foreach (var chunkData in _chunkMultiMeshes.Values)
             {
-                chunkData.EntityIndices.Clear();
+                chunkData.Count = 0;
             }
 
             // Query entities with Position + RenderTag + Visible + ChunkOwner + RenderZone
@@ -183,14 +180,16 @@ namespace Client.ECS.Systems
                     var chunkLoc = chunkOwner.Location;
                     _activeChunksThisFrame.Add(chunkLoc);
 
-                    // Get or create ChunkMultiMesh
                     if (!_chunkMultiMeshes.TryGetValue(chunkLoc, out var chunkData))
                     {
                         chunkData = CreateChunkMultiMesh(chunkLoc);
                         _chunkMultiMeshes[chunkLoc] = chunkData;
                     }
 
-                    chunkData.EntityIndices.Add(entity.Index);
+                    int nextIndex = chunkData.Count;
+                    EnsureCapacity(chunkData, nextIndex + 1, chunkLoc);
+                    chunkData.Transforms[nextIndex] = new Transform3D(Basis.Identity, new Vector3(pos.X, pos.Y, pos.Z));
+                    chunkData.Count++;
                 }
             }
 
@@ -206,7 +205,7 @@ namespace Client.ECS.Systems
                 int totalEntities = 0;
                 foreach (var chunkData in _chunkMultiMeshes.Values)
                 {
-                    totalEntities += chunkData.EntityIndices.Count;
+                    totalEntities += chunkData.Count;
                 }
                 Logging.Log($"[{Name}] Active chunks: {_chunkMultiMeshes.Count}, Total entities: {totalEntities}");
             }
@@ -258,69 +257,47 @@ namespace Client.ECS.Systems
 
             return chunkData;
         }
+        private void EnsureCapacity(ChunkMultiMesh chunkData, int required, ChunkLocation location)
+        {
+            if (required <= chunkData.Capacity)
+                return;
+
+            int newCapacity = chunkData.Capacity == 0
+                ? Math.Max(SystemSettings.InitialChunkCapacity.Value, required)
+                : Math.Max(required, chunkData.Capacity * 2);
+
+            var newBuffer = new Transform3D[newCapacity];
+            if (chunkData.Capacity > 0)
+            {
+                Array.Copy(chunkData.Transforms, newBuffer, chunkData.Capacity);
+            }
+            chunkData.Transforms = newBuffer;
+            chunkData.Capacity = newCapacity;
+
+            if (SystemSettings.EnableDebugLogs.Value)
+            {
+                Logging.Log($"[{Name}] Grown chunk {location} transform buffer to {newCapacity}");
+            }
+        }
 
         /// <summary>
         /// Update MultiMesh transforms for all active chunks.
         /// </summary>
         private void UpdateChunkMultiMeshes()
         {
-            if (_world == null)
-                return;
-
-            // Get Position archetype for bulk lookup
-            var archetypes = _world.QueryArchetypes(typeof(Position));
-            var positionLookup = new Dictionary<uint, Position>();
-
-            foreach (var arch in archetypes)
+            foreach (var chunkEntry in _chunkMultiMeshes)
             {
-                if (arch.Count == 0) continue;
-                var positions = arch.GetComponentSpan<Position>(PositionTypeId);
-                var entities = arch.GetEntityArray();
+                var chunkData = chunkEntry.Value;
+                int count = chunkData.Count;
 
-                for (int i = 0; i < entities.Length; i++)
-                {
-                    positionLookup[entities[i].Index] = positions[i];
-                }
-            }
-
-            // Update each chunk's MultiMesh
-            foreach (var kvp in _chunkMultiMeshes)
-            {
-                var chunkData = kvp.Value;
-                int entityCount = chunkData.EntityIndices.Count;
-
-                if (entityCount == 0)
+                if (count == 0)
                 {
                     chunkData.MultiMesh.InstanceCount = 0;
                     continue;
                 }
 
-                // Grow transform buffer if needed
-                if (entityCount > chunkData.Capacity)
-                {
-                    int newCapacity = Math.Max(entityCount, chunkData.Capacity * 2);
-                    chunkData.Transforms = new Transform3D[newCapacity];
-                    chunkData.Capacity = newCapacity;
-
-                    if (SystemSettings.EnableDebugLogs.Value)
-                    {
-                        Logging.Log($"[{Name}] Grew chunk {kvp.Key} capacity to {newCapacity}");
-                    }
-                }
-
-                // Build transform array
-                for (int i = 0; i < entityCount; i++)
-                {
-                    uint entityIndex = chunkData.EntityIndices[i];
-                    if (positionLookup.TryGetValue(entityIndex, out var pos))
-                    {
-                        chunkData.Transforms[i] = new Transform3D(Basis.Identity, new Vector3(pos.X, pos.Y, pos.Z));
-                    }
-                }
-
-                // Update MultiMesh
-                chunkData.MultiMesh.InstanceCount = entityCount;
-                for (int i = 0; i < entityCount; i++)
+                chunkData.MultiMesh.InstanceCount = count;
+                for (int i = 0; i < count; i++)
                 {
                     chunkData.MultiMesh.SetInstanceTransform(i, chunkData.Transforms[i]);
                 }

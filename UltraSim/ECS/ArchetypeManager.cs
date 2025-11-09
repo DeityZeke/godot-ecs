@@ -19,7 +19,7 @@ namespace UltraSim.ECS
     {
         private readonly World _world;
         private readonly List<Archetype> _archetypes = new();
-        private readonly Dictionary<ComponentSignature, Archetype> _signatureCache = new();
+        private readonly Dictionary<ComponentSignatureKey, Archetype> _signatureCache = new();
 
         public int ArchetypeCount => _archetypes.Count;
 
@@ -29,7 +29,7 @@ namespace UltraSim.ECS
             // Create empty archetype (archetype 0)
             var emptyArch = new Archetype();
             _archetypes.Add(emptyArch);
-            _signatureCache[emptyArch.Signature] = emptyArch;
+            _signatureCache[new ComponentSignatureKey(emptyArch.Signature)] = emptyArch;
         }
 
         #region Archetype Lookup
@@ -43,7 +43,8 @@ namespace UltraSim.ECS
         public Archetype GetOrCreate(ComponentSignature signature)
         {
             // Check cache first
-            if (_signatureCache.TryGetValue(signature, out var cached))
+            var key = new ComponentSignatureKey(signature);
+            if (_signatureCache.TryGetValue(key, out var cached))
                 return cached;
 
             // Linear search through archetypes (rare case - archetype doesn't exist yet)
@@ -51,7 +52,7 @@ namespace UltraSim.ECS
             {
                 if (arch.Signature.Equals(signature))
                 {
-                    _signatureCache[signature] = arch;
+                    _signatureCache[key] = arch;
                     return arch;
                 }
             }
@@ -75,7 +76,7 @@ namespace UltraSim.ECS
             }
 
             _archetypes.Add(newArch);
-            _signatureCache[signature] = newArch;
+            _signatureCache[key] = newArch;
 
             return newArch;
         }
@@ -91,8 +92,10 @@ namespace UltraSim.ECS
         /// </summary>
         public Archetype GetOrCreate(ComponentSignature signature)
         {
+            var key = new ComponentSignatureKey(signature);
+
             // 1. Fast cache hit
-            if (_signatureCache.TryGetValue(signature, out var cached))
+            if (_signatureCache.TryGetValue(key, out var cached))
                 return cached;
 
             // 2. Linear search (only when new archetype)
@@ -100,7 +103,7 @@ namespace UltraSim.ECS
             {
                 if (arch.Signature.Equals(signature))
                 {
-                    _signatureCache[signature] = arch;
+                    _signatureCache[key] = arch;
                     return arch;
                 }
             }
@@ -141,7 +144,7 @@ namespace UltraSim.ECS
             }
 
             _archetypes.Add(newArch);
-            _signatureCache[signature] = newArch;
+            _signatureCache[key] = newArch;
 
             return newArch;
         }
@@ -263,5 +266,36 @@ namespace UltraSim.ECS
         }
 
         #endregion
+
+        private readonly struct ComponentSignatureKey : IEquatable<ComponentSignatureKey>
+        {
+            private readonly ulong _hash1;
+            private readonly ulong _hash2;
+            private readonly int _count;
+
+            public ComponentSignatureKey(ComponentSignature signature)
+            {
+                _count = signature.Count;
+                var bits = signature.GetRawBits();
+                ulong h1 = 0xcbf29ce484222325;
+                ulong h2 = 0x100000001b3;
+                foreach (var word in bits)
+                {
+                    h1 ^= word;
+                    h1 *= 0x100000001b3;
+                    h2 += word * 0x9e3779b185ebca87;
+                }
+                _hash1 = h1;
+                _hash2 = h2;
+            }
+
+            public bool Equals(ComponentSignatureKey other) =>
+                _hash1 == other._hash1 && _hash2 == other._hash2 && _count == other._count;
+
+            public override bool Equals(object? obj) =>
+                obj is ComponentSignatureKey other && Equals(other);
+
+            public override int GetHashCode() => HashCode.Combine(_hash1, _hash2, _count);
+        }
     }
 }

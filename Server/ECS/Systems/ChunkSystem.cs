@@ -193,10 +193,25 @@ namespace UltraSim.Server.ECS.Systems
                     if (chunkEntity == Entity.Invalid)
                         continue;
 
-                    // Add or update ChunkOwner component
                     var owner = new ChunkOwner(chunkEntity, chunkLoc);
-                    _buffer.AddComponent(entity.Index, ChunkOwnerTypeId, owner);
-                    assignedCount++;
+
+                    if (hasChunkOwner)
+                    {
+                        ref var existingOwner = ref chunkOwners[i];
+
+                        if (!existingOwner.IsAssigned ||
+                            existingOwner.ChunkEntity != chunkEntity ||
+                            !existingOwner.Location.Equals(chunkLoc))
+                        {
+                            existingOwner = owner;
+                            assignedCount++;
+                        }
+                    }
+                    else
+                    {
+                        _buffer.AddComponent(entity.Index, ChunkOwnerTypeId, owner);
+                        assignedCount++;
+                    }
                 }
             }
 

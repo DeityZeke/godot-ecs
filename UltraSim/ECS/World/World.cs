@@ -137,6 +137,7 @@ namespace UltraSim.ECS
         #region Enqueue APIs
 
         public void EnqueueDestroyEntity(Entity e) => _entities.EnqueueDestroy(e);
+        public void EnqueueDestroyEntity(uint entityIndex) => _entities.EnqueueDestroy(entityIndex);
 
         public void EnqueueCreateEntity(Action<Entity>? builder = null) =>
             _entities.EnqueueCreate(builder);

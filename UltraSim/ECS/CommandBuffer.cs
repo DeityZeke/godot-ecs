@@ -38,17 +38,55 @@ namespace UltraSim.ECS
 
         private struct EntityCreationCommand
         {
-            public List<(int typeId, object value)> Components;
+            public List<ComponentInit> Components;
         }
 
-        private struct ThreadCommand
+        private readonly struct ThreadCommand
         {
-            public enum Type { AddComponent, RemoveComponent, DestroyEntity }
+            public enum Type : byte { AddComponent = 0, RemoveComponent = 1, DestroyEntity = 2 }
 
-            public Type CommandType;
-            public uint EntityIndex;
-            public int ComponentTypeId;
-            public object? BoxedValue;
+            private const int EntityBits = 32;
+            private const int ComponentBits = 24;
+            private const int TypeBits = 8;
+
+            private const int ComponentShift = EntityBits;
+            private const int TypeShift = ComponentShift + ComponentBits;
+
+            private const ulong EntityMask = (1UL << EntityBits) - 1;
+            private const uint ComponentMask = (1u << ComponentBits) - 1;
+
+            private readonly ulong _header;
+            public readonly object? BoxedValue;
+
+            private ThreadCommand(ulong header, object? boxedValue)
+            {
+                _header = header;
+                BoxedValue = boxedValue;
+            }
+
+            public Type CommandType => (Type)((_header >> TypeShift) & ((1UL << TypeBits) - 1));
+            public uint EntityIndex => (uint)(_header & EntityMask);
+            public int ComponentTypeId => (int)((_header >> ComponentShift) & ComponentMask);
+
+            public static ThreadCommand CreateAdd(uint entityIndex, int componentTypeId, object boxedValue) =>
+                new(Pack(Type.AddComponent, entityIndex, componentTypeId), boxedValue);
+
+            public static ThreadCommand CreateRemove(uint entityIndex, int componentTypeId) =>
+                new(Pack(Type.RemoveComponent, entityIndex, componentTypeId), null);
+
+            public static ThreadCommand CreateDestroy(uint entityIndex) =>
+                new(Pack(Type.DestroyEntity, entityIndex, 0), null);
+
+            private static ulong Pack(Type type, uint entityIndex, int componentTypeId)
+            {
+#if DEBUG
+                if (componentTypeId < 0 || (uint)componentTypeId > ComponentMask)
+                    throw new ArgumentOutOfRangeException(nameof(componentTypeId), $"ComponentTypeId exceeds {ComponentMask}");
+#endif
+                return ((ulong)type << TypeShift) |
+                       (((ulong)componentTypeId & ComponentMask) << ComponentShift) |
+                       entityIndex;
+            }
         }
 
         #endregion
@@ -58,6 +96,7 @@ namespace UltraSim.ECS
         // Main thread commands (for CreateEntity with builder pattern)
         private readonly List<EntityCreationCommand> _creates = new();
         private readonly List<Entity> _destroys = new();
+        private readonly ConcurrentBag<List<ComponentInit>> _componentListPool = new();
 
         // Thread-local commands (for parallel systems)
         private readonly ThreadLocal<List<ThreadCommand>> _threadLocalBuffers;
@@ -98,12 +137,13 @@ namespace UltraSim.ECS
         /// </summary>
         public void CreateEntity(Action<EntityBuilder> setup)
         {
-            var builder = new EntityBuilder();
+            var components = RentComponentList();
+            var builder = new EntityBuilder(components);
             setup(builder);
 
             _creates.Add(new EntityCreationCommand
             {
-                Components = new List<(int typeId, object value)>(builder.GetComponents())
+                Components = components
             });
         }
 
@@ -126,11 +166,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void DestroyEntity(uint entityIndex)
         {
-            _threadLocalBuffers.Value!.Add(new ThreadCommand
-            {
-                CommandType = ThreadCommand.Type.DestroyEntity,
-                EntityIndex = entityIndex
-            });
+            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateDestroy(entityIndex));
         }
 
         #endregion
@@ -143,13 +179,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void AddComponent(uint entityIndex, int componentTypeId, object boxedValue)
         {
-            _threadLocalBuffers.Value!.Add(new ThreadCommand
-            {
-                CommandType = ThreadCommand.Type.AddComponent,
-                EntityIndex = entityIndex,
-                ComponentTypeId = componentTypeId,
-                BoxedValue = boxedValue
-            });
+            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateAdd(entityIndex, componentTypeId, boxedValue));
         }
 
         /// <summary>
@@ -158,12 +188,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void RemoveComponent(uint entityIndex, int componentTypeId)
         {
-            _threadLocalBuffers.Value!.Add(new ThreadCommand
-            {
-                CommandType = ThreadCommand.Type.RemoveComponent,
-                EntityIndex = entityIndex,
-                ComponentTypeId = componentTypeId
-            });
+            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateRemove(entityIndex, componentTypeId));
         }
 
         #endregion
@@ -224,7 +249,7 @@ namespace UltraSim.ECS
                             break;
 
                         case ThreadCommand.Type.DestroyEntity:
-                            world.EnqueueDestroyEntity(new Entity(cmd.EntityIndex, 1)); // Version 1 as placeholder (lookup uses index only)
+                            world.EnqueueDestroyEntity(cmd.EntityIndex);
                             break;
                     }
                 }
@@ -246,6 +271,7 @@ namespace UltraSim.ECS
                     // Empty entity
                     world.CreateEntity();
                     created++;
+                    ReturnComponentList(cmd.Components);
                     continue;
                 }
 
@@ -254,7 +280,7 @@ namespace UltraSim.ECS
                 foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
                 {
                     // Use pre-computed typeId from EntityBuilder (OPTIMIZED)
-                    signature = signature.Add(component.typeId);
+                    signature = signature.Add(component.TypeId);
                 }
 
                 // Create entity directly in target archetype (ONE archetype move!)
@@ -270,10 +296,11 @@ namespace UltraSim.ECS
                 foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
                 {
                     // Use pre-computed typeId (OPTIMIZED - eliminates redundant GetTypeId call)
-                    archetype.SetComponentValueBoxed(component.typeId, slot, component.value);
+                    archetype.SetComponentValueBoxed(component.TypeId, slot, component.Value);
                 }
 
                 created++;
+                ReturnComponentList(cmd.Components);
             }
 
             return created;
@@ -313,6 +340,23 @@ namespace UltraSim.ECS
                     _pool.Add(buffer);
                 }
             }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private List<ComponentInit> RentComponentList()
+        {
+            if (_componentListPool.TryTake(out var list))
+                return list;
+            return new List<ComponentInit>(8);
+        }
+
+        private void ReturnComponentList(List<ComponentInit> list)
+        {
+            list.Clear();
+            _componentListPool.Add(list);
         }
 
         #endregion

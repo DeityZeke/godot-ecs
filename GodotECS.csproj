@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="CONCEPT REFERENCE\**\*.cs" />
+    <Compile Remove="Tests\**\*.cs" />
   </ItemGroup>
 </Project>

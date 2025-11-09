@@ -121,8 +121,8 @@ namespace UltraSim.ECS
         private readonly World _world;
 
         // Deferred component operation queues
-        private readonly ConcurrentQueue<(uint entityIndex, int componentTypeId)> _removeQueue = new();
-        private readonly ConcurrentQueue<(uint entityIndex, int componentTypeId, object boxedValue)> _addQueue = new();
+        private readonly ConcurrentQueue<ComponentRemoveOp> _removeQueue = new();
+        private readonly ConcurrentQueue<ComponentAddOp> _addQueue = new();
 
         #endregion
 
@@ -143,7 +143,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void EnqueueAdd(uint entityIndex, int componentTypeId, object boxedValue)
         {
-            _addQueue.Enqueue((entityIndex, componentTypeId, boxedValue));
+            _addQueue.Enqueue(ComponentAddOp.Create(entityIndex, componentTypeId, boxedValue));
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void EnqueueRemove(uint entityIndex, int componentTypeId)
         {
-            _removeQueue.Enqueue((entityIndex, componentTypeId));
+            _removeQueue.Enqueue(ComponentRemoveOp.Create(entityIndex, componentTypeId));
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace UltraSim.ECS
             {
                 try
                 {
-                    _world.RemoveComponentFromEntityInternal(op.entityIndex, op.componentTypeId);
+                    _world.RemoveComponentFromEntityInternal(op.EntityIndex, op.ComponentTypeId);
                 }
                 catch (Exception ex)
                 {
@@ -178,7 +178,7 @@ namespace UltraSim.ECS
             {
                 try
                 {
-                    _world.AddComponentToEntityInternal(op.entityIndex, op.componentTypeId, op.boxedValue);
+                    _world.AddComponentToEntityInternal(op.EntityIndex, op.ComponentTypeId, op.BoxedValue);
                 }
                 catch (Exception ex)
                 {
@@ -205,6 +205,51 @@ namespace UltraSim.ECS
         /// Number of queued component removals.
         /// </summary>
         public int RemoveCount => _removeQueue.Count;
+
+        #endregion
+
+        #region Packed Ops
+
+        private readonly struct ComponentRemoveOp
+        {
+            private const int EntityBits = 32;
+            private const int ComponentBits = 32; // allow large component ids
+            private const int ComponentShift = EntityBits;
+            private const ulong EntityMask = (1UL << EntityBits) - 1;
+
+            private readonly ulong _header;
+
+            private ComponentRemoveOp(ulong header) => _header = header;
+
+            public uint EntityIndex => (uint)(_header & EntityMask);
+            public int ComponentTypeId => (int)(_header >> ComponentShift);
+
+            public static ComponentRemoveOp Create(uint entityIndex, int componentTypeId) =>
+                new(((ulong)componentTypeId << ComponentShift) | entityIndex);
+        }
+
+        private readonly struct ComponentAddOp
+        {
+            private const int EntityBits = 32;
+            private const int ComponentBits = 32;
+            private const int ComponentShift = EntityBits;
+            private const ulong EntityMask = (1UL << EntityBits) - 1;
+
+            private readonly ulong _header;
+            public readonly object BoxedValue;
+
+            private ComponentAddOp(ulong header, object boxedValue)
+            {
+                _header = header;
+                BoxedValue = boxedValue;
+            }
+
+            public uint EntityIndex => (uint)(_header & EntityMask);
+            public int ComponentTypeId => (int)(_header >> ComponentShift);
+
+            public static ComponentAddOp Create(uint entityIndex, int componentTypeId, object boxedValue) =>
+                new(((ulong)componentTypeId << ComponentShift) | entityIndex, boxedValue);
+        }
 
         #endregion
     }
