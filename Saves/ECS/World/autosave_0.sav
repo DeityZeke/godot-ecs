@@ -1,9 +1,0 @@
-[World]
-ArchetypeCount=2
-AutoSaveEnabled=True
-AutoSaveInterval=60
-EntityCount=600000
-SaveTimestamp=1762293909
-SystemStatesSaved=4
-Version=2.0
-
