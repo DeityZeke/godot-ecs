@@ -173,8 +173,14 @@ public partial class HybridBootstrapper : WorldHostBase
 
         if (world.Systems.GetSystem<MultiMeshZoneManager>() is MultiMeshZoneManager multiMeshManager)
         {
-            multiMeshManager.SetChunkManager(chunkManager);
-            GD.Print("[HybridBootstrapper] Connected MultiMeshZoneManager to ChunkManager");
+            multiMeshManager.SetChunkManager(chunkManager, chunkSystem);
+            GD.Print("[HybridBootstrapper] Connected MultiMeshZoneManager to ChunkManager + ChunkSystem");
+        }
+
+        if (world.Systems.GetSystem<MeshInstanceBubbleManager>() is MeshInstanceBubbleManager bubbleManager)
+        {
+            bubbleManager.SetChunkManager(chunkManager, chunkSystem);
+            GD.Print("[HybridBootstrapper] Connected MeshInstanceBubbleManager to ChunkManager + ChunkSystem");
         }
 
         if (_chunkDebugOverlay != null)

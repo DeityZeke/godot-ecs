@@ -14,13 +14,13 @@ namespace Client.ECS.Systems
     /// <typeparam name="TVisual">Concrete visual node type (e.g. MeshInstance3D).</typeparam>
     internal sealed class ChunkVisualPool<TVisual> where TVisual : class
     {
-        private readonly Stack<TVisual> _available = new();
+        private readonly Stack<TVisual> _available;
         private readonly HashSet<TVisual> _leased = new();
         private readonly Func<ChunkLocation, TVisual?> _factory;
         private readonly Action<TVisual>? _onAcquire;
         private readonly Action<TVisual>? _onRelease;
 
-        public ChunkLocation Location { get; }
+        public ChunkLocation Location { get; private set; }
 
         public int ActiveCount => _leased.Count;
         public int AvailableCount => _available.Count;
@@ -29,12 +29,19 @@ namespace Client.ECS.Systems
             ChunkLocation location,
             Func<ChunkLocation, TVisual?> factory,
             Action<TVisual>? onAcquire = null,
-            Action<TVisual>? onRelease = null)
+            Action<TVisual>? onRelease = null,
+            int initialCapacity = 0)
         {
             Location = location;
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
             _onAcquire = onAcquire;
             _onRelease = onRelease;
+            _available = new Stack<TVisual>(Math.Max(0, initialCapacity));
+        }
+
+        public void UpdateLocation(ChunkLocation location)
+        {
+            Location = location;
         }
 
         public TVisual? Acquire()

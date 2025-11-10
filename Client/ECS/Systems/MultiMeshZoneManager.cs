@@ -2,14 +2,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Godot;
 using UltraSim.ECS;
 using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
+using UltraSim.Server.ECS.Systems;
 using UltraSim;
+using Client.ECS;
 using Client.ECS.Components;
+using Client.ECS.Rendering;
 
 namespace Client.ECS.Systems
 {
@@ -28,6 +33,8 @@ namespace Client.ECS.Systems
             public IntSetting RadialSegments { get; private set; }
             public IntSetting Rings { get; private set; }
             public IntSetting InitialChunkCapacity { get; private set; }
+            public IntSetting ChunkReleaseDelayFrames { get; private set; }
+            public IntSetting MaxChunkUploadsPerFrame { get; private set; }
             public BoolSetting CastShadows { get; private set; }
             public BoolSetting EnableDebugLogs { get; private set; }
 
@@ -45,9 +52,17 @@ namespace Client.ECS.Systems
                     min: 2, max: 32, step: 1,
                     tooltip: "Sphere mesh rings (lower = better performance)");
 
-                InitialChunkCapacity = RegisterInt("Initial Chunk Capacity", 1000,
-                    min: 100, max: 100000, step: 100,
+                InitialChunkCapacity = RegisterInt("Initial Chunk Capacity", 256,
+                    min: 64, max: 100000, step: 64,
                     tooltip: "Initial MultiMesh capacity per chunk (auto-grows if needed)");
+
+                ChunkReleaseDelayFrames = RegisterInt("Chunk Release Delay (frames)", 10,
+                    min: 0, max: 300, step: 1,
+                    tooltip: "How many frames to keep inactive chunk MultiMeshes before pooling them");
+
+                MaxChunkUploadsPerFrame = RegisterInt("Chunk Uploads Per Frame", 256,
+                    min: 0, max: 5000, step: 32,
+                    tooltip: "How many dirty chunks can upload transforms per frame (0 = all)");
 
                 CastShadows = RegisterBool("Cast Shadows", false,
                     tooltip: "Enable shadow casting for near zone entities");
@@ -66,13 +81,19 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(MultiMeshZoneManager).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(RenderTag), typeof(Visible), typeof(ChunkOwner), typeof(RenderZone) };
+        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(RenderTag), typeof(Visible), typeof(ChunkOwner), typeof(RenderZone), typeof(StaticRenderTag) };
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
 
         private Node3D? _rootNode;
         private Node3D? _multiMeshContainer;
         private SphereMesh? _sphereMesh;
+        private BoxMesh? _cubeMesh;
+        private StandardMaterial3D? _nearZoneMaterial;
+        private StandardMaterial3D? _staticNearMaterial;
+        private const float FrustumPadding = 32f;
+        private const int FrustumHideGraceFrames = 5;
         private ChunkManager? _chunkManager;
+        private ChunkSystem? _chunkSystem;
 
         // Track chunk -> MultiMeshInstance3D + data
         private class ChunkMultiMesh
@@ -82,17 +103,51 @@ namespace Client.ECS.Systems
             public Transform3D[] Transforms = Array.Empty<Transform3D>(); // Pre-allocated transform buffer
             public int Capacity = 0;
             public int Count = 0;
+            public ChunkLocation Location;
+            public RenderPrototypeKind Prototype;
+            public bool IsDirty;
+            public int LastUploadedCount;
+            public bool IsVisible;
+            public int HiddenFrames;
         }
 
-        private readonly Dictionary<ChunkLocation, ChunkMultiMesh> _chunkMultiMeshes = new();
-        private readonly HashSet<ChunkLocation> _activeChunksLastFrame = new();
-        private readonly HashSet<ChunkLocation> _activeChunksThisFrame = new();
+        private readonly struct ChunkMeshKey : IEquatable<ChunkMeshKey>
+        {
+            public ChunkMeshKey(ChunkLocation location, RenderPrototypeKind prototype)
+            {
+                Location = location;
+                Prototype = prototype;
+            }
+
+            public ChunkLocation Location { get; }
+            public RenderPrototypeKind Prototype { get; }
+
+            public bool Equals(ChunkMeshKey other) => Location.Equals(other.Location) && Prototype == other.Prototype;
+            public override bool Equals(object? obj) => obj is ChunkMeshKey other && Equals(other);
+            public override int GetHashCode() => HashCode.Combine(Location, (int)Prototype);
+        }
+
+        private readonly Dictionary<ChunkMeshKey, ChunkMultiMesh> _chunkMultiMeshes = new();
+        private readonly Queue<ChunkMultiMesh> _pooledChunkMeshes = new();
+        private readonly List<ChunkMeshKey> _chunkUploadList = new();
+        private readonly List<ChunkMeshKey> _chunkKeyScratch = new();
+        private readonly List<ChunkRenderWindow.Slot> _nearSlotScratch = new();
+        private readonly List<ChunkRenderWindow.Slot> _nearExitedScratch = new();
+        private float[] _multimeshBuffer = Array.Empty<float>();
+        private const int FloatsPerInstance = 12;
+        private readonly HybridRenderSharedState _sharedState = HybridRenderSharedState.Instance;
+        private ulong _nearWindowVersionProcessed = 0;
+        private int _multimeshCreatesThisFrame = 0;
+        private int _multimeshPoolsThisFrame = 0;
+        private int _createdSinceReport = 0;
+        private int _pooledSinceReport = 0;
 
         private static readonly int PositionTypeId = ComponentManager.GetTypeId<Position>();
-        private static readonly int ChunkOwnerTypeId = ComponentManager.GetTypeId<ChunkOwner>();
-        private static readonly int RenderZoneTypeId = ComponentManager.GetTypeId<RenderZone>();
+        private static readonly int StaticRenderTypeId = ComponentManager.GetTypeId<StaticRenderTag>();
+        private static readonly int RenderPrototypeTypeId = ComponentManager.GetTypeId<RenderPrototype>();
 
         private int _frameCounter = 0;
+        private int _chunkUploadCursor = 0;
 
         public override void OnInitialize(World world)
         {
@@ -123,98 +178,338 @@ namespace Client.ECS.Systems
                 Radius = SystemSettings.EntityRadius.Value,
                 Height = SystemSettings.EntityRadius.Value * 2.0f
             };
+            _nearZoneMaterial = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(1.0f, 0.55f, 0.15f),
+                Metallic = 0.0f,
+                Roughness = 1.0f
+            };
+            _sphereMesh.SurfaceSetMaterial(0, _nearZoneMaterial);
+
+            _cubeMesh = new BoxMesh
+            {
+                Size = Vector3.One * SystemSettings.EntityRadius.Value * 2.0f
+            };
+            _staticNearMaterial = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(0.5f, 0.95f, 0.6f),
+                Metallic = 0.0f,
+                Roughness = 0.9f
+            };
+            _cubeMesh.SurfaceSetMaterial(0, _staticNearMaterial);
 
             Logging.Log($"[{Name}] Initialized - Mesh: {SystemSettings.RadialSegments.Value}x{SystemSettings.Rings.Value} sphere, Initial capacity: {SystemSettings.InitialChunkCapacity.Value}/chunk");
         }
 
         /// <summary>
-        /// Set the ChunkManager reference (called by WorldECS after ChunkSystem initialization).
+        /// Set the ChunkManager and ChunkSystem references for chunk-based iteration.
         /// </summary>
-        public void SetChunkManager(ChunkManager chunkManager)
+        public void SetChunkManager(ChunkManager chunkManager, ChunkSystem chunkSystem)
         {
             _chunkManager = chunkManager;
-            Logging.Log($"[{Name}] ChunkManager reference set");
+            _chunkSystem = chunkSystem;
+            ResetChunkWindowState();
+            Logging.Log($"[{Name}] ChunkManager + ChunkSystem references set");
+        }
+
+        private void ResetChunkWindowState()
+        {
+            _nearWindowVersionProcessed = 0;
+            PoolAllChunkMultiMeshes();
+        }
+
+        private void PoolAllChunkMultiMeshes()
+        {
+            if (_chunkMultiMeshes.Count == 0)
+                return;
+
+            _chunkKeyScratch.Clear();
+            foreach (var key in _chunkMultiMeshes.Keys)
+            {
+                _chunkKeyScratch.Add(key);
+            }
+
+            foreach (var key in _chunkKeyScratch)
+            {
+                PoolChunkMultiMesh(key);
+            }
+
+            _chunkKeyScratch.Clear();
+        }
+
+        private void PoolChunkMultiMeshes(ChunkLocation location)
+        {
+            _chunkKeyScratch.Clear();
+            foreach (var key in _chunkMultiMeshes.Keys)
+            {
+                if (key.Location.Equals(location))
+                {
+                    _chunkKeyScratch.Add(key);
+                }
+            }
+
+            foreach (var key in _chunkKeyScratch)
+            {
+                PoolChunkMultiMesh(key);
+            }
+
+            _chunkKeyScratch.Clear();
+        }
+
+        private static void CopySlotList(IReadOnlyList<ChunkRenderWindow.Slot> source, List<ChunkRenderWindow.Slot> destination)
+        {
+            // Snapshot count to prevent race condition with concurrent window updates
+            int count = source.Count;
+            if (count == 0)
+                return;
+
+            if (source is List<ChunkRenderWindow.Slot> list)
+            {
+                // Use try-catch to handle concurrent modification during iteration
+                try
+                {
+                    var span = CollectionsMarshal.AsSpan(list);
+                    // Re-check bounds in case list was modified
+                    int safeLength = Math.Min(span.Length, count);
+                    for (int i = 0; i < safeLength; i++)
+                    {
+                        destination.Add(span[i]);
+                    }
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    // List was modified during iteration, fall back to safer index-based copy
+                    for (int i = 0; i < Math.Min(source.Count, count); i++)
+                    {
+                        destination.Add(source[i]);
+                    }
+                }
+            }
+            else
+            {
+                // Use snapshot count and bounds checking for non-List implementations
+                for (int i = 0; i < count && i < source.Count; i++)
+                {
+                    destination.Add(source[i]);
+                }
+            }
+        }
+
+        private static void SetChunkVisibility(ChunkMultiMesh chunkData, bool visible)
+        {
+            if (visible)
+            {
+                chunkData.HiddenFrames = 0;
+                if (!chunkData.IsVisible)
+                {
+                    chunkData.IsVisible = true;
+                    chunkData.Instance.CallDeferred(Node3D.MethodName.SetVisible, true);
+                    chunkData.IsDirty = true;
+                }
+                return;
+            }
+
+            if (chunkData.HiddenFrames < FrustumHideGraceFrames)
+            {
+                chunkData.HiddenFrames++;
+                return;
+            }
+
+            if (!chunkData.IsVisible)
+                return;
+
+            chunkData.IsVisible = false;
+            chunkData.Instance.CallDeferred(Node3D.MethodName.SetVisible, false);
+            chunkData.MultiMesh.VisibleInstanceCount = 0;
+        }
+
+        private static int _visibilityCheckCount = 0;
+
+        private bool IsChunkVisible(ChunkLocation chunkLocation)
+        {
+            if (!_sharedState.FrustumCullingEnabled || _chunkManager == null)
+            {
+                if (_visibilityCheckCount < 3)
+                {
+                    Logging.Log($"[{Name}] IsChunkVisible early return: cullingEnabled={_sharedState.FrustumCullingEnabled}, chunkManager={(_chunkManager != null ? "OK" : "NULL")}");
+                    _visibilityCheckCount++;
+                }
+                return true;
+            }
+
+            var planes = _sharedState.FrustumPlanes;
+            if (planes == null || planes.Count == 0)
+            {
+                if (_visibilityCheckCount < 3)
+                {
+                    Logging.Log($"[{Name}] IsChunkVisible early return: planes={(planes == null ? "NULL" : $"empty ({planes.Count})")}");
+                    _visibilityCheckCount++;
+                }
+                return true;
+            }
+
+            var bounds = _chunkManager.ChunkToWorldBounds(chunkLocation);
+            bool visible = FrustumUtility.IsVisible(bounds, planes, FrustumPadding);
+
+            if (_visibilityCheckCount < 10)
+            {
+                Logging.Log($"[{Name}] IsChunkVisible for chunk {chunkLocation}: visible={visible}, planes={planes.Count}, padding={FrustumPadding}");
+                _visibilityCheckCount++;
+            }
+
+            return visible;
         }
 
         public override void Update(World world, double delta)
         {
-            if (_multiMeshContainer == null || _sphereMesh == null)
+            if (_multiMeshContainer == null || _sphereMesh == null || _chunkSystem == null)
                 return;
 
             _frameCounter++;
+            _multimeshCreatesThisFrame = 0;
+            _multimeshPoolsThisFrame = 0;
 
-            // Clear per-frame tracking
-            _activeChunksThisFrame.Clear();
+            SyncNearWindow();
+
             foreach (var chunkData in _chunkMultiMeshes.Values)
             {
+                if (chunkData == null)
+                    continue;
+
                 chunkData.Count = 0;
+                if (chunkData.LastUploadedCount != 0)
+                {
+                    chunkData.IsDirty = true;
+                }
             }
 
-            // Query entities with Position + RenderTag + Visible + ChunkOwner + RenderZone
-            var archetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible), typeof(ChunkOwner), typeof(RenderZone));
-
-            foreach (var arch in archetypes)
+            // Snapshot slots to avoid concurrent modification if window recenters during iteration
+            _nearSlotScratch.Clear();
+            foreach (var slot in _sharedState.NearWindow.ActiveSlots)
             {
-                if (arch.Count == 0) continue;
+                _nearSlotScratch.Add(slot);
+            }
 
-                var positions = arch.GetComponentSpan<Position>(PositionTypeId);
-                var chunkOwners = arch.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                var renderZones = arch.GetComponentSpan<RenderZone>(RenderZoneTypeId);
-                var entities = arch.GetEntityArray();
+            // NEW: Iterate only chunks in the near window, not all 100k entities!
+            foreach (var slot in _nearSlotScratch)
+            {
+                var chunkEntity = _chunkManager?.GetChunk(slot.GlobalLocation);
+                if (chunkEntity == null || chunkEntity == Entity.Invalid)
+                    continue;
 
-                for (int i = 0; i < entities.Length; i++)
+                bool isCoreChunk = _sharedState.CoreWindow.Contains(slot.GlobalLocation);
+                bool chunkVisible = IsChunkVisible(slot.GlobalLocation);
+
+                // Get all entities in this chunk from ChunkSystem
+                var entitiesInChunk = _chunkSystem.GetEntitiesInChunk(chunkEntity.Value);
+
+                foreach (var entity in entitiesInChunk)
                 {
-                    var zone = renderZones[i];
-
-                    // Only process entities in Near zone
-                    if (zone.Zone != RenderZoneType.Near)
+                    if (!world.TryGetEntityLocation(entity, out var archetype, out var entitySlot))
                         continue;
 
-                    var entity = entities[i];
-                    var pos = positions[i];
-                    var chunkOwner = chunkOwners[i];
-
-                    if (!chunkOwner.IsAssigned)
+                    if (!archetype.HasComponent(PositionTypeId))
                         continue;
 
-                    var chunkLoc = chunkOwner.Location;
-                    _activeChunksThisFrame.Add(chunkLoc);
+                    bool isStatic = archetype.HasComponent(StaticRenderTypeId);
+                    if (isCoreChunk && !isStatic)
+                        continue;
 
-                    if (!_chunkMultiMeshes.TryGetValue(chunkLoc, out var chunkData))
+                    var prototype = ResolvePrototype(archetype, entitySlot);
+                    var key = new ChunkMeshKey(slot.GlobalLocation, prototype);
+
+                    ref var chunkDataRef = ref CollectionsMarshal.GetValueRefOrAddDefault(_chunkMultiMeshes, key, out bool exists);
+                    if (!exists || chunkDataRef == null)
                     {
-                        chunkData = CreateChunkMultiMesh(chunkLoc);
-                        _chunkMultiMeshes[chunkLoc] = chunkData;
+                        chunkDataRef = AcquireChunkMultiMesh(slot.GlobalLocation, prototype);
                     }
 
+                    var chunkData = chunkDataRef;
+                    SetChunkVisibility(chunkData, chunkVisible);
+                    if (!chunkVisible)
+                        continue;
+
+                    var positions = archetype.GetComponentSpan<Position>(PositionTypeId);
+                    var pos = positions[entitySlot];
+
                     int nextIndex = chunkData.Count;
-                    EnsureCapacity(chunkData, nextIndex + 1, chunkLoc);
+                    EnsureCapacity(chunkData, nextIndex + 1, slot.GlobalLocation);
                     chunkData.Transforms[nextIndex] = new Transform3D(Basis.Identity, new Vector3(pos.X, pos.Y, pos.Z));
                     chunkData.Count++;
+                    chunkData.IsDirty = true;
                 }
             }
 
             // Update all active chunk MultiMeshes
             UpdateChunkMultiMeshes();
 
-            // Remove chunks that left the near zone
-            RemoveInactiveChunks();
-
             // Debug stats
-            if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 60 == 0)
+            _createdSinceReport += _multimeshCreatesThisFrame;
+            _pooledSinceReport += _multimeshPoolsThisFrame;
+
+            if (SystemSettings.EnableDebugLogs.Value)
             {
-                int totalEntities = 0;
-                foreach (var chunkData in _chunkMultiMeshes.Values)
+                if (_frameCounter % 60 == 0)
                 {
-                    totalEntities += chunkData.Count;
+                    int totalEntities = 0;
+                    foreach (var chunkData in _chunkMultiMeshes.Values)
+                    {
+                        if (chunkData == null)
+                            continue;
+
+                        totalEntities += chunkData.Count;
+                    }
+                    Logging.Log($"[{Name}] Active chunk meshes: {_chunkMultiMeshes.Count}, Total entities: {totalEntities}, Pool: {_pooledChunkMeshes.Count}");
+                    if (_createdSinceReport > 0 || _pooledSinceReport > 0)
+                    {
+                        Logging.Log($"[{Name}] MultiMesh window diff: +{_createdSinceReport}, -{_pooledSinceReport}");
+                        _createdSinceReport = 0;
+                        _pooledSinceReport = 0;
+                    }
                 }
-                Logging.Log($"[{Name}] Active chunks: {_chunkMultiMeshes.Count}, Total entities: {totalEntities}");
             }
         }
 
         /// <summary>
-        /// Create a new MultiMeshInstance3D for a chunk.
+        /// Rent a MultiMesh instance for the specified chunk + prototype.
         /// </summary>
-        private ChunkMultiMesh CreateChunkMultiMesh(ChunkLocation location)
+        private ChunkMultiMesh AcquireChunkMultiMesh(ChunkLocation location, RenderPrototypeKind prototype)
+        {
+            ChunkMultiMesh chunkData;
+            if (_pooledChunkMeshes.Count > 0)
+            {
+                chunkData = _pooledChunkMeshes.Dequeue();
+            }
+            else
+            {
+                chunkData = CreateChunkMultiMesh();
+            }
+
+            PrepareChunkMultiMesh(chunkData, location, prototype);
+            return chunkData;
+        }
+
+        private void PrepareChunkMultiMesh(ChunkMultiMesh chunkData, ChunkLocation location, RenderPrototypeKind prototype)
+        {
+            chunkData.Location = location;
+            chunkData.Prototype = prototype;
+            chunkData.Count = 0;
+            chunkData.MultiMesh.InstanceCount = 0;
+            chunkData.MultiMesh.VisibleInstanceCount = 0;
+            chunkData.MultiMesh.Mesh = GetPrototypeMesh(prototype);
+            chunkData.Instance.MaterialOverride = GetPrototypeMaterial(prototype);
+            var newName = new StringName($"Chunk_{location.X}_{location.Z}_{location.Y}_{prototype}");
+            chunkData.Instance.SetDeferred(Node.PropertyName.Name, newName);
+            chunkData.Instance.SetDeferred(Node3D.PropertyName.Visible, false);
+            chunkData.IsDirty = true;
+            chunkData.LastUploadedCount = 0;
+            chunkData.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Create a new MultiMeshInstance3D for pooling.
+        /// </summary>
+        private ChunkMultiMesh CreateChunkMultiMesh()
         {
             if (_multiMeshContainer == null || _sphereMesh == null)
                 throw new InvalidOperationException("MultiMesh container or sphere mesh not initialized");
@@ -232,30 +527,30 @@ namespace Client.ECS.Systems
 
             var instance = new MultiMeshInstance3D
             {
-                Name = $"Chunk_{location.X}_{location.Z}_{location.Y}",
+                Name = "ChunkPoolInstance",
                 Multimesh = multiMesh,
                 CastShadow = SystemSettings.CastShadows.Value
                     ? GeometryInstance3D.ShadowCastingSetting.On
                     : GeometryInstance3D.ShadowCastingSetting.Off,
-                GIMode = GeometryInstance3D.GIModeEnum.Disabled
+                GIMode = GeometryInstance3D.GIModeEnum.Disabled,
+                Visible = false
             };
+            if (_nearZoneMaterial != null)
+            {
+                instance.MaterialOverride = _nearZoneMaterial;
+            }
 
             _multiMeshContainer.CallDeferred("add_child", instance);
 
-            var chunkData = new ChunkMultiMesh
+            _multimeshCreatesThisFrame++;
+
+            return new ChunkMultiMesh
             {
                 Instance = instance,
                 MultiMesh = multiMesh,
                 Transforms = new Transform3D[initialCapacity],
                 Capacity = initialCapacity
             };
-
-            if (SystemSettings.EnableDebugLogs.Value)
-            {
-                Logging.Log($"[{Name}] Created MultiMesh for chunk {location}, Capacity: {initialCapacity}");
-            }
-
-            return chunkData;
         }
         private void EnsureCapacity(ChunkMultiMesh chunkData, int required, ChunkLocation location)
         {
@@ -280,70 +575,199 @@ namespace Client.ECS.Systems
             }
         }
 
+        private Mesh? GetPrototypeMesh(RenderPrototypeKind prototype)
+        {
+            if (prototype == RenderPrototypeKind.Cube)
+            {
+                return _cubeMesh != null ? (Mesh)_cubeMesh : _sphereMesh;
+            }
+
+            return _sphereMesh;
+        }
+
+        private StandardMaterial3D? GetPrototypeMaterial(RenderPrototypeKind prototype)
+        {
+            return prototype switch
+            {
+                RenderPrototypeKind.Cube => _staticNearMaterial ?? _nearZoneMaterial,
+                _ => _nearZoneMaterial
+            };
+        }
+
+        private void PoolChunkMultiMesh(ChunkMeshKey key)
+        {
+            if (!_chunkMultiMeshes.Remove(key, out var chunkData))
+                return;
+
+            chunkData.MultiMesh.InstanceCount = 0;
+            chunkData.MultiMesh.VisibleInstanceCount = 0;
+            chunkData.Count = 0;
+            chunkData.LastUploadedCount = 0;
+            chunkData.IsDirty = false;
+            chunkData.Instance.SetDeferred(Node3D.PropertyName.Visible, false);
+            chunkData.IsVisible = false;
+            chunkData.Location = default;
+            chunkData.Prototype = RenderPrototypeKind.Sphere;
+
+            _pooledChunkMeshes.Enqueue(chunkData);
+            _multimeshPoolsThisFrame++;
+        }
+
         /// <summary>
         /// Update MultiMesh transforms for all active chunks.
         /// </summary>
         private void UpdateChunkMultiMeshes()
         {
-            foreach (var chunkEntry in _chunkMultiMeshes)
+            if (_chunkMultiMeshes.Count == 0)
+                return;
+
+            _chunkUploadList.Clear();
+            foreach (var kvp in _chunkMultiMeshes)
             {
-                var chunkData = chunkEntry.Value;
-                int count = chunkData.Count;
-
-                if (count == 0)
+                var chunkData = kvp.Value;
+                if (chunkData.IsDirty || chunkData.LastUploadedCount != chunkData.Count)
                 {
-                    chunkData.MultiMesh.InstanceCount = 0;
-                    continue;
+                    _chunkUploadList.Add(kvp.Key);
                 }
+            }
 
-                chunkData.MultiMesh.InstanceCount = count;
-                for (int i = 0; i < count; i++)
+            if (_chunkUploadList.Count == 0)
+                return;
+
+            int dirtyCount = _chunkUploadList.Count;
+            int budget = SystemSettings.MaxChunkUploadsPerFrame.Value;
+            if (budget <= 0 || budget >= dirtyCount)
+            {
+                foreach (var chunkLoc in _chunkUploadList)
                 {
-                    chunkData.MultiMesh.SetInstanceTransform(i, chunkData.Transforms[i]);
+                    UploadChunkMultiMesh(_chunkMultiMeshes[chunkLoc]);
                 }
+                _chunkUploadCursor = 0;
+                return;
+            }
+
+            for (int i = 0; i < budget; i++)
+            {
+                int index = (_chunkUploadCursor + i) % dirtyCount;
+                var chunkLoc = _chunkUploadList[index];
+                if (_chunkMultiMeshes.TryGetValue(chunkLoc, out var chunkData))
+                {
+                    UploadChunkMultiMesh(chunkData);
+                }
+            }
+
+            _chunkUploadCursor = (_chunkUploadCursor + budget) % dirtyCount;
+        }
+
+        private RenderPrototypeKind ResolvePrototype(Archetype archetype, int entitySlot)
+        {
+            if (archetype.HasComponent(RenderPrototypeTypeId))
+            {
+                var prototypes = archetype.GetComponentSpan<RenderPrototype>(RenderPrototypeTypeId);
+                return prototypes[entitySlot].Prototype;
+            }
+
+            return RenderPrototypeKind.Sphere;
+        }
+
+        private void SyncNearWindow()
+        {
+            if (_sharedState.NearVersion == _nearWindowVersionProcessed)
+                return;
+
+            _nearWindowVersionProcessed = _sharedState.NearVersion;
+            var window = _sharedState.NearWindow;
+
+            _nearExitedScratch.Clear();
+            CopySlotList(window.Exited, _nearExitedScratch);
+
+            foreach (var slot in _nearExitedScratch)
+            {
+                PoolChunkMultiMeshes(slot.GlobalLocation);
             }
         }
 
-        /// <summary>
-        /// Remove MultiMeshes for chunks that left the near zone.
-        /// </summary>
-        private void RemoveInactiveChunks()
+        private void UploadChunkMultiMesh(ChunkMultiMesh chunkData)
         {
-            if (_multiMeshContainer == null)
+            int count = chunkData.Count;
+            if (count == 0)
+            {
+                if (chunkData.LastUploadedCount != 0)
+                {
+                    chunkData.MultiMesh.InstanceCount = 0;
+                    chunkData.MultiMesh.VisibleInstanceCount = 0;
+                    chunkData.LastUploadedCount = 0;
+                    if (chunkData.IsVisible)
+                    {
+                        chunkData.Instance.SetDeferred(Node3D.PropertyName.Visible, false);
+                        chunkData.IsVisible = false;
+                    }
+                }
+
+                chunkData.IsDirty = false;
                 return;
+            }
 
-            var toRemove = new List<ChunkLocation>();
-            foreach (var chunkLoc in _activeChunksLastFrame)
+            var transformSpan = chunkData.Transforms.AsSpan(0, count);
+            var bufferSpan = BuildTransformBuffer(transformSpan);
+
+            int expectedFloats = count * FloatsPerInstance;
+            System.Diagnostics.Debug.Assert(bufferSpan.Length == expectedFloats, $"Invalid MultiMesh buffer size. Expected {expectedFloats}, got {bufferSpan.Length}");
+
+            chunkData.MultiMesh.InstanceCount = count;
+            chunkData.MultiMesh.VisibleInstanceCount = count;
+            RenderingServer.MultimeshSetBuffer(chunkData.MultiMesh.GetRid(), bufferSpan);
+
+            if (!chunkData.IsVisible)
             {
-                if (!_activeChunksThisFrame.Contains(chunkLoc))
+                chunkData.Instance.SetDeferred(Node3D.PropertyName.Visible, true);
+                chunkData.IsVisible = true;
+            }
+
+            chunkData.LastUploadedCount = count;
+            chunkData.IsDirty = false;
+        }
+
+        private ReadOnlySpan<float> BuildTransformBuffer(Span<Transform3D> transforms)
+        {
+            int requiredFloats = transforms.Length * FloatsPerInstance;
+
+            if (_multimeshBuffer.Length < requiredFloats)
+            {
+                int newSize = _multimeshBuffer.Length == 0 ? 1024 : _multimeshBuffer.Length;
+                while (newSize < requiredFloats)
                 {
-                    toRemove.Add(chunkLoc);
+                    newSize *= 2;
                 }
+                Array.Resize(ref _multimeshBuffer, newSize);
             }
 
-            foreach (var chunkLoc in toRemove)
+            int offset = 0;
+            foreach (var transform in transforms)
             {
-                if (_chunkMultiMeshes.TryGetValue(chunkLoc, out var chunkData))
-                {
-                    if (chunkData.Instance.IsInsideTree())
-                    {
-                        chunkData.Instance.QueueFree();
-                    }
-                    _chunkMultiMeshes.Remove(chunkLoc);
+                var basis = transform.Basis;
+                var origin = transform.Origin;
+                var row0 = basis.Row0;
+                var row1 = basis.Row1;
+                var row2 = basis.Row2;
 
-                    if (SystemSettings.EnableDebugLogs.Value)
-                    {
-                        Logging.Log($"[{Name}] Removed MultiMesh for chunk {chunkLoc}");
-                    }
-                }
+                _multimeshBuffer[offset++] = row0.X;
+                _multimeshBuffer[offset++] = row0.Y;
+                _multimeshBuffer[offset++] = row0.Z;
+                _multimeshBuffer[offset++] = origin.X;
+
+                _multimeshBuffer[offset++] = row1.X;
+                _multimeshBuffer[offset++] = row1.Y;
+                _multimeshBuffer[offset++] = row1.Z;
+                _multimeshBuffer[offset++] = origin.Y;
+
+                _multimeshBuffer[offset++] = row2.X;
+                _multimeshBuffer[offset++] = row2.Y;
+                _multimeshBuffer[offset++] = row2.Z;
+                _multimeshBuffer[offset++] = origin.Z;
             }
 
-            // Update tracking for next frame
-            _activeChunksLastFrame.Clear();
-            foreach (var chunkLoc in _activeChunksThisFrame)
-            {
-                _activeChunksLastFrame.Add(chunkLoc);
-            }
+            return _multimeshBuffer.AsSpan(0, requiredFloats);
         }
 
         public override void OnShutdown(World world)
@@ -351,6 +775,9 @@ namespace Client.ECS.Systems
             // Clean up all MultiMeshes
             foreach (var chunkData in _chunkMultiMeshes.Values)
             {
+                if (chunkData == null)
+                    continue;
+
                 if (chunkData.Instance.IsInsideTree())
                 {
                     chunkData.Instance.QueueFree();

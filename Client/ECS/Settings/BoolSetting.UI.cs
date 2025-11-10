@@ -14,6 +14,7 @@ namespace Client.ECS.Settings
         private readonly HBoxContainer container;
         private readonly Label text;
         private readonly CheckBox checkBox;
+        private bool _bound;
 
         private bool _updatingUI;
 
@@ -53,8 +54,13 @@ namespace Client.ECS.Settings
 
         public void Bind()
         {
+            if (_bound)
+                return;
+
             checkBox.Toggled += OnToggled;
             Setting.ValueChanged += OnSettingChanged;
+            container.TreeExited += OnNodeTreeExited;
+            _bound = true;
         }
 
         private void OnToggled(bool pressed)
@@ -76,6 +82,17 @@ namespace Client.ECS.Settings
             {
                 _updatingUI = false;
             }
+        }
+
+        private void OnNodeTreeExited()
+        {
+            if (!_bound)
+                return;
+
+            checkBox.Toggled -= OnToggled;
+            Setting.ValueChanged -= OnSettingChanged;
+            container.TreeExited -= OnNodeTreeExited;
+            _bound = false;
         }
     }
 }

@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://dpdngux01ogyp"]
+[gd_scene load_steps=9 format=3 uid="uid://dpdngux01ogyp"]
 
 [ext_resource type="Script" uid="uid://ccoexd7034ge6" path="res://_temp/HybridBootstrapper.cs" id="1_bo1nx"]
 [ext_resource type="Script" uid="uid://c0bmkl4wjtvou" path="res://UltraSim/CameraController.cs" id="2_bo1nx"]
+[ext_resource type="Script" uid="uid://bk33g8a6t0rvy" path="res://Client/UI/PerfOverlay.cs" id="3_8gbba"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u77a"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -17,6 +18,9 @@ tonemap_mode = 2
 glow_enabled = true
 
 [sub_resource type="SphereMesh" id="SphereMesh_bo1nx"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_bo1nx"]
+size = Vector3(32, 0.1, 32)
 
 [node name="Main" type="Node3D"]
 
@@ -44,3 +48,16 @@ layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 16)
+mesh = SubResource("BoxMesh_bo1nx")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Control" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("3_8gbba")

@@ -18,6 +18,13 @@ namespace UltraSim.ECS.Systems
     {
         #region Settings
 
+        public enum SpawnVisualMode
+        {
+            DynamicOnly,
+            StaticOnly,
+            Random
+        }
+
         public sealed class Settings : SettingsManager
         {
             public FloatSetting SpawnRadius { get; private set; }
@@ -25,6 +32,7 @@ namespace UltraSim.ECS.Systems
             public FloatSetting MaxSpeed { get; private set; }
             public FloatSetting PulseFrequencyMin { get; private set; }
             public FloatSetting PulseFrequencyMax { get; private set; }
+            public EnumSetting<SpawnVisualMode> SpawnVisuals { get; private set; }
 
             public ButtonSetting Spawn100 { get; private set; }
             public ButtonSetting Spawn1000 { get; private set; }
@@ -49,6 +57,9 @@ namespace UltraSim.ECS.Systems
 
                 PulseFrequencyMax = RegisterFloat("Max Pulse Frequency", 2f, 0.1f, 10f, 0.1f,
                     tooltip: "Maximum pulse frequency (Hz) for spawned entities");
+
+                SpawnVisuals = RegisterEnum("Spawn Visual Mode", SpawnVisualMode.DynamicOnly,
+                    tooltip: "Dynamic = mesh instances (sphere), Static = MultiMesh cubes, Random = mix per entity");
 
                 RegisterString("", ""); // Spacer
 
@@ -162,6 +173,17 @@ namespace UltraSim.ECS.Systems
 
                     builder.Add(new RenderTag { });
                     builder.Add(new Visible { });
+
+                    bool spawnStatic = ShouldSpawnStatic(SystemSettings.SpawnVisuals.Value);
+                    if (spawnStatic)
+                    {
+                        builder.Add(new StaticRenderTag { });
+                        builder.Add(new RenderPrototype(RenderPrototypeKind.Cube));
+                    }
+                    else
+                    {
+                        builder.Add(new RenderPrototype(RenderPrototypeKind.Sphere));
+                    }
                 });
             }
 
@@ -203,6 +225,17 @@ namespace UltraSim.ECS.Systems
 
             sw.Stop();
             Logging.Log($"[{Name}] Cleared {destroyed} spawned entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
+        }
+
+        private static bool ShouldSpawnStatic(SpawnVisualMode mode)
+        {
+            return mode switch
+            {
+                SpawnVisualMode.StaticOnly => true,
+                SpawnVisualMode.DynamicOnly => false,
+                SpawnVisualMode.Random => Utilities.RandomFloat() < 0.5f,
+                _ => false
+            };
         }
     }
 }

@@ -9,6 +9,7 @@ using UltraSim.ECS;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
 using Client.ECS.Settings;
+using Client.ECS.Systems;
 using Client.UI;
 
 namespace Client.ECS.ControlPanel
@@ -71,12 +72,12 @@ namespace Client.ECS.ControlPanel
 
         public void Update(double delta)
         {
-            if (_showTimings)
+            foreach (var entry in _systemEntries.Values)
             {
-                // Optimize: use struct enumerator to avoid allocation
-                foreach (var kvp in _systemEntries)
+                entry.UpdateStatus();
+                if (_showTimings)
                 {
-                    kvp.Value.UpdateTiming();
+                    entry.UpdateTiming();
                 }
             }
         }
@@ -229,8 +230,10 @@ namespace Client.ECS.ControlPanel
         private Label? _nameLabel;
         private CheckBox? _enabledCheckBox;
         private Label? _timingLabel;
+        private Label? _statusLabel;
         private VBoxContainer? _settingsContainer;
         private Button? _applyButton;
+        private MeshInstanceBubbleManager? _bubbleManager;
 
         private Action<BaseSystem> _onSettingChanged;
         private Func<ISetting, ISettingUI?> _getSettingUI;
@@ -240,6 +243,7 @@ namespace Client.ECS.ControlPanel
         public SystemEntryUI(BaseSystem system, bool showTimings, Action<BaseSystem> onSettingChanged, Func<ISetting, ISettingUI?> getSettingUI)
         {
             _system = system;
+            _bubbleManager = system as MeshInstanceBubbleManager;
             _onSettingChanged = onSettingChanged;
             _getSettingUI = getSettingUI;
 
@@ -304,6 +308,18 @@ namespace Client.ECS.ControlPanel
             };
             _timingLabel.SetAnchorsPreset(LayoutPreset.FullRect);
             timingContainer.AddChild(_timingLabel);
+
+            if (_bubbleManager != null)
+            {
+                _statusLabel = new Label
+                {
+                    Text = "Bubble Entities: 0",
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    CustomMinimumSize = new Vector2(160, 0)
+                };
+                headerHBox.AddChild(_statusLabel);
+            }
 
             // Enabled checkbox (on far right)
             _enabledCheckBox = new CheckBox
@@ -491,6 +507,14 @@ namespace Client.ECS.ControlPanel
             {
                 double ms = _system.Statistics.AverageUpdateTimeMs;
                 _timingLabel.Text = ms.ToString("F3") + "ms";
+            }
+        }
+
+        public void UpdateStatus()
+        {
+            if (_statusLabel != null && _bubbleManager != null)
+            {
+                _statusLabel.Text = $"Bubble Entities: {_bubbleManager.ActiveCoreEntities:N0}";
             }
         }
 

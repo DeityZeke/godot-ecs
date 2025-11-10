@@ -1,0 +1,1905 @@
+this is a log from before:
+Godot Engine v4.5.stable.mono.official.876b29033 - https://godotengine.org
+Vulkan 1.4.303 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4070 Ti SUPER
+
+========================================
+      ECS WORLD INITIALIZATION         
+========================================
+[HybridBootstrapper] World initialized.
+========================================
+         ECS WORLD READY                
+  Press F12 to open Control Panel      
+========================================
+
+[18:10:03] [Info] ECS: [SIMD] Initialized - Hardware: AVX512, Systems: Simd512, Showcase: False
+[18:10:03] [Info] ECS: [World] âœ… Auto-save enabled (interval: 60s)
+[18:10:03] [Info] ECS: [MeshInstance Bubble Manager] Initialized - Mesh: 6x3 sphere, Radius: 0.4, Chunk pool reserve: 256
+[18:10:03] [Info] ECS: [SystemManager] Registered system: MeshInstanceBubbleManager
+[18:10:03] [Info] ECS: [Entity Spawner] Initialized with spawn radius 500
+[18:10:03] [Info] ECS: [Entity Spawner] Note: Entities will be assigned to chunks by ChunkSystem
+[18:10:03] [Info] ECS: [SystemManager] Registered system: EntitySpawnerSystem
+[18:10:03] [Info] ECS: [ChunkManager] Initialized - ChunkSize: 64x32x64
+[18:10:03] [Info] ECS: [ChunkSystem] Initialized with ChunkManager (64x32x64)
+[18:10:03] [Info] ECS: [SystemManager] Registered system: ChunkSystem
+[18:10:03] [Info] ECS: [SystemManager] Registered system: OptimizedPulsingMovementSystem
+[18:10:03] [Info] ECS: [SystemManager] Registered system: OptimizedMovementSystem
+[18:10:03] [Info] ECS: [Hybrid Render System] Initialized - Core bubble: 5x5x5
+[18:10:03] [Info] ECS: [Hybrid Render System] Near zone: 8 chunks, Far zone: disabled
+[18:10:03] [Info] ECS: [SystemManager] Registered system: HybridRenderSystem
+[18:10:03] [Info] ECS: [MultiMesh Zone Manager] Initialized - Mesh: 6x3 sphere, Initial capacity: 1000/chunk
+[18:10:03] [Info] ECS: [SystemManager] Registered system: MultiMeshZoneManager
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: MeshInstance Bubble Manager
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: Entity Spawner
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: ChunkSystem
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: OptimizedPulsingMovementSystem
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: OptimizedMovementSystem
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: Hybrid Render System
+[18:10:03] [Info] ECS: [SystemManager] Enabled system: MultiMesh Zone Manager
+[18:10:03] [Info] ECS: [Hybrid Render System] First Update call - initializing
+[18:10:03] [Info] ECS: [Hybrid Render System] ChunkManager is null, waiting for connection
+[18:10:03] [Info] ECS: Control Panel Initializing...
+[18:10:03] [Info] ECS:  - 5 Panels Detected
+[18:10:03] [Info] ECS:  - Loaded and Applied Panel Settings
+[18:10:03] [Info] ECS:  - Built Panel UI's
+[18:10:03] [Info] ECS: Control Panel Ready! Press F12 to toggle
+[HybridBootstrapper] Connected HybridRenderSystem to ChunkManager
+[HybridBootstrapper] Connected MultiMeshZoneManager to ChunkManager
+[HybridBootstrapper] Connected MeshInstanceBubbleManager to ChunkManager
+[HybridBootstrapper] Chunk debug overlay attached
+[18:10:04] [Info] ECS: [Hybrid Render System] ChunkManager reference set
+[18:10:04] [Info] ECS: [MultiMesh Zone Manager] ChunkManager reference set
+[18:10:04] [Info] ECS: [Hybrid Render System] Camera moved to chunk Chunk(0, 0, Y:0)
+[18:10:04] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:04] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:04] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +2205, -0
+[18:10:04] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[ECS] Frame: 0.916 ms (avg over 105 frames)
+[18:10:04] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:04] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:04] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[18:10:05] [Info] ECS: Systems Panel: 7/7 systems with settings
+[18:10:05] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:05] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:05] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[18:10:05] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:05] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:05] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 143.6 | Frame: 6.96ms | Tick: 0.074ms | Entities: 0
+[ECS] Frame: 0.087 ms (avg over 145 frames)
+[18:10:06] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:06] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:06] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[18:10:06] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 0
+  XZ Columns: 0
+  Avg Chunks/Column: 0.00
+  Max Vertical Chunks: 0
+  Frame: 300
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.076ms | Entities: 0
+[18:10:06] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:06] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:06] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.078ms | Entities: 0
+[ECS] Frame: 0.089 ms (avg over 146 frames)
+[18:10:06] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:06] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:06] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 143.9 | Frame: 6.95ms | Tick: 0.083ms | Entities: 0
+[18:10:07] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:07] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:07] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 143.9 | Frame: 6.95ms | Tick: 0.083ms | Entities: 0
+[18:10:07] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:07] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:07] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[ECS] Frame: 0.089 ms (avg over 145 frames)
+[18:10:08] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:08] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:08] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[18:10:08] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 0
+  XZ Columns: 0
+  Avg Chunks/Column: 0.00
+  Max Vertical Chunks: 0
+  Frame: 600
+[UI] FPS: 143.9 | Frame: 6.95ms | Tick: 0.078ms | Entities: 0
+[18:10:08] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:08] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:08] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 143.9 | Frame: 6.95ms | Tick: 0.116ms | Entities: 0
+[ECS] Frame: 0.084 ms (avg over 145 frames)
+[18:10:09] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:09] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:09] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.086ms | Entities: 0
+[18:10:09] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:09] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:09] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.076ms | Entities: 0
+[ECS] Frame: 0.088 ms (avg over 146 frames)
+[18:10:09] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:09] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:09] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.090ms | Entities: 0
+[18:10:10] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:10] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:10] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 0
+  XZ Columns: 0
+  Avg Chunks/Column: 0.00
+  Max Vertical Chunks: 0
+  Frame: 900
+[18:10:10] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[18:10:10] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:10] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:10] [Info] ECS: [Hybrid Render System] Zone distribution: Core=0, Near=0, Far=0, Culled=0 (Total: 0 entities, 0 chunks)
+[UI] FPS: 144.0 | Frame: 6.95ms | Tick: 0.073ms | Entities: 0
+[ECS] Frame: 0.088 ms (avg over 145 frames)
+[18:10:10] [Info] ECS: [Entity Spawner] Spawning 100000 entities...
+[18:10:11] [Info] ECS: [CommandBuffer] Applied: 100000 created, 0 destroyed in 128.968ms
+[18:10:11] [Info] ECS: [Entity Spawner] Spawned 100000 entities - Queue: 77.380ms, Apply: 128.999ms, Total: 206.379ms
+[18:10:11] [Info] ECS: [Entity Spawner] ChunkSystem will assign entities to chunks on next assignment cycle
+[18:10:11] [Info] ECS: [SIMD] ProcessPulsing_Scalar CALLED (1 entity per iteration)
+[18:10:11] [Info] ECS: [SIMD] ApplyVelocity_SSE CALLED (4 entities per iteration) - SSE hardware confirmed
+[18:10:11] [Info] ECS: [CommandBuffer] Applied: 4706 created, 0 destroyed in 5.329ms
+[18:10:11] [Info] ECS: [ChunkSystem] Queued 4706 chunks for creation this frame
+[18:10:11] [Info] ECS: [ChunkSystem] Registered 4706 new chunks this frame
+[18:10:11] [Info] ECS: [ChunkSystem] Reassigned 99999 entities to chunks
+[18:10:11] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 5.229ms
+[18:10:11] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:11] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[UI] FPS: 86.4 | Frame: 11.57ms | Tick: 1.828ms | Entities: 104,707
+[18:10:11] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 125
+[18:10:11] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 2205, Total entities: 0, Pool: 0
+[18:10:11] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3005, Near=82654, Far=0, Culled=14340 (Total: 99999 entities, 4707 chunks)
+[18:10:11] [Info] ECS: [ChunkSystem] Reassigned 1599 entities to chunks
+[18:10:11] [Info] ECS: [CommandBuffer] Applied: 6 created, 0 destroyed in 11.111ms
+[18:10:11] [Info] ECS: [ChunkSystem] Queued 6 chunks for creation this frame
+[18:10:11] [Info] ECS: [ChunkSystem] Registered 6 new chunks this frame
+[18:10:11] [Info] ECS: [ChunkSystem] Reassigned 3358 entities to chunks
+[18:10:11] [Info] ECS: [CommandBuffer] Applied: 12 created, 0 destroyed in 0.032ms
+[18:10:11] [Info] ECS: [ChunkSystem] Queued 12 chunks for creation this frame
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1857 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4556 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6702 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7709 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25787 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 33425 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40892 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54192 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55548 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 56410 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64430 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67639 to pool
+[18:10:12] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93533 to pool
+[18:10:12] [Info] ECS: [ChunkSystem] Registered 12 new chunks this frame
+[UI] FPS: 37.2 | Frame: 26.85ms | Tick: 8.019ms | Entities: 104,725
+[ECS] Frame: 11.768 ms (avg over 56 frames)
+[18:10:12] [Info] ECS: [ChunkSystem] Reassigned 2591 entities to chunks
+[18:10:12] [Info] ECS: [CommandBuffer] Applied: 15 created, 0 destroyed in 0.036ms
+[18:10:12] [Info] ECS: [ChunkSystem] Queued 15 chunks for creation this frame
+[18:10:12] [Info] ECS: [ChunkSystem] Registered 15 new chunks this frame
+[18:10:12] [Info] ECS: [ChunkSystem] Reassigned 2904 entities to chunks
+[18:10:12] [Info] ECS: [CommandBuffer] Applied: 12 created, 0 destroyed in 0.064ms
+[18:10:12] [Info] ECS: [ChunkSystem] Queued 12 chunks for creation this frame
+[18:10:12] [Info] ECS: [ChunkSystem] Registered 12 new chunks this frame
+[UI] FPS: 39.7 | Frame: 25.19ms | Tick: 7.442ms | Entities: 104,752
+[18:10:12] [Info] ECS: [ChunkSystem] Reassigned 2076 entities to chunks
+[18:10:12] [Info] ECS: [CommandBuffer] Applied: 7 created, 0 destroyed in 0.024ms
+[18:10:12] [Info] ECS: [ChunkSystem] Queued 7 chunks for creation this frame
+[18:10:12] [Info] ECS: [ChunkSystem] Registered 7 new chunks this frame
+[18:10:12] [Info] ECS: [ChunkSystem] Reassigned 2801 entities to chunks
+[18:10:12] [Info] ECS: [CommandBuffer] Applied: 9 created, 0 destroyed in 0.017ms
+[18:10:12] [Info] ECS: [ChunkSystem] Queued 9 chunks for creation this frame
+[18:10:13] [Info] ECS: [ChunkSystem] Registered 9 new chunks this frame
+[UI] FPS: 39.1 | Frame: 25.61ms | Tick: 7.155ms | Entities: 104,768
+[ECS] Frame: 17.045 ms (avg over 41 frames)
+[18:10:13] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 212
+[18:10:13] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +3404, -403
+[18:10:13] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5257, Total entities: 82650, Pool: 0
+[18:10:13] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +3052, -0
+[18:10:13] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3021, Near=82649, Far=0, Culled=14330 (Total: 100000 entities, 4768 chunks)
+[18:10:13] [Info] ECS: [ChunkSystem] Reassigned 2138 entities to chunks
+[18:10:13] [Info] ECS: [CommandBuffer] Applied: 7 created, 0 destroyed in 0.015ms
+[18:10:13] [Info] ECS: [ChunkSystem] Queued 7 chunks for creation this frame
+[18:10:13] [Info] ECS: [ChunkSystem] Registered 7 new chunks this frame
+[18:10:13] [Info] ECS: [ChunkSystem] Reassigned 2729 entities to chunks
+[18:10:13] [Info] ECS: [CommandBuffer] Applied: 9 created, 0 destroyed in 0.039ms
+[18:10:13] [Info] ECS: [ChunkSystem] Queued 9 chunks for creation this frame
+[18:10:13] [Info] ECS: [ChunkSystem] Registered 9 new chunks this frame
+[UI] FPS: 40.3 | Frame: 24.82ms | Tick: 6.750ms | Entities: 104,784
+[18:10:13] [Info] ECS: [ChunkSystem] Reassigned 2197 entities to chunks
+[18:10:13] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.011ms
+[18:10:13] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:10:13] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[18:10:13] [Info] ECS: [ChunkSystem] Reassigned 2655 entities to chunks
+[18:10:13] [Info] ECS: [CommandBuffer] Applied: 7 created, 0 destroyed in 0.015ms
+[18:10:13] [Info] ECS: [ChunkSystem] Queued 7 chunks for creation this frame
+[18:10:14] [Info] ECS: [ChunkSystem] Registered 7 new chunks this frame
+[UI] FPS: 42.0 | Frame: 23.81ms | Tick: 8.118ms | Entities: 104,795
+[ECS] Frame: 15.752 ms (avg over 43 frames)
+[18:10:14] [Info] ECS: [ChunkSystem] Reassigned 2193 entities to chunks
+[18:10:14] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.011ms
+[18:10:14] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:10:14] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[18:10:14] [Info] ECS: [ChunkSystem] Reassigned 2425 entities to chunks
+[18:10:14] [Info] ECS: [CommandBuffer] Applied: 10 created, 0 destroyed in 0.016ms
+[18:10:14] [Info] ECS: [ChunkSystem] Queued 10 chunks for creation this frame
+[18:10:14] [Info] ECS: [ChunkSystem] Registered 10 new chunks this frame
+[UI] FPS: 45.2 | Frame: 22.14ms | Tick: 6.745ms | Entities: 104,809
+[18:10:14] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 241
+[18:10:14] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +408, -408
+[18:10:14] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5315, Total entities: 82650, Pool: 0
+[18:10:14] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +58, -0
+[18:10:14] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3018, Near=82623, Far=0, Culled=14359 (Total: 100000 entities, 4809 chunks)
+[18:10:14] [Info] ECS: [ChunkSystem] Reassigned 2120 entities to chunks
+[18:10:14] [Info] ECS: [CommandBuffer] Applied: 6 created, 0 destroyed in 0.013ms
+[18:10:14] [Info] ECS: [ChunkSystem] Queued 6 chunks for creation this frame
+[18:10:14] [Info] ECS: [ChunkSystem] Registered 6 new chunks this frame
+[18:10:14] [Info] ECS: [ChunkSystem] Reassigned 2776 entities to chunks
+[18:10:14] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.012ms
+[18:10:14] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:10:15] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[UI] FPS: 39.9 | Frame: 25.08ms | Tick: 7.079ms | Entities: 104,817
+[18:10:15] [Info] ECS: [ChunkSystem] Reassigned 2186 entities to chunks
+[18:10:15] [Info] ECS: [CommandBuffer] Applied: 6 created, 0 destroyed in 0.013ms
+[18:10:15] [Info] ECS: [ChunkSystem] Queued 6 chunks for creation this frame
+[ECS] Frame: 17.560 ms (avg over 44 frames)
+[18:10:15] [Info] ECS: [ChunkSystem] Registered 6 new chunks this frame
+[18:10:15] [Info] ECS: [ChunkSystem] Reassigned 2677 entities to chunks
+[18:10:15] [Info] ECS: [CommandBuffer] Applied: 5 created, 0 destroyed in 0.012ms
+[18:10:15] [Info] ECS: [ChunkSystem] Queued 5 chunks for creation this frame
+[18:10:15] [Info] ECS: [ChunkSystem] Registered 5 new chunks this frame
+[UI] FPS: 43.6 | Frame: 22.93ms | Tick: 7.168ms | Entities: 104,828
+[18:10:15] [Info] ECS: [ChunkSystem] Reassigned 2025 entities to chunks
+[18:10:15] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:10:15] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:15] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:10:15] [Info] ECS: [ChunkSystem] Reassigned 2233 entities to chunks
+[18:10:15] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:10:15] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:15] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[UI] FPS: 39.4 | Frame: 25.41ms | Tick: 6.908ms | Entities: 104,830
+[18:10:16] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 246
+[18:10:16] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +389, -389
+[18:10:16] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5340, Total entities: 82650, Pool: 0
+[18:10:16] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +25, -0
+[18:10:16] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3045, Near=82601, Far=0, Culled=14354 (Total: 100000 entities, 4830 chunks)
+[18:10:16] [Info] ECS: [ChunkSystem] Reassigned 2849 entities to chunks
+[18:10:16] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.011ms
+[18:10:16] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4830
+  XZ Columns: 222
+  Avg Chunks/Column: 21.76
+  Max Vertical Chunks: 32
+  Frame: 1200
+[18:10:16] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:10:16] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[ECS] Frame: 15.881 ms (avg over 42 frames)
+[18:10:16] [Info] ECS: [ChunkSystem] Reassigned 2092 entities to chunks
+[18:10:16] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.011ms
+[18:10:16] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:10:16] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[UI] FPS: 42.0 | Frame: 23.83ms | Tick: 22.600ms | Entities: 104,839
+[18:10:16] [Info] ECS: [ChunkSystem] Reassigned 2663 entities to chunks
+[18:10:16] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.012ms
+[18:10:16] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:10:16] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:10:16] [Info] ECS: [ChunkSystem] Reassigned 2107 entities to chunks
+[18:10:17] [Info] ECS: [ChunkSystem] Reassigned 2637 entities to chunks
+[18:10:17] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:10:17] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[UI] FPS: 41.7 | Frame: 23.98ms | Tick: 83.264ms | Entities: 104,840
+[18:10:17] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[ECS] Frame: 15.633 ms (avg over 43 frames)
+[18:10:17] [Info] ECS: [ChunkSystem] Reassigned 2039 entities to chunks
+[18:10:17] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:10:17] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:17] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:10:17] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 250
+[18:10:17] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +395, -395
+[18:10:17] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5348, Total entities: 82650, Pool: 0
+[18:10:17] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +8, -0
+[18:10:17] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3027, Near=82618, Far=0, Culled=14355 (Total: 100000 entities, 4841 chunks)
+[18:10:17] [Info] ECS: [ChunkSystem] Reassigned 2661 entities to chunks
+[18:10:17] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.010ms
+[18:10:17] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:10:17] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[UI] FPS: 35.1 | Frame: 28.49ms | Tick: 7.036ms | Entities: 104,843
+[18:10:17] [Info] ECS: [ChunkSystem] Reassigned 2333 entities to chunks
+[18:10:18] [Info] ECS: [ChunkSystem] Reassigned 2625 entities to chunks
+[18:10:18] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.011ms
+[18:10:18] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:18] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[UI] FPS: 41.2 | Frame: 24.27ms | Tick: 7.259ms | Entities: 104,844
+[ECS] Frame: 16.183 ms (avg over 42 frames)
+[18:10:18] [Info] ECS: [ChunkSystem] Reassigned 2262 entities to chunks
+[18:10:18] [Info] ECS: [ChunkSystem] Reassigned 2574 entities to chunks
+[UI] FPS: 42.8 | Frame: 23.39ms | Tick: 7.030ms | Entities: 104,844
+[18:10:18] [Info] ECS: [ChunkSystem] Reassigned 2139 entities to chunks
+[18:10:18] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:10:18] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:18] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:10:19] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:19] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +423, -423
+[18:10:19] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5352, Total entities: 82650, Pool: 0
+[18:10:19] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +4, -0
+[18:10:19] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3015, Near=82642, Far=0, Culled=14343 (Total: 100000 entities, 4845 chunks)
+[18:10:19] [Info] ECS: [ChunkSystem] Reassigned 2790 entities to chunks
+[18:10:19] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:10:19] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:19] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[UI] FPS: 38.0 | Frame: 26.32ms | Tick: 6.839ms | Entities: 104,846
+[ECS] Frame: 16.324 ms (avg over 42 frames)
+[18:10:19] [Info] ECS: [ChunkSystem] Reassigned 2233 entities to chunks
+[18:10:19] [Info] ECS: [ChunkSystem] Reassigned 2536 entities to chunks
+[UI] FPS: 41.8 | Frame: 23.93ms | Tick: 6.780ms | Entities: 104,846
+[18:10:19] [Info] ECS: [ChunkSystem] Reassigned 2157 entities to chunks
+[18:10:20] [Info] ECS: [ChunkSystem] Reassigned 2801 entities to chunks
+[18:10:20] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.010ms
+[18:10:20] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:10:20] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[UI] FPS: 38.9 | Frame: 25.71ms | Tick: 7.408ms | Entities: 104,847
+[18:10:20] [Info] ECS: [ChunkSystem] Reassigned 2443 entities to chunks
+[ECS] Frame: 18.580 ms (avg over 41 frames)
+[18:10:20] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:20] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +409, -409
+[18:10:20] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:20] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +1, -0
+[18:10:20] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3029, Near=82653, Far=0, Culled=14318 (Total: 100000 entities, 4847 chunks)
+[18:10:20] [Info] ECS: [ChunkSystem] Reassigned 2770 entities to chunks
+[UI] FPS: 39.5 | Frame: 25.31ms | Tick: 6.545ms | Entities: 104,847
+[18:10:20] [Info] ECS: [ChunkSystem] Reassigned 2167 entities to chunks
+[18:10:21] [Info] ECS: [ChunkSystem] Reassigned 2943 entities to chunks
+[UI] FPS: 39.2 | Frame: 25.53ms | Tick: 6.728ms | Entities: 104,847
+[18:10:21] [Info] ECS: [ChunkSystem] Reassigned 2093 entities to chunks
+[ECS] Frame: 16.405 ms (avg over 41 frames)
+[18:10:21] [Info] ECS: [ChunkSystem] Reassigned 2572 entities to chunks
+[UI] FPS: 41.6 | Frame: 24.01ms | Tick: 6.746ms | Entities: 104,847
+[18:10:21] [Info] ECS: [ChunkSystem] Reassigned 2172 entities to chunks
+[18:10:22] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:22] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +412, -412
+[18:10:22] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:22] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3029, Near=82623, Far=0, Culled=14348 (Total: 100000 entities, 4847 chunks)
+[18:10:22] [Info] ECS: [ChunkSystem] Reassigned 2552 entities to chunks
+[UI] FPS: 41.3 | Frame: 24.24ms | Tick: 6.578ms | Entities: 104,847
+[18:10:22] [Info] ECS: [ChunkSystem] Reassigned 2376 entities to chunks
+[ECS] Frame: 15.860 ms (avg over 42 frames)
+[18:10:22] [Info] ECS: [ChunkSystem] Reassigned 2058 entities to chunks
+[UI] FPS: 43.2 | Frame: 23.13ms | Tick: 6.553ms | Entities: 104,847
+[18:10:22] [Info] ECS: [ChunkSystem] Reassigned 2632 entities to chunks
+[18:10:23] [Info] ECS: [ChunkSystem] Reassigned 1985 entities to chunks
+[18:10:23] [Info] ECS: [ChunkSystem] Reassigned 2622 entities to chunks
+[UI] FPS: 43.5 | Frame: 22.97ms | Tick: 80.207ms | Entities: 104,847
+[ECS] Frame: 15.588 ms (avg over 43 frames)
+[18:10:23] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:23] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +411, -411
+[18:10:23] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:23] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3003, Near=82649, Far=0, Culled=14348 (Total: 100000 entities, 4847 chunks)
+[18:10:23] [Info] ECS: [ChunkSystem] Reassigned 2128 entities to chunks
+[18:10:23] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4847
+  XZ Columns: 222
+  Avg Chunks/Column: 21.83
+  Max Vertical Chunks: 33
+  Frame: 1500
+[18:10:23] [Info] ECS: [ChunkSystem] Reassigned 2687 entities to chunks
+[UI] FPS: 35.7 | Frame: 28.04ms | Tick: 7.608ms | Entities: 104,847
+[18:10:24] [Info] ECS: [ChunkSystem] Reassigned 2226 entities to chunks
+[18:10:24] [Info] ECS: [ChunkSystem] Reassigned 2664 entities to chunks
+[UI] FPS: 40.0 | Frame: 25.01ms | Tick: 7.235ms | Entities: 104,847
+[ECS] Frame: 16.144 ms (avg over 42 frames)
+[18:10:24] [Info] ECS: [ChunkSystem] Reassigned 2268 entities to chunks
+[18:10:24] [Info] ECS: [ChunkSystem] Reassigned 2615 entities to chunks
+[18:10:25] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:25] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +393, -393
+[18:10:25] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:25] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3012, Near=82640, Far=0, Culled=14348 (Total: 100000 entities, 4847 chunks)
+[18:10:25] [Info] ECS: [ChunkSystem] Reassigned 2289 entities to chunks
+[18:10:25] [Info] ECS: [ChunkSystem] Reassigned 2654 entities to chunks
+[18:10:25] [Info] ECS: [ChunkSystem] Reassigned 2190 entities to chunks
+[ECS] Frame: 18.077 ms (avg over 42 frames)
+[18:10:25] [Info] ECS: [ChunkSystem] Reassigned 2565 entities to chunks
+[18:10:25] [Info] ECS: [ChunkSystem] Reassigned 2278 entities to chunks
+[18:10:26] [Info] ECS: [ChunkSystem] Reassigned 2571 entities to chunks
+[18:10:26] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:26] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +414, -414
+[18:10:26] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:26] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3029, Near=82614, Far=0, Culled=14357 (Total: 100000 entities, 4847 chunks)
+[18:10:26] [Info] ECS: [ChunkSystem] Reassigned 2219 entities to chunks
+[ECS] Frame: 15.719 ms (avg over 42 frames)
+[18:10:26] [Info] ECS: [ChunkSystem] Reassigned 1958 entities to chunks
+[18:10:26] [Info] ECS: [ChunkSystem] Reassigned 2631 entities to chunks
+[18:10:27] [Info] ECS: [ChunkSystem] Reassigned 2829 entities to chunks
+[18:10:27] [Info] ECS: [ChunkSystem] Reassigned 2290 entities to chunks
+[ECS] Frame: 16.132 ms (avg over 41 frames)
+[18:10:27] [Info] ECS: [ChunkSystem] Reassigned 2178 entities to chunks
+[18:10:27] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:27] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +385, -385
+[18:10:27] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:27] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3033, Near=82617, Far=0, Culled=14350 (Total: 100000 entities, 4847 chunks)
+[18:10:27] [Info] ECS: [ChunkSystem] Reassigned 2622 entities to chunks
+[18:10:28] [Info] ECS: [ChunkSystem] Reassigned 2300 entities to chunks
+[18:10:28] [Info] ECS: [ChunkSystem] Reassigned 2734 entities to chunks
+[ECS] Frame: 15.579 ms (avg over 42 frames)
+[18:10:28] [Info] ECS: [ChunkSystem] Reassigned 2062 entities to chunks
+[18:10:28] [Info] ECS: [ChunkSystem] Reassigned 2781 entities to chunks
+[18:10:29] [Info] ECS: [ChunkSystem] Reassigned 2205 entities to chunks
+[18:10:29] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:29] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +413, -413
+[18:10:29] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:29] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3039, Near=82644, Far=0, Culled=14317 (Total: 100000 entities, 4847 chunks)
+[18:10:29] [Info] ECS: [ChunkSystem] Reassigned 2626 entities to chunks
+[ECS] Frame: 15.981 ms (avg over 42 frames)
+[18:10:29] [Info] ECS: [ChunkSystem] Reassigned 2173 entities to chunks
+[18:10:29] [Info] ECS: [ChunkSystem] Reassigned 2725 entities to chunks
+[18:10:30] [Info] ECS: [ChunkSystem] Reassigned 2259 entities to chunks
+[18:10:30] [Info] ECS: [ChunkSystem] Reassigned 2706 entities to chunks
+[ECS] Frame: 16.377 ms (avg over 42 frames)
+[18:10:30] [Info] ECS: [ChunkSystem] Reassigned 2090 entities to chunks
+[18:10:30] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3001, Pools: 251
+[18:10:30] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +402, -402
+[18:10:30] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 5353, Total entities: 82650, Pool: 0
+[18:10:30] [Info] ECS: [Hybrid Render System] Zone distribution: Core=3025, Near=82620, Far=0, Culled=14355 (Total: 100000 entities, 4847 chunks)
+[18:10:30] [Info] ECS: [ChunkSystem] Reassigned 2727 entities to chunks
+[18:10:30] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4847
+  XZ Columns: 222
+  Avg Chunks/Column: 21.83
+  Max Vertical Chunks: 33
+  Frame: 1800
+[18:10:31] [Info] ECS: [ChunkSystem] Reassigned 2260 entities to chunks
+[18:10:31] [Info] ECS: [ChunkSystem] Reassigned 2528 entities to chunks
+[18:10:31] [Info] ECS: [ChunkSystem] Reassigned 2233 entities to chunks
+[ECS] Frame: 18.026 ms (avg over 42 frames)
+--- Debugging process stopped ---
+
+and this is the log after:
+
+Godot Engine v4.5.stable.mono.official.876b29033 - https://godotengine.org
+Vulkan 1.4.303 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4070 Ti SUPER
+
+========================================
+      ECS WORLD INITIALIZATION         
+========================================
+[HybridBootstrapper] World initialized.
+========================================
+         ECS WORLD READY                
+  Press F12 to open Control Panel      
+========================================
+
+[18:39:26] [Info] ECS: [SIMD] Initialized - Hardware: AVX512, Systems: Simd512, Showcase: False
+[18:39:26] [Info] ECS: [World] âœ… Auto-save enabled (interval: 60s)
+[18:39:26] [Info] ECS: [MeshInstance Bubble Manager] Initialized - Mesh: 6x3 sphere, Radius: 0.4, Chunk pool reserve: 256
+[18:39:26] [Info] ECS: [SystemManager] Registered system: MeshInstanceBubbleManager
+[18:39:26] [Info] ECS: [Entity Spawner] Initialized with spawn radius 500
+[18:39:26] [Info] ECS: [Entity Spawner] Note: Entities will be assigned to chunks by ChunkSystem
+[18:39:26] [Info] ECS: [SystemManager] Registered system: EntitySpawnerSystem
+[18:39:26] [Info] ECS: [ChunkManager] Initialized - ChunkSize: 64x32x64
+[18:39:26] [Info] ECS: [ChunkSystem] Initialized with ChunkManager (64x32x64)
+[18:39:26] [Info] ECS: [SystemManager] Registered system: ChunkSystem
+[18:39:26] [Info] ECS: [SystemManager] Registered system: OptimizedPulsingMovementSystem
+[18:39:26] [Info] ECS: [SystemManager] Registered system: OptimizedMovementSystem
+[18:39:26] [Info] ECS: [Hybrid Render System] Initialized - Core bubble: 5x5x5
+[18:39:26] [Info] ECS: [Hybrid Render System] Near zone: 8 chunks, Far zone: disabled
+[18:39:26] [Info] ECS: [SystemManager] Registered system: HybridRenderSystem
+[18:39:26] [Info] ECS: [MultiMesh Zone Manager] Initialized - Mesh: 6x3 sphere, Initial capacity: 1000/chunk
+[18:39:26] [Info] ECS: [SystemManager] Registered system: MultiMeshZoneManager
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: MeshInstance Bubble Manager
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: Entity Spawner
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: ChunkSystem
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: OptimizedPulsingMovementSystem
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: OptimizedMovementSystem
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: Hybrid Render System
+[18:39:26] [Info] ECS: [SystemManager] Enabled system: MultiMesh Zone Manager
+[18:39:26] [Info] ECS: [Hybrid Render System] First Update call - initializing
+[18:39:26] [Info] ECS: [Hybrid Render System] ChunkManager is null, waiting for connection
+[18:39:26] [Info] ECS: Control Panel Initializing...
+[18:39:26] [Info] ECS:  - 5 Panels Detected
+[18:39:26] [Info] ECS:  - Loaded and Applied Panel Settings
+[18:39:26] [Info] ECS:  - Built Panel UI's
+[18:39:26] [Info] ECS: Control Panel Ready! Press F12 to toggle
+[HybridBootstrapper] Connected HybridRenderSystem to ChunkManager
+[HybridBootstrapper] Connected MultiMeshZoneManager to ChunkManager + ChunkSystem
+[HybridBootstrapper] Connected MeshInstanceBubbleManager to ChunkManager + ChunkSystem
+[HybridBootstrapper] Chunk debug overlay attached
+[18:39:26] [Info] ECS: [Hybrid Render System] ChunkManager reference set
+[18:39:26] [Info] ECS: [MultiMesh Zone Manager] ChunkManager + ChunkSystem references set
+[18:39:26] [Info] ECS: [Hybrid Render System] Camera moved to chunk Chunk(0, 0, Y:0)
+[18:39:27] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:27] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[ECS] Frame: 0.463 ms (avg over 111 frames)
+[18:39:27] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:27] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[18:39:28] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:28] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[18:39:28] [Info] ECS: Systems Panel: 7/7 systems with settings
+[18:39:28] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:28] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[ECS] Frame: 0.155 ms (avg over 147 frames)
+[UI] FPS: 147.8 | Frame: 6.76ms | Tick: 0.138ms | Entities: 0
+[18:39:28] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 0
+  XZ Columns: 0
+  Avg Chunks/Column: 0.00
+  Max Vertical Chunks: 0
+  Frame: 300
+[18:39:28] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:28] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[UI] FPS: 143.1 | Frame: 6.99ms | Tick: 0.138ms | Entities: 0
+[18:39:29] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:29] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[ECS] Frame: 0.158 ms (avg over 144 frames)
+[UI] FPS: 142.1 | Frame: 7.04ms | Tick: 0.138ms | Entities: 0
+[18:39:29] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:29] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[18:39:30] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:30] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[UI] FPS: 143.7 | Frame: 6.96ms | Tick: 0.134ms | Entities: 0
+[18:39:30] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:30] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[ECS] Frame: 0.142 ms (avg over 145 frames)
+[UI] FPS: 143.8 | Frame: 6.95ms | Tick: 0.132ms | Entities: 0
+[18:39:31] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 0
+  XZ Columns: 0
+  Avg Chunks/Column: 0.00
+  Max Vertical Chunks: 0
+  Frame: 600
+[18:39:31] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:31] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[UI] FPS: 143.8 | Frame: 6.95ms | Tick: 0.137ms | Entities: 0
+[18:39:31] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:31] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[ECS] Frame: 0.141 ms (avg over 145 frames)
+[UI] FPS: 143.8 | Frame: 6.95ms | Tick: 0.141ms | Entities: 0
+[18:39:31] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:31] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[UI] FPS: 143.8 | Frame: 6.96ms | Tick: 0.134ms | Entities: 0
+[18:39:32] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:32] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[ECS] Frame: 0.142 ms (avg over 145 frames)
+[18:39:32] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 0, Pools: 0
+[18:39:32] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 0, Total entities: 0, Pool: 0
+[UI] FPS: 143.8 | Frame: 6.95ms | Tick: 0.139ms | Entities: 0
+[18:39:32] [Info] ECS: [Entity Spawner] Spawning 100000 entities...
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 100000 created, 0 destroyed in 133.356ms
+[18:39:33] [Info] ECS: [Entity Spawner] Spawned 100000 entities - Queue: 79.799ms, Apply: 133.390ms, Total: 213.189ms
+[18:39:33] [Info] ECS: [Entity Spawner] ChunkSystem will assign entities to chunks on next assignment cycle
+[18:39:33] [Info] ECS: [SIMD] ProcessPulsing_Scalar CALLED (1 entity per iteration)
+[18:39:33] [Info] ECS: [SIMD] ApplyVelocity_SSE CALLED (4 entities per iteration) - SSE hardware confirmed
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 4711 created, 0 destroyed in 5.355ms
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 4711 chunks for creation this frame
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 4711 new chunks this frame
+[18:39:33] [Info] ECS: [ChunkSystem] Reassigned 99997 entities to chunks
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 15.670ms
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[UI] FPS: 52.0 | Frame: 19.24ms | Tick: 4.662ms | Entities: 104,714
+[18:39:33] [Info] ECS: [ChunkSystem] Reassigned 3338 entities to chunks
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 11 created, 0 destroyed in 0.032ms
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 11 chunks for creation this frame
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 806 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13572 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15724 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18120 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20017 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20826 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26006 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29151 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30649 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39139 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40810 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44974 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46190 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53304 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55877 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 57766 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60704 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 61194 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63374 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64191 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71449 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77302 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83137 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85685 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87885 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88736 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89133 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92357 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92652 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93103 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95686 to pool
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 11 new chunks this frame
+[18:39:33] [Info] ECS: [ChunkSystem] Reassigned 909 entities to chunks
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.015ms
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 3414 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 19440 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21835 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39151 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60517 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74861 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92728 to pool
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:33] [Info] ECS: [ChunkSystem] Reassigned 911 entities to chunks
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 10 created, 0 destroyed in 0.030ms
+[18:39:33] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4727
+  XZ Columns: 216
+  Avg Chunks/Column: 21.88
+  Max Vertical Chunks: 32
+  Frame: 900
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 10 chunks for creation this frame
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25237 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26903 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59487 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 96969 to pool
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 10 new chunks this frame
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3100, Pools: 125
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +3227, -127
+[18:39:33] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1069, Total entities: 23798, Pool: 0
+[18:39:33] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +1069, -0
+[18:39:33] [Info] ECS: [ChunkSystem] Reassigned 941 entities to chunks
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.025ms
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15127 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47150 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49445 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55932 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 61022 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65375 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 69420 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78713 to pool
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[ECS] Frame: 6.768 ms (avg over 75 frames)
+[18:39:33] [Info] ECS: [ChunkSystem] Reassigned 857 entities to chunks
+[18:39:33] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.026ms
+[18:39:33] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[UI] FPS: 94.3 | Frame: 10.61ms | Tick: 4.251ms | Entities: 104,744
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14583 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 16832 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20014 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 24349 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37295 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42994 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53142 to pool
+[18:39:33] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54245 to pool
+[18:39:33] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 1382 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 5 created, 0 destroyed in 0.028ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 5 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1656 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20556 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29525 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34021 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36996 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54491 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64479 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64743 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82150 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88263 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92506 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 5 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 796 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 7 created, 0 destroyed in 0.018ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 7 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5556 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7880 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12557 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13814 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48014 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93059 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 7 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 762 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.022ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4631 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7246 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40246 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 872 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.016ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6778 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22116 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42399 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44270 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50278 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59061 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59193 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92612 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92634 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92828 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3109, Pools: 125
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +163, -154
+[18:39:34] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1074, Total entities: 23800, Pool: 0
+[18:39:34] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +5, -0
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 827 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.011ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9653 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27643 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31705 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67320 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83076 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91809 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[UI] FPS: 105.7 | Frame: 9.46ms | Tick: 3.550ms | Entities: 104,766
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 1261 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.013ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 846 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 19354 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27201 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37573 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81002 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82890 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 790 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.013ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26018 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31513 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46374 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97535 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 797 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.029ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9527 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12073 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48216 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49265 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49584 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65227 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87310 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 801 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.013ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6483 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7923 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12448 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29231 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39853 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53946 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64174 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67967 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[ECS] Frame: 5.154 ms (avg over 108 frames)
+[18:39:34] [Info] ECS: [ChunkSystem] Reassigned 873 entities to chunks
+[18:39:34] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.012ms
+[18:39:34] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21333 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48792 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51083 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54154 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55554 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79390 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83581 to pool
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95937 to pool
+[18:39:34] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3119, Pools: 125
+[18:39:34] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +156, -146
+[18:39:34] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1077, Total entities: 23814, Pool: 0
+[18:39:34] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +3, -0
+[UI] FPS: 106.7 | Frame: 9.37ms | Tick: 3.556ms | Entities: 104,783
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 957 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 5 created, 0 destroyed in 0.014ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 5 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1215 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22773 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46304 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51338 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59131 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67254 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 5 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 1385 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 5 created, 0 destroyed in 0.011ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 5 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14310 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22188 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25938 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27955 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37765 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39079 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40568 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42050 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59037 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65887 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70604 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87561 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97555 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 5 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 747 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.008ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25239 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 41656 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 52991 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75995 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89530 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 788 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.009ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 43481 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98333 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 750 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.010ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 989 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6003 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12243 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26710 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35977 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44818 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50586 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88248 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 738 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.010ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14786 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15192 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21380 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26448 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31944 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47146 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63983 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 68400 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 68925 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 84649 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3121, Pools: 125
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +131, -129
+[18:39:35] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1079, Total entities: 23818, Pool: 0
+[18:39:35] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +2, -0
+[UI] FPS: 109.5 | Frame: 9.13ms | Tick: 3.840ms | Entities: 104,801
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 1261 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 6 created, 0 destroyed in 0.012ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 6 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 651 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5206 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6304 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27757 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37740 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 45730 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53553 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58570 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73842 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82181 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98312 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98402 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98994 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 6 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 708 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.010ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2586 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32628 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39514 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54716 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79367 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98929 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 889 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.009ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4439 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4877 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9724 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 24818 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51191 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92845 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 94450 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 809 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18673 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49979 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 66161 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70177 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 76994 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77948 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82569 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92065 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[ECS] Frame: 4.843 ms (avg over 110 frames)
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 785 entities to chunks
+[18:39:35] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.010ms
+[18:39:35] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2013 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18272 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28653 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30034 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36404 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53120 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64211 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 72445 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77901 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88426 to pool
+[18:39:35] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[UI] FPS: 112.8 | Frame: 8.86ms | Tick: 14.654ms | Entities: 104,817
+[18:39:35] [Info] ECS: [ChunkSystem] Reassigned 748 entities to chunks
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9970 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 19688 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20579 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30152 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39803 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46515 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75803 to pool
+[18:39:35] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 99742 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3115, Pools: 125
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +145, -151
+[18:39:36] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1079, Total entities: 23811, Pool: 0
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 1338 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.010ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12623 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21201 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 23427 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 41373 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 45386 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48296 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48714 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60756 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73477 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95550 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 99322 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 799 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.010ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 318 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32114 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34247 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42995 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48971 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 69378 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97320 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 751 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.007ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 8346 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21244 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44253 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46846 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85498 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92474 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 759 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.009ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6629 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15647 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37395 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42912 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 773 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.007ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2539 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32575 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36837 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74651 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 76694 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83101 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[UI] FPS: 113.8 | Frame: 8.79ms | Tick: 3.634ms | Entities: 104,826
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 723 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 4 created, 0 destroyed in 0.011ms
+[18:39:36] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4826
+  XZ Columns: 222
+  Avg Chunks/Column: 21.74
+  Max Vertical Chunks: 32
+  Frame: 1200
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 4 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18120 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 33044 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55877 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60182 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71235 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 4 new chunks this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3119, Pools: 125
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +152, -148
+[18:39:36] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1079, Total entities: 23792, Pool: 0
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 1221 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.009ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1468 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12141 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26670 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59359 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59869 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60704 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81560 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85685 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 86153 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 713 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 5 created, 0 destroyed in 0.011ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 5 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4695 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 17567 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20017 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70245 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 5 new chunks this frame
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 885 entities to chunks
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26311 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27280 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34244 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44644 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44986 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46722 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79834 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95207 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98744 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 867 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15642 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25106 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47653 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62476 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89133 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 96931 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[ECS] Frame: 4.731 ms (avg over 115 frames)
+[18:39:36] [Info] ECS: [ChunkSystem] Reassigned 772 entities to chunks
+[18:39:36] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.011ms
+[18:39:36] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 806 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6318 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13233 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62527 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74861 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75407 to pool
+[18:39:36] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87885 to pool
+[18:39:36] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[UI] FPS: 112.6 | Frame: 8.88ms | Tick: 3.938ms | Entities: 104,841
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 1211 entities to chunks
+[18:39:37] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.012ms
+[18:39:37] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 3857 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20826 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26903 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29151 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50135 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 57766 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63769 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78719 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 80009 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3116, Pools: 125
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +143, -146
+[18:39:37] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1082, Total entities: 23792, Pool: 0
+[18:39:37] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +3, -0
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 902 entities to chunks
+[18:39:37] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:37] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20363 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 41495 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42994 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 56011 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82529 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 767 entities to chunks
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14093 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15724 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22756 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29539 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34021 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62883 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91698 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92652 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 764 entities to chunks
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14104 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30991 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40206 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54491 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67137 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88736 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90305 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 755 entities to chunks
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7402 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35478 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53490 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54245 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82150 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93103 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95686 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 782 entities to chunks
+[UI] FPS: 112.6 | Frame: 8.88ms | Tick: 3.482ms | Entities: 104,845
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1293 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46097 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53902 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55932 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60323 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82191 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98062 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 1362 entities to chunks
+[18:39:37] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.010ms
+[18:39:37] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 10145 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13572 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32865 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44974 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55774 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 69420 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71898 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88609 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90227 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 94446 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3114, Pools: 125
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +150, -152
+[18:39:37] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1082, Total entities: 23795, Pool: 0
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 778 entities to chunks
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12557 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51601 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90783 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 793 entities to chunks
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14746 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18536 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20297 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22116 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 24079 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35281 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 38652 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47060 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49445 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58043 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70780 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71017 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92506 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 733 entities to chunks
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44687 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59061 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75297 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81002 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85858 to pool
+[ECS] Frame: 4.779 ms (avg over 114 frames)
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 812 entities to chunks
+[18:39:37] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.009ms
+[18:39:37] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2645 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15127 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 52068 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54402 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78264 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 80694 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87310 to pool
+[18:39:37] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92612 to pool
+[18:39:37] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[UI] FPS: 113.2 | Frame: 8.83ms | Tick: 3.531ms | Entities: 104,849
+[18:39:37] [Info] ECS: [ChunkSystem] Reassigned 790 entities to chunks
+[18:39:37] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:37] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 655 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28179 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 38821 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40246 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53946 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60517 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 1320 entities to chunks
+[18:39:38] [Info] ECS: [CommandBuffer] Applied: 3 created, 0 destroyed in 0.011ms
+[18:39:38] [Info] ECS: [ChunkSystem] Queued 3 chunks for creation this frame
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1656 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7880 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20424 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27201 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35581 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 43081 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48792 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59186 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85636 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Registered 3 new chunks this frame
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3105, Pools: 125
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +109, -118
+[18:39:38] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1083, Total entities: 23781, Pool: 0
+[18:39:38] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +1, -0
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 736 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4631 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 10096 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15363 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21333 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25766 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48216 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51834 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54565 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67254 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67967 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78695 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 791 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6961 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9242 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13645 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30264 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40568 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48014 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 837 entities to chunks
+[18:39:38] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:38] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5056 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7674 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12448 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15340 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 56362 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65227 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 80444 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 771 entities to chunks
+[18:39:38] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.007ms
+[18:39:38] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7503 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25239 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46836 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51083 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62283 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64174 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75995 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92728 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[UI] FPS: 112.3 | Frame: 8.90ms | Tick: 3.497ms | Entities: 104,855
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 1315 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1184 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1215 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22741 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26006 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29231 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37196 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37597 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55088 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64191 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78713 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81101 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83581 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89982 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91384 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 830 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 846 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12611 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31741 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35291 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65691 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3112, Pools: 125
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +163, -156
+[18:39:38] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1084, Total entities: 23784, Pool: 0
+[18:39:38] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +1, -0
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 644 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 651 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27189 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28802 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59967 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74735 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91844 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97555 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 711 entities to chunks
+[18:39:38] [Info] ECS: [CommandBuffer] Applied: 2 created, 0 destroyed in 0.010ms
+[18:39:38] [Info] ECS: [ChunkSystem] Queued 2 chunks for creation this frame
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 989 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4352 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48836 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48974 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67818 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74437 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79390 to pool
+[18:39:38] [Info] ECS: [ChunkSystem] Registered 2 new chunks this frame
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 863 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22784 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27643 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 61194 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70125 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98994 to pool
+[ECS] Frame: 4.875 ms (avg over 113 frames)
+[18:39:38] [Info] ECS: [ChunkSystem] Reassigned 850 entities to chunks
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 440 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 16832 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 41960 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 84230 to pool
+[18:39:38] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91809 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 1236 entities to chunks
+[18:39:39] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.008ms
+[18:39:39] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4881 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7923 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 8867 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20014 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28469 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73842 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 84649 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97441 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98333 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 99742 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 739 entities to chunks
+[18:39:39] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4858
+  XZ Columns: 224
+  Avg Chunks/Column: 21.69
+  Max Vertical Chunks: 32
+  Frame: 1500
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1380 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22188 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28308 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77948 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92845 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98312 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3103, Pools: 125
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +127, -136
+[18:39:39] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23788, Pool: 0
+[18:39:39] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +1, -0
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 790 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13814 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39079 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48714 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83829 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 789 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 3414 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 8954 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30170 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39139 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46190 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48971 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75803 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87561 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89530 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 94450 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 838 entities to chunks
+[18:39:39] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:39] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2013 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28840 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42050 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51338 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 57520 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65887 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 762 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15192 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 23066 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25938 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37765 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42912 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 45730 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53553 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 72445 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78617 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 1284 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 8346 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14786 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 17032 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18120 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18571 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39151 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44489 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55877 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77901 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83137 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83849 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 692 entities to chunks
+[18:39:39] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.008ms
+[18:39:39] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26781 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55789 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70895 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 72121 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3105, Pools: 125
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +147, -145
+[18:39:39] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23792, Pool: 0
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 804 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26448 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36357 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60704 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85685 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 99322 to pool
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 885 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2624 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5206 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6483 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21244 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31944 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39514 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73477 to pool
+[ECS] Frame: 4.789 ms (avg over 111 frames)
+[18:39:39] [Info] ECS: [ChunkSystem] Reassigned 846 entities to chunks
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13389 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15758 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20017 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20215 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39759 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50278 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50571 to pool
+[18:39:39] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83402 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 1342 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18272 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 38709 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40810 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59193 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60756 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74861 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89133 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93059 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 808 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 17167 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21380 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26903 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90294 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 96781 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 803 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4447 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6629 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 33044 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 45386 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67661 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87885 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98402 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3111, Pools: 125
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +165, -159
+[18:39:40] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23791, Pool: 0
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 720 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18168 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48105 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70604 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74426 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98929 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 800 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15647 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27491 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29525 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32811 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42994 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51384 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63374 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65803 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71235 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 86153 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97535 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98696 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 813 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 806 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20826 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29151 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34021 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40553 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54491 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54716 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65375 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81294 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 1404 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15665 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 19440 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49185 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49265 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49979 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53142 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 57766 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62435 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67320 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 68925 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 76515 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85755 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88426 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 773 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20177 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36996 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39853 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51191 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 66910 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82150 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83101 to pool
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 821 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9653 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21303 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44270 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 66161 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 84001 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3108, Pools: 125
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +146, -149
+[18:39:40] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23773, Pool: 0
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 808 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4439 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25209 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42995 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54245 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58772 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 68400 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90364 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93354 to pool
+[ECS] Frame: 4.854 ms (avg over 112 frames)
+[18:39:40] [Info] ECS: [ChunkSystem] Reassigned 785 entities to chunks
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15724 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27280 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27757 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28653 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37573 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58570 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 76994 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81560 to pool
+[18:39:40] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88736 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 1328 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6003 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25237 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29539 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30649 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35272 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35977 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44818 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49584 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49802 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55932 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59359 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62527 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88248 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 872 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12141 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12557 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25106 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30034 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53946 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74897 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81002 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87310 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92652 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97320 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 761 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22116 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95550 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 853 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2539 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47150 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59061 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 69420 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70177 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78403 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3108, Pools: 125
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +139, -139
+[18:39:41] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23794, Pool: 0
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 830 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36404 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 36837 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48792 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63490 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91703 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92506 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92828 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95686 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 809 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9724 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13572 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30991 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31705 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34247 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40568 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46374 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48296 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 61022 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67254 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90305 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92357 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 93103 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 1156 entities to chunks
+[18:39:41] [Info] ECS: [CommandBuffer] Applied: 1 created, 0 destroyed in 0.009ms
+[18:39:41] [Info] ECS: [ChunkSystem] Queued 1 chunks for creation this frame
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 318 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4877 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14104 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15642 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21333 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21835 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26311 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27201 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29294 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34244 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 49445 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67967 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79834 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92612 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Registered 1 new chunks this frame
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 755 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9527 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25239 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48216 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79367 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 96883 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 887 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 9970 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40246 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44974 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46515 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 69378 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70245 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75995 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88263 to pool
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 785 entities to chunks
+[18:39:41] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4861
+  XZ Columns: 224
+  Avg Chunks/Column: 21.70
+  Max Vertical Chunks: 32
+  Frame: 1800
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2586 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12073 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12448 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 67719 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74651 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91698 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92634 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3097, Pools: 125
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +130, -141
+[18:39:41] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23786, Pool: 0
+[ECS] Frame: 4.778 ms (avg over 111 frames)
+[18:39:41] [Info] ECS: [ChunkSystem] Reassigned 800 entities to chunks
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 651 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15127 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21201 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 24349 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27705 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44644 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50586 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51083 to pool
+[18:39:41] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71449 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 1188 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1215 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 1656 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7880 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12243 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 12623 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14583 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20556 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20579 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37300 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64174 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65227 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78719 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 80009 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 83581 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 969 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 989 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4631 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20363 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46846 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98994 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 929 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48014 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54154 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60517 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 99742 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 797 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14746 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27955 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29231 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 41495 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53902 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 680 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 43481 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 90783 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 94654 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 97555 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3108, Pools: 125
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +150, -139
+[18:39:42] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23795, Pool: 0
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 772 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46304 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48714 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48971 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53444 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 56011 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63983 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82890 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92065 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 1324 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 8241 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 17272 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 35478 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42912 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73842 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73960 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75297 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75407 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77948 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82181 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 84649 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92845 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 96969 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 755 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 846 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 17567 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47653 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 50135 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59869 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63460 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 75803 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 79390 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 80314 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 925 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18120 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 28179 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55877 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98312 to pool
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 836 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 2013 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44986 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58043 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60182 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92474 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 98333 to pool
+[ECS] Frame: 4.891 ms (avg over 109 frames)
+[18:39:42] [Info] ECS: [ChunkSystem] Reassigned 786 entities to chunks
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 41656 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 44363 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47060 to pool
+[18:39:42] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 94450 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3098, Pools: 125
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +150, -160
+[18:39:43] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23800, Pool: 0
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 1369 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5556 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 8346 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51815 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60704 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85685 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95197 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 816 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 19688 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20017 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 24818 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32865 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 72445 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77302 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 77901 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 680 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6318 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 7923 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22188 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37395 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74861 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 92728 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 716 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26903 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 27643 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46722 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78713 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89133 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 747 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 655 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53553 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 95207 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 846 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22773 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32575 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39079 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 45730 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 46097 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 52068 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64191 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91809 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3095, Pools: 125
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +127, -130
+[18:39:43] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23815, Pool: 0
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 1278 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15192 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 21244 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 30264 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42994 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55774 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58257 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59037 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62476 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 73477 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85498 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87561 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87885 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89530 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 99322 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 814 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26006 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26710 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 34021 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60323 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 790 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14786 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37740 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 51338 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54491 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59487 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 65887 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81101 to pool
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 754 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37277 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37765 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 42050 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 58126 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 78695 to pool
+[ECS] Frame: 4.752 ms (avg over 114 frames)
+[18:39:43] [Info] ECS: [ChunkSystem] Reassigned 822 entities to chunks
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 10145 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 16832 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20826 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25938 to pool
+[18:39:43] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 40206 to pool
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 1222 entities to chunks
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 806 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 14310 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 19354 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 22741 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 24079 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 26448 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 29151 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32114 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 32628 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 33044 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37295 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39514 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 39803 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55554 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 59131 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 60756 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 63769 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82150 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 82569 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3098, Pools: 125
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +144, -141
+[18:39:44] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23817, Pool: 0
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 843 entities to chunks
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6629 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 18272 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 47146 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55088 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 57766 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 88609 to pool
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 751 entities to chunks
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5056 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71235 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 71898 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 85858 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 86153 to pool
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 704 entities to chunks
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 4695 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 5206 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 10884 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 20014 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 31944 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 54245 to pool
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 789 entities to chunks
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 13814 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 45386 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 53946 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 61194 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 62883 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 64211 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 87310 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 91384 to pool
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 750 entities to chunks
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 6304 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 37597 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 48836 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 81002 to pool
+[18:39:44] [Info] ECS: [ChunkSystem] Reassigned 1279 entities to chunks
+[18:39:44] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4861
+  XZ Columns: 224
+  Avg Chunks/Column: 21.70
+  Max Vertical Chunks: 32
+  Frame: 2100
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 15647 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 25766 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 55712 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 70125 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 74735 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 89864 to pool
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 3101, Pools: 125
+[18:39:44] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +136, -133
+[18:39:44] [Info] ECS: [MultiMesh Zone Manager] Active chunks: 1085, Total entities: 23799, Pool: 0
+--- Debugging process stopped ---

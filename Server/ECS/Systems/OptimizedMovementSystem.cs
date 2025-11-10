@@ -9,7 +9,9 @@ using Godot;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.SIMD;
+using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Threading;
+using UltraSim.Server.ECS.Systems;
 
 namespace UltraSim.ECS.Systems
 {
@@ -47,19 +49,23 @@ namespace UltraSim.ECS.Systems
 
         public override string Name => "OptimizedMovementSystem";
         public override int SystemId => typeof(OptimizedMovementSystem).GetHashCode();
-        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(Velocity) };
+        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(Velocity), typeof(StaticRenderTag) };
         public override Type[] WriteSet { get; } = new[] { typeof(Position) };
         private const int CHUNK_SIZE = 65536;
 
         private static readonly int PosId = ComponentManager.GetTypeId<Position>(); //ComponentTypeRegistry.GetId<Position>();
         private static readonly int VelId = ComponentManager.GetTypeId<Velocity>(); //ComponentTypeRegistry.GetId<Velocity>();
+        private static readonly int StaticRenderId = ComponentManager.GetTypeId<StaticRenderTag>();
 
+        private ChunkManager? _chunkManager;
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
 
 
         public override void OnInitialize(World world)
         {
             _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(Velocity));
+            var chunkSystem = world.Systems.GetSystem<ChunkSystem>() as ChunkSystem;
+            _chunkManager = chunkSystem?.GetChunkManager();
 
 #if USE_DEBUG
             GD.Print("[ManualThreadPoolMovementSystem] Initialized.");
@@ -85,6 +91,8 @@ namespace UltraSim.ECS.Systems
             foreach (var arch in _cachedQuery!)
             {
                 if (arch.Count == 0) continue;
+                if (arch.HasComponent(StaticRenderId))
+                    continue;
 
                 var posComponentList = arch.GetComponentListTyped<Position>(PosId);
                 var velComponentList = arch.GetComponentListTyped<Velocity>(VelId);
@@ -94,6 +102,7 @@ namespace UltraSim.ECS.Systems
 
                 var posList = posComponentList.GetList();
                 var velList = velComponentList.GetList();
+                var entities = arch.GetEntityArray();
 
                 int count = Math.Min(posList.Count, velList.Count);
                 int numChunks = (count + CHUNK_SIZE - 1) / CHUNK_SIZE;
@@ -109,11 +118,19 @@ namespace UltraSim.ECS.Systems
                     int start = chunkIndex * CHUNK_SIZE;
                     int end = Math.Min(start + CHUNK_SIZE, count);
 
-                    SimdOperations.ApplyVelocity(
-                        posSpan.Slice(start, end - start),
-                        velSpan.Slice(start, end - start),
-                        adjustedDelta
-                    );
+                    var posSlice = posSpan.Slice(start, end - start);
+                    var velSlice = velSpan.Slice(start, end - start);
+                    SimdOperations.ApplyVelocity(posSlice, velSlice, adjustedDelta);
+
+                    if (_chunkManager != null)
+                    {
+                        for (int i = 0; i < posSlice.Length; i++)
+                        {
+                            var entity = entities[start + i];
+                            var chunkLoc = _chunkManager.WorldToChunk(posSlice[i].X, posSlice[i].Y, posSlice[i].Z);
+                            ChunkAssignmentQueue.Enqueue(entity, chunkLoc);
+                        }
+                    }
                 });
             }
         }

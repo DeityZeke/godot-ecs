@@ -22,42 +22,28 @@ namespace UltraSim.ECS.Chunk
 
         private ulong _currentFrame = 0;
 
-        // === ADAPTIVE VERTICAL STORAGE ===
+        private readonly ChunkLookupTable _locationIndex = new();
+        private readonly Dictionary<Entity, ChunkLocation> _entityToLocation = new();
+        private readonly Dictionary<(int X, int Z), ColumnStats> _columnStats = new();
+        private readonly Dictionary<Entity, ChunkRuntimeInfo> _runtimeInfo = new();
 
-        /// <summary>
-        /// Represents a vertical band of chunks at a specific XZ coordinate.
-        /// Only allocates chunks that are actually occupied.
-        /// </summary>
-        private class VerticalChunkBand
+        private struct ColumnStats
         {
-            /// <summary>
-            /// Sparse storage: Y-index -> Chunk Entity.
-            /// </summary>
-            public Dictionary<int, Entity> Chunks = new();
-
-            public int MinY = int.MaxValue;
-            public int MaxY = int.MinValue;
+            public int Count;
+            public int MinY;
+            public int MaxY;
         }
 
-        /// <summary>
-        /// Main storage: (X, Z) -> Vertical band of chunks.
-        /// </summary>
-        private readonly Dictionary<(int X, int Z), VerticalChunkBand> _chunkColumns = new();
-
-        /// <summary>
-        /// Reverse lookup: Entity -> ChunkLocation.
-        /// </summary>
-        private readonly Dictionary<Entity, ChunkLocation> _entityToLocation = new();
-
-        /// <summary>
-        /// Fast lookup: ChunkLocation -> Entity.
-        /// </summary>
-        private readonly Dictionary<ChunkLocation, Entity> _locationToEntity = new();
+        private struct ChunkRuntimeInfo
+        {
+            public ulong LastAccessFrame;
+        }
 
         // === STATISTICS ===
 
-        public int TotalChunkColumns => _chunkColumns.Count;
+        public int TotalChunkColumns => _columnStats.Count;
         public int TotalChunks => _entityToLocation.Count;
+        public ulong CurrentFrame => _currentFrame;
 
         public ChunkManager(int chunkSizeXZ = 64, int chunkSizeY = 32)
         {
@@ -102,33 +88,38 @@ namespace UltraSim.ECS.Chunk
 
         /// <summary>
         /// Register a chunk entity with the manager.
-        /// Called by ChunkSystem after creating the chunk entity.
+        /// Called by ChunkSystem after creating or reusing the chunk entity.
         /// </summary>
         public void RegisterChunk(Entity chunkEntity, ChunkLocation location)
         {
-            if (_locationToEntity.ContainsKey(location))
+            if (_locationIndex.ContainsKey(location))
             {
                 Logging.Log($"[ChunkManager] WARNING: Chunk already exists at {location}", LogSeverity.Warning);
                 return;
             }
 
-            // Register in sparse storage
-            var key = (location.X, location.Z);
-            if (!_chunkColumns.TryGetValue(key, out var band))
+            _entityToLocation[chunkEntity] = location;
+            _locationIndex.TryAdd(location, chunkEntity, overwrite: true);
+            _runtimeInfo[chunkEntity] = new ChunkRuntimeInfo { LastAccessFrame = _currentFrame };
+
+            var columnKey = (location.X, location.Z);
+            if (_columnStats.TryGetValue(columnKey, out var stats))
             {
-                band = new VerticalChunkBand();
-                _chunkColumns[key] = band;
+                stats.Count++;
+                stats.MinY = Math.Min(stats.MinY, location.Y);
+                stats.MaxY = Math.Max(stats.MaxY, location.Y);
+                _columnStats[columnKey] = stats;
+            }
+            else
+            {
+                _columnStats[columnKey] = new ColumnStats
+                {
+                    Count = 1,
+                    MinY = location.Y,
+                    MaxY = location.Y
+                };
             }
 
-            band.Chunks[location.Y] = chunkEntity;
-            band.MinY = Math.Min(band.MinY, location.Y);
-            band.MaxY = Math.Max(band.MaxY, location.Y);
-
-            // Register in lookup tables
-            _entityToLocation[chunkEntity] = location;
-            _locationToEntity[location] = chunkEntity;
-
-            Logging.Log($"[ChunkManager] Registered chunk {location} -> Entity {chunkEntity.Index}", LogSeverity.Debug);
         }
 
         /// <summary>
@@ -143,54 +134,76 @@ namespace UltraSim.ECS.Chunk
                 return;
             }
 
-            // Remove from sparse storage
-            var key = (location.X, location.Z);
-            if (_chunkColumns.TryGetValue(key, out var band))
-            {
-                band.Chunks.Remove(location.Y);
+            // Remove from lookup tables
+            _entityToLocation.Remove(chunkEntity);
+            _locationIndex.Remove(location, out _);
+            _runtimeInfo.Remove(chunkEntity);
 
-                if (band.Chunks.Count == 0)
+            var columnKey = (location.X, location.Z);
+            if (_columnStats.TryGetValue(columnKey, out var stats))
+            {
+                stats.Count--;
+                if (stats.Count <= 0)
                 {
-                    _chunkColumns.Remove(key);
+                    _columnStats.Remove(columnKey);
                 }
-                else if (location.Y == band.MinY || location.Y == band.MaxY)
+                else
                 {
-                    // Recalculate bounds
-                    band.MinY = int.MaxValue;
-                    band.MaxY = int.MinValue;
-                    foreach (int y in band.Chunks.Keys)
+                    if (location.Y == stats.MinY || location.Y == stats.MaxY)
                     {
-                        band.MinY = Math.Min(band.MinY, y);
-                        band.MaxY = Math.Max(band.MaxY, y);
+                        RecomputeColumnExtents(columnKey, ref stats);
                     }
+                    _columnStats[columnKey] = stats;
                 }
             }
 
-            // Remove from lookup tables
-            _entityToLocation.Remove(chunkEntity);
-            _locationToEntity.Remove(location);
-
-            Logging.Log($"[ChunkManager] Unregistered chunk {location}", LogSeverity.Debug);
         }
 
         // === CHUNK QUERIES ===
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ChunkExists(ChunkLocation location)
-        {
-            return _locationToEntity.ContainsKey(location);
-        }
+        public bool ChunkExists(ChunkLocation location) => _locationIndex.ContainsKey(location);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Entity GetChunk(ChunkLocation location)
         {
-            return _locationToEntity.TryGetValue(location, out Entity entity) ? entity : Entity.Invalid;
+            return _locationIndex.TryGetValue(location, out var entity) ? entity : Entity.Invalid;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetChunkLocation(Entity chunkEntity, out ChunkLocation location)
         {
             return _entityToLocation.TryGetValue(chunkEntity, out location);
+        }
+
+        public void TouchChunk(Entity chunkEntity)
+        {
+            if (_runtimeInfo.TryGetValue(chunkEntity, out var info))
+            {
+                info.LastAccessFrame = _currentFrame;
+                _runtimeInfo[chunkEntity] = info;
+            }
+        }
+
+        public List<(Entity Entity, ChunkLocation Location, ulong LastAccess)> CollectStaleChunks(ulong olderThanFrame, int maxResults)
+        {
+            var result = new List<(Entity Entity, ChunkLocation Location, ulong LastAccess)>();
+            if (maxResults <= 0)
+                return result;
+
+            foreach (var kvp in _runtimeInfo)
+            {
+                if (kvp.Value.LastAccessFrame <= olderThanFrame &&
+                    _entityToLocation.TryGetValue(kvp.Key, out var location))
+                {
+                    result.Add((kvp.Key, location, kvp.Value.LastAccessFrame));
+                }
+            }
+
+            result.Sort((a, b) => a.LastAccess.CompareTo(b.LastAccess));
+            if (result.Count > maxResults)
+                result.RemoveRange(maxResults, result.Count - maxResults);
+            return result;
         }
 
         /// <summary>
@@ -209,33 +222,21 @@ namespace UltraSim.ECS.Chunk
             int minChunkY = (int)Math.Floor((worldY - radius) / ChunkSizeY);
             int maxChunkY = (int)Math.Floor((worldY + radius) / ChunkSizeY);
 
-            // Iterate through XZ columns
-            for (int x = minChunkX; x <= maxChunkX; x++)
+            _locationIndex.ForEach((location, chunkEntity) =>
             {
-                for (int z = minChunkZ; z <= maxChunkZ; z++)
-                {
-                    var key = (x, z);
-                    if (!_chunkColumns.TryGetValue(key, out var band))
-                        continue;
+                if (location.X < minChunkX || location.X > maxChunkX)
+                    return;
+                if (location.Z < minChunkZ || location.Z > maxChunkZ)
+                    return;
+                if (location.Y < minChunkY || location.Y > maxChunkY)
+                    return;
 
-                    // Search vertical band within Y range
-                    int searchMinY = Math.Max(minChunkY, band.MinY);
-                    int searchMaxY = Math.Min(maxChunkY, band.MaxY);
+                var bounds = ChunkToWorldBounds(location);
+                float distSq = bounds.GetSquaredDistanceToPoint(worldX, worldY, worldZ);
 
-                    for (int y = searchMinY; y <= searchMaxY; y++)
-                    {
-                        if (!band.Chunks.TryGetValue(y, out Entity chunkEntity))
-                            continue;
-
-                        // Distance check using chunk bounds
-                        var bounds = ChunkToWorldBounds(new ChunkLocation(x, z, y));
-                        float distSq = bounds.GetSquaredDistanceToPoint(worldX, worldY, worldZ);
-
-                        if (distSq <= radiusSq)
-                            result.Add(chunkEntity);
-                    }
-                }
-            }
+                if (distSq <= radiusSq)
+                    result.Add(chunkEntity);
+            });
 
             return result;
         }
@@ -255,28 +256,19 @@ namespace UltraSim.ECS.Chunk
             int minChunkY = (int)Math.Floor(queryBounds.MinY / ChunkSizeY);
             int maxChunkY = (int)Math.Floor(queryBounds.MaxY / ChunkSizeY);
 
-            for (int x = minChunkX; x <= maxChunkX; x++)
+            _locationIndex.ForEach((location, chunkEntity) =>
             {
-                for (int z = minChunkZ; z <= maxChunkZ; z++)
-                {
-                    var key = (x, z);
-                    if (!_chunkColumns.TryGetValue(key, out var band))
-                        continue;
+                if (location.X < minChunkX || location.X > maxChunkX)
+                    return;
+                if (location.Z < minChunkZ || location.Z > maxChunkZ)
+                    return;
+                if (location.Y < minChunkY || location.Y > maxChunkY)
+                    return;
 
-                    int searchMinY = Math.Max(minChunkY, band.MinY);
-                    int searchMaxY = Math.Min(maxChunkY, band.MaxY);
-
-                    for (int y = searchMinY; y <= searchMaxY; y++)
-                    {
-                        if (!band.Chunks.TryGetValue(y, out Entity chunkEntity))
-                            continue;
-
-                        var chunkBounds = ChunkToWorldBounds(new ChunkLocation(x, z, y));
-                        if (chunkBounds.Intersects(queryBounds))
-                            result.Add(chunkEntity);
-                    }
-                }
-            }
+                var chunkBounds = ChunkToWorldBounds(location);
+                if (chunkBounds.Intersects(queryBounds))
+                    result.Add(chunkEntity);
+            });
 
             return result;
         }
@@ -297,8 +289,40 @@ namespace UltraSim.ECS.Chunk
         /// </summary>
         public IEnumerable<KeyValuePair<ChunkLocation, Entity>> EnumerateChunks()
         {
-            foreach (var kvp in _locationToEntity)
+            var items = new List<KeyValuePair<ChunkLocation, Entity>>(_locationIndex.Count);
+            _locationIndex.ForEach((loc, entity) => items.Add(new KeyValuePair<ChunkLocation, Entity>(loc, entity)));
+            foreach (var kvp in items)
                 yield return kvp;
+        }
+
+        private void RecomputeColumnExtents((int X, int Z) key, ref ColumnStats stats)
+        {
+            int count = 0;
+            int minY = int.MaxValue;
+            int maxY = int.MinValue;
+
+            _locationIndex.ForEach((location, _) =>
+            {
+                if (location.X == key.X && location.Z == key.Z)
+                {
+                    count++;
+                    minY = Math.Min(minY, location.Y);
+                    maxY = Math.Max(maxY, location.Y);
+                }
+            });
+
+            if (count == 0)
+            {
+                stats.Count = 0;
+                stats.MinY = 0;
+                stats.MaxY = 0;
+            }
+            else
+            {
+                stats.Count = count;
+                stats.MinY = minY;
+                stats.MaxY = maxY;
+            }
         }
 
         // === DEBUGGING / STATISTICS ===
@@ -306,12 +330,12 @@ namespace UltraSim.ECS.Chunk
         public string GetStatistics()
         {
             int totalChunks = _entityToLocation.Count;
-            int totalColumns = _chunkColumns.Count;
+            int totalColumns = _columnStats.Count;
             int maxVerticalChunks = 0;
 
-            foreach (var band in _chunkColumns.Values)
+            foreach (var stats in _columnStats.Values)
             {
-                int verticalCount = band.MaxY - band.MinY + 1;
+                int verticalCount = stats.MaxY - stats.MinY + 1;
                 maxVerticalChunks = Math.Max(maxVerticalChunks, verticalCount);
             }
 

@@ -118,9 +118,15 @@ namespace Client
 
             if (world.Systems.GetSystem<MultiMeshZoneManager>() is MultiMeshZoneManager multiMeshManager)
             {
-                multiMeshManager.SetChunkManager(chunkManager);
-                GD.Print("[ClientHost] Connected MultiMeshZoneManager to ChunkManager");
+                multiMeshManager.SetChunkManager(chunkManager, chunkSystem);
+                GD.Print("[ClientHost] Connected MultiMeshZoneManager to ChunkManager + ChunkSystem");
             }
-        }
+
+            if (world.Systems.GetSystem<MeshInstanceBubbleManager>() is MeshInstanceBubbleManager bubbleManager)
+            {
+                bubbleManager.SetChunkManager(chunkManager, chunkSystem);
+                GD.Print("[ClientHost] Connected MeshInstanceBubbleManager to ChunkManager + ChunkSystem");
+            }
+    }
     }
 }
