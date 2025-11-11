@@ -167,10 +167,10 @@ namespace Client.ECS.Systems
                 Metallic = 0.0f,
                 Roughness = 0.7f
             };
-            _sphereMesh.SurfaceSetMaterial(0, _nearMaterial);
+            _sphereMesh.Material = _nearMaterial;
 
             _cubeMesh = new BoxMesh { Size = Vector3.One * SystemSettings.EntityRadius.Value * 2.0f };
-            _cubeMesh.SurfaceSetMaterial(0, _nearMaterial);
+            _cubeMesh.Material = _nearMaterial;
 
             Logging.Log($"[{Name}] Initialized - Max instances: {SystemSettings.MaxMeshInstances.Value}");
         }

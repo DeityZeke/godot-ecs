@@ -4,14 +4,14 @@
     "d:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\GodotECS.Tests\\GodotECS.Tests.csproj": {}
   },
   "projects": {
-    "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
+    "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj",
+        "projectUniqueName": "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj",
         "projectName": "GodotECS",
-        "projectPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj",
+        "projectPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj",
         "packagesPath": "C:\\Users\\nbrow\\.nuget\\packages\\",
-        "outputPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\.godot\\mono\\temp\\obj\\",
+        "outputPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\.godot\\mono\\temp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\nbrow\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -102,8 +102,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
-                "projectPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj"
+              "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
+                "projectPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj"
               }
             }
           }

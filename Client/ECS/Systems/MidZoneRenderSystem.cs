@@ -146,7 +146,8 @@ namespace Client.ECS.Systems
             public override int GetHashCode() => HashCode.Combine(Location, (int)Prototype);
         }
 
-        private readonly Dictionary<ChunkMeshKey, ChunkMultiMesh> _chunkMultiMeshes = new();
+        // Thread-safe dictionary for parallel chunk processing
+        private readonly ConcurrentDictionary<ChunkMeshKey, ChunkMultiMesh> _chunkMultiMeshes = new();
         private readonly Queue<ChunkMultiMesh> _pooledChunkMeshes = new();
         private readonly List<ChunkMeshKey> _chunkUploadList = new();
         private readonly List<ChunkMeshKey> _chunksToRemove = new();
@@ -188,7 +189,7 @@ namespace Client.ECS.Systems
                 Metallic = 0.0f,
                 Roughness = 1.0f
             };
-            _sphereMesh.SurfaceSetMaterial(0, _midMaterial);
+            _sphereMesh.Material = _midMaterial;
 
             _cubeMesh = new BoxMesh { Size = Vector3.One * SystemSettings.EntityRadius.Value * 2.0f };
             _staticMidMaterial = new StandardMaterial3D
@@ -197,7 +198,7 @@ namespace Client.ECS.Systems
                 Metallic = 0.0f,
                 Roughness = 0.9f
             };
-            _cubeMesh.SurfaceSetMaterial(0, _staticMidMaterial);
+            _cubeMesh.Material = _staticMidMaterial;
 
             Logging.Log($"[{Name}] Initialized - Initial capacity: {SystemSettings.InitialChunkCapacity.Value}/chunk");
         }
@@ -327,13 +328,8 @@ namespace Client.ECS.Systems
 
                 var key = new ChunkMeshKey(chunkLocation, prototype);
 
-                ref var chunkDataRef = ref CollectionsMarshal.GetValueRefOrAddDefault(_chunkMultiMeshes, key, out bool exists);
-                if (!exists || chunkDataRef == null)
-                {
-                    chunkDataRef = AcquireChunkMultiMesh(chunkLocation, prototype);
-                }
-
-                var chunkData = chunkDataRef;
+                // GetOrAdd is thread-safe for ConcurrentDictionary
+                var chunkData = _chunkMultiMeshes.GetOrAdd(key, k => AcquireChunkMultiMesh(chunkLocation, prototype));
 
                 // Always build transforms, but track visibility for GPU upload
                 chunkData.Visible = visible;

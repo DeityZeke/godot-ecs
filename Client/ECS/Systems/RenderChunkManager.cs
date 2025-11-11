@@ -38,7 +38,7 @@ namespace Client.ECS.Systems
     /// - Near chunks: Have NearZoneTag → Query<NearZoneTag>() finds them
     /// - Mid chunks: Have MidZoneTag → Query<MidZoneTag>() finds them
     /// - Far chunks: Have FarZoneTag → Query<FarZoneTag>() finds them
-    /// - Pooled chunks: Have NO zone tag → Invisible to zone systems
+    /// - Pooled chunks: Have RenderChunkPoolTag → Query<RenderChunkPoolTag>() finds them for reuse
     ///
     /// Benefits:
     /// - Zone systems query DIFFERENT archetypes (no read conflicts → parallelizable!)
@@ -100,10 +100,11 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(RenderChunkManager).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: RenderChunk for querying existing chunks
-        public override Type[] ReadSet { get; } = new[] { typeof(RenderChunk) };
-        // Write: Zone tags + create/destroy entities
-        public override Type[] WriteSet { get; } = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag), typeof(RenderChunk) };
+        // Read: RenderChunk for querying existing chunks, RenderChunkPoolTag for pool queries
+        public override Type[] ReadSet { get; } = new[] { typeof(RenderChunk), typeof(RenderChunkPoolTag) };
+        // Write: Zone tags + RenderChunkPoolTag + create/destroy entities
+        // NOTE: RenderChunk entities do NOT have ChunkLocation component to avoid conflicts with ChunkSystem's spatial chunks
+        public override Type[] WriteSet { get; } = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag), typeof(RenderChunkPoolTag), typeof(RenderChunk) };
 
         private ChunkManager? _chunkManager;
         private ChunkLocation _lastPlayerChunk = new(int.MaxValue, int.MaxValue, int.MaxValue);
@@ -114,15 +115,12 @@ namespace Client.ECS.Systems
         private enum ZoneType : byte { None, Near, Mid, Far }
         private readonly Dictionary<ChunkLocation, ZoneType> _previousZones = new();
 
-        // Entity pool: Reuse render chunk entities to prevent allocation overhead
-        private readonly Queue<Entity> _entityPool = new();
-
         private readonly CommandBuffer _buffer = new();
 
         public override void OnInitialize(World world)
         {
             Logging.Log($"[{Name}] Initialized - Near: {SystemSettings.NearBubbleSize.Value}x{SystemSettings.NearBubbleSize.Value}x{SystemSettings.NearBubbleSize.Value}, Mid: {SystemSettings.MidRenderDistance.Value} chunks");
-            Logging.Log($"[{Name}] Proactive render chunk creation enabled with entity pooling (capacity: {SystemSettings.PoolCapacity.Value})");
+            Logging.Log($"[{Name}] Proactive render chunk creation enabled with tag-based pooling (max capacity: {SystemSettings.PoolCapacity.Value})");
         }
 
         public void SetChunkManager(ChunkManager chunkManager)
@@ -240,23 +238,39 @@ namespace Client.ECS.Systems
                 }
             }
 
-            // Query all existing RenderChunk entities
+            // Query ACTIVE render chunks (have zone tags, not pooled)
             var existingChunks = new Dictionary<ChunkLocation, Entity>();
             var renderChunkTypeId = ComponentManager.GetTypeId<RenderChunk>();
 
-            var archetypes = world.QueryArchetypes(typeof(RenderChunk));
-            foreach (var archetype in archetypes)
+            var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
+            foreach (var zoneTagType in zoneTagTypes)
+            {
+                var archetypes = world.QueryArchetypes(zoneTagType);
+                foreach (var archetype in archetypes)
+                {
+                    if (archetype.Count == 0)
+                        continue;
+
+                    var renderChunks = archetype.GetComponentSpan<RenderChunk>(renderChunkTypeId);
+                    var entities = archetype.GetEntityArray();
+
+                    for (int i = 0; i < renderChunks.Length; i++)
+                    {
+                        existingChunks[renderChunks[i].Location] = entities[i];
+                    }
+                }
+            }
+
+            // Query POOLED render chunks (for reuse)
+            var pooledEntities = new List<Entity>();
+            var pooledArchetypes = world.QueryArchetypes(typeof(RenderChunkPoolTag));
+            foreach (var archetype in pooledArchetypes)
             {
                 if (archetype.Count == 0)
                     continue;
 
-                var renderChunks = archetype.GetComponentSpan<RenderChunk>(renderChunkTypeId);
                 var entities = archetype.GetEntityArray();
-
-                for (int i = 0; i < renderChunks.Length; i++)
-                {
-                    existingChunks[renderChunks[i].Location] = entities[i];
-                }
+                pooledEntities.AddRange(entities);
             }
 
             // Process existing chunks: Update or Pool
@@ -286,9 +300,11 @@ namespace Client.ECS.Systems
                     var previousZone = _previousZones.TryGetValue(location, out var prev) ? prev : ZoneType.None;
                     RemoveAllZoneTags(_buffer, entity, previousZone);
 
-                    if (_entityPool.Count < SystemSettings.PoolCapacity.Value)
+                    // Check current pool size + entities we're adding this frame
+                    if (pooledEntities.Count + pooled < SystemSettings.PoolCapacity.Value)
                     {
-                        _entityPool.Enqueue(entity);
+                        // Add to pool via RenderChunkPoolTag
+                        _buffer.AddComponent(entity.Index, ComponentManager.GetTypeId<RenderChunkPoolTag>(), new RenderChunkPoolTag());
                         pooled++;
                     }
                     else
@@ -302,6 +318,7 @@ namespace Client.ECS.Systems
             // Create missing chunks (from pool or new)
             int created = 0;
             int reused = 0;
+            int poolIndex = 0;
 
             foreach (var location in windowLocations)
             {
@@ -311,18 +328,17 @@ namespace Client.ECS.Systems
                     var zone = windowZones[location];
 
                     // Try to reuse pooled entity first
-                    if (_entityPool.Count > 0)
+                    if (poolIndex < pooledEntities.Count)
                     {
-                        var entity = _entityPool.Dequeue();
+                        var entity = pooledEntities[poolIndex++];
+
+                        // Remove pool tag
+                        _buffer.RemoveComponent(entity.Index, ComponentManager.GetTypeId<RenderChunkPoolTag>());
 
                         // Update RenderChunk component with new location/bounds
+                        // NOTE: We don't add ChunkLocation as separate component to avoid conflicts with ChunkSystem
                         _buffer.RemoveComponent(entity.Index, renderChunkTypeId);
                         _buffer.AddComponent(entity.Index, renderChunkTypeId, new RenderChunk(location, bounds, visible: false));
-
-                        // Update ChunkLocation component
-                        int chunkLocationTypeId = ComponentManager.GetTypeId<ChunkLocation>();
-                        _buffer.RemoveComponent(entity.Index, chunkLocationTypeId);
-                        _buffer.AddComponent(entity.Index, chunkLocationTypeId, location);
 
                         // Add zone tag to activate
                         AddZoneTag(_buffer, entity, zone);
@@ -332,9 +348,10 @@ namespace Client.ECS.Systems
                     else
                     {
                         // Pool empty - create new entity
+                        // NOTE: RenderChunk contains location, so we don't add ChunkLocation as separate component
+                        // This prevents conflicts with ChunkSystem's spatial chunks
                         _buffer.CreateEntity(builder =>
                         {
-                            builder.Add(location);
                             builder.Add(new RenderChunk(location, bounds, visible: false));
 
                             // Add zone tag immediately
@@ -370,8 +387,9 @@ namespace Client.ECS.Systems
                 int nearCount = windowZones.Values.Count(z => z == ZoneType.Near);
                 int midCount = windowZones.Values.Count(z => z == ZoneType.Mid);
                 int farCount = windowZones.Values.Count(z => z == ZoneType.Far);
+                int poolSizeAfter = pooledEntities.Count - reused + pooled;
 
-                Logging.Log($"[{Name}] Window: Near={nearCount}, Mid={midCount}, Far={farCount}, Created={created}, Reused={reused}, Pooled={pooled}, Updated={updated}, PoolSize={_entityPool.Count}");
+                Logging.Log($"[{Name}] Window: Near={nearCount}, Mid={midCount}, Far={farCount}, Created={created}, Reused={reused}, Pooled={pooled}, Updated={updated}, PoolSize={poolSizeAfter}");
             }
         }
 
@@ -425,7 +443,6 @@ namespace Client.ECS.Systems
         public override void OnShutdown(World world)
         {
             _previousZones.Clear();
-            _entityPool.Clear();
             _buffer.Dispose();
 
             if (SystemSettings.EnableDebugLogs.Value)

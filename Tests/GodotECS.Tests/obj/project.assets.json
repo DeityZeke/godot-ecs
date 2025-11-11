@@ -5627,8 +5627,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
-              "projectPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj"
+            "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
+              "projectPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj"
             }
           }
         }
