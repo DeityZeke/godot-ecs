@@ -117,6 +117,7 @@ namespace UltraSim.Server.ECS.Systems
         public override Type[] WriteSet { get; } = new[] { typeof(ChunkOwner), typeof(ChunkState) };
 
         private ChunkManager? _chunkManager;
+        private World? _world;
         private CommandBuffer _buffer = new();
         private int _frameCounter = 0;
         private int _chunksQueuedThisFrame = 0;
@@ -151,13 +152,83 @@ namespace UltraSim.Server.ECS.Systems
 
         public override void OnInitialize(World world)
         {
+            _world = world;
             _cachedQuery = world.QueryArchetypes(typeof(Position));
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
+
+            // Subscribe to MovementSystem's entity batch processed event
+            var movementSystem = world.Systems.GetSystem<OptimizedMovementSystem>() as OptimizedMovementSystem;
+            if (movementSystem != null)
+            {
+                movementSystem.EntityBatchProcessed += OnEntityBatchProcessed;
+                Logging.Log($"[ChunkSystem] Subscribed to MovementSystem batch events");
+            }
 
             Logging.Log($"[ChunkSystem] Initialized with ChunkManager (64x32x64)");
         }
 
         public ChunkManager? GetChunkManager() => _chunkManager;
+
+        /// <summary>
+        /// Event handler for MovementSystem's EntityBatchProcessed event.
+        /// Checks if entities have moved outside their current chunk bounds and reassigns them.
+        /// </summary>
+        private void OnEntityBatchProcessed(EntityBatchProcessedEventArgs args)
+        {
+            if (_chunkManager == null || _world == null)
+                return;
+
+            var entitySpan = args.GetSpan();
+
+            // Process each entity in the batch
+            for (int i = 0; i < entitySpan.Length; i++)
+            {
+                var entity = entitySpan[i];
+
+                // Get entity's current location in the ECS
+                if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
+                    continue;
+
+                // Skip if entity doesn't have Position component
+                if (!archetype.HasComponent(PosTypeId))
+                    continue;
+
+                // Read current position
+                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
+                if ((uint)slot >= (uint)positions.Length)
+                    continue;
+
+                var position = positions[slot];
+
+                // Calculate which chunk this position belongs to
+                var targetChunkLoc = _chunkManager.WorldToChunk(position.X, position.Y, position.Z);
+
+                // Check if entity already has a ChunkOwner component
+                bool hasOwner = archetype.HasComponent(ChunkOwnerTypeId);
+                bool needsReassignment = true;
+
+                if (hasOwner)
+                {
+                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                    if ((uint)slot < (uint)owners.Length)
+                    {
+                        var currentOwner = owners[slot];
+
+                        // Check if entity is still in the same chunk
+                        if (currentOwner.IsAssigned && currentOwner.Location.Equals(targetChunkLoc))
+                        {
+                            needsReassignment = false;
+                        }
+                    }
+                }
+
+                // Reassign to new chunk if needed
+                if (needsReassignment)
+                {
+                    ChunkAssignmentQueue.Enqueue(entity, targetChunkLoc);
+                }
+            }
+        }
 
         /// <summary>
         /// Get all entities currently assigned to a specific chunk.
