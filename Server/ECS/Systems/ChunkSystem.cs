@@ -43,6 +43,9 @@ namespace UltraSim.Server.ECS.Systems
             public IntSetting ChunkIdleFrames { get; private set; }
             public IntSetting PoolCleanupBatch { get; private set; }
             public BoolSetting EnableDebugLogs { get; private set; }
+            public BoolSetting EnableDeferredBatchProcessing { get; private set; }
+            public BoolSetting ParallelBatchProcessing { get; private set; }
+            public IntSetting ParallelBatchThreshold { get; private set; }
 
             public Settings()
             {
@@ -102,6 +105,16 @@ namespace UltraSim.Server.ECS.Systems
 
                 EnableDebugLogs = RegisterBool("Enable Debug Logs", false,
                     tooltip: "Log chunk creation/destruction and assignment operations");
+
+                EnableDeferredBatchProcessing = RegisterBool("Deferred Batch Processing", true,
+                    tooltip: "Process event batches deferred in Update() instead of synchronously in event handlers");
+
+                ParallelBatchProcessing = RegisterBool("Parallel Batch Processing", true,
+                    tooltip: "Process multiple event batches in parallel when deferred processing is enabled");
+
+                ParallelBatchThreshold = RegisterInt("Parallel Batch Threshold", 2,
+                    min: 1, max: 100, step: 1,
+                    tooltip: "Minimum number of batches required before parallel processing kicks in");
             }
         }
 
@@ -123,6 +136,10 @@ namespace UltraSim.Server.ECS.Systems
         private int _frameCounter = 0;
         private int _chunksQueuedThisFrame = 0;
         private int _chunksRegisteredThisFrame = 0;
+
+        // Deferred batch processing queues
+        private readonly ConcurrentQueue<EntityBatchProcessedEventArgs> _movementBatchQueue = new();
+        private readonly ConcurrentQueue<EntityBatchCreatedEventArgs> _creationBatchQueue = new();
 
         // Track chunks that are pending creation (to avoid duplicate creation requests)
         private readonly HashSet<ChunkLocation> _pendingChunkCreations = new();
@@ -176,82 +193,95 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Event handler for World's EntityBatchCreated event.
-        /// Performs initial chunk assignment for newly created entities with Position components.
+        /// Either enqueues batch for deferred processing or processes immediately.
         /// </summary>
         private void OnEntityBatchCreated(EntityBatchCreatedEventArgs args)
         {
             if (_chunkManager == null || _world == null)
                 return;
 
-            var entitySpan = args.GetSpan();
-
-            // Process each newly created entity
-            for (int i = 0; i < entitySpan.Length; i++)
+            // Deferred processing: O(1) - just enqueue the batch reference
+            if (SystemSettings.EnableDeferredBatchProcessing.Value)
             {
-                var entity = entitySpan[i];
-
-                // Get entity's location in the ECS
-                if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
-                    continue;
-
-                // Skip if entity doesn't have Position component
-                if (!archetype.HasComponent(PosTypeId))
-                    continue;
-
-                // Skip chunk entities themselves
-                if (archetype.HasComponent(ChunkLocationTypeId))
-                    continue;
-
-                // Read initial position
-                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
-                if ((uint)slot >= (uint)positions.Length)
-                    continue;
-
-                var position = positions[slot];
-
-                // Calculate which chunk this position belongs to
-                var chunkLoc = _chunkManager.WorldToChunk(position.X, position.Y, position.Z);
-
-                // Assign to chunk (initial assignment - entity shouldn't have ChunkOwner yet)
-                ChunkAssignmentQueue.Enqueue(entity, chunkLoc);
+                _creationBatchQueue.Enqueue(args);
+                return;
             }
+
+            // Synchronous processing (old behavior)
+            ProcessCreationBatchImmediate(args);
         }
 
         /// <summary>
         /// Event handler for MovementSystem's EntityBatchProcessed event.
-        /// Checks if entities have moved outside their current chunk bounds and reassigns them.
+        /// Either enqueues batch for deferred processing or processes immediately.
         /// </summary>
         private void OnEntityBatchProcessed(EntityBatchProcessedEventArgs args)
         {
             if (_chunkManager == null || _world == null)
                 return;
 
+            // Deferred processing: O(1) - just enqueue the batch reference
+            if (SystemSettings.EnableDeferredBatchProcessing.Value)
+            {
+                _movementBatchQueue.Enqueue(args);
+                return;
+            }
+
+            // Synchronous processing (old behavior)
+            ProcessMovementBatchImmediate(args);
+        }
+
+        /// <summary>
+        /// Process a creation batch immediately (synchronous).
+        /// </summary>
+        private void ProcessCreationBatchImmediate(EntityBatchCreatedEventArgs args)
+        {
             var entitySpan = args.GetSpan();
 
-            // Process each entity in the batch
             for (int i = 0; i < entitySpan.Length; i++)
             {
                 var entity = entitySpan[i];
 
-                // Get entity's current location in the ECS
-                if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
+                if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
 
-                // Skip if entity doesn't have Position component
-                if (!archetype.HasComponent(PosTypeId))
+                if (!archetype.HasComponent(PosTypeId) || archetype.HasComponent(ChunkLocationTypeId))
                     continue;
 
-                // Read current position
                 var positions = archetype.GetComponentSpan<Position>(PosTypeId);
                 if ((uint)slot >= (uint)positions.Length)
                     continue;
 
                 var position = positions[slot];
+                var chunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
+                ChunkAssignmentQueue.Enqueue(entity, chunkLoc);
+            }
+        }
 
-                // Calculate which chunk this position belongs to
-                var targetChunkLoc = _chunkManager.WorldToChunk(position.X, position.Y, position.Z);
+        /// <summary>
+        /// Process a movement batch immediately (synchronous).
+        /// </summary>
+        private void ProcessMovementBatchImmediate(EntityBatchProcessedEventArgs args)
+        {
+            var entitySpan = args.GetSpan();
 
-                // Check if entity already has a ChunkOwner component
+            for (int i = 0; i < entitySpan.Length; i++)
+            {
+                var entity = entitySpan[i];
+
+                if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
+                    continue;
+
+                if (!archetype.HasComponent(PosTypeId))
+                    continue;
+
+                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
+                if ((uint)slot >= (uint)positions.Length)
+                    continue;
+
+                var position = positions[slot];
+                var targetChunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
+
                 bool hasOwner = archetype.HasComponent(ChunkOwnerTypeId);
                 bool needsReassignment = true;
 
@@ -261,8 +291,6 @@ namespace UltraSim.Server.ECS.Systems
                     if ((uint)slot < (uint)owners.Length)
                     {
                         var currentOwner = owners[slot];
-
-                        // Check if entity is still in the same chunk
                         if (currentOwner.IsAssigned && currentOwner.Location.Equals(targetChunkLoc))
                         {
                             needsReassignment = false;
@@ -270,11 +298,92 @@ namespace UltraSim.Server.ECS.Systems
                     }
                 }
 
-                // Reassign to new chunk if needed
                 if (needsReassignment)
                 {
                     ChunkAssignmentQueue.Enqueue(entity, targetChunkLoc);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Process all deferred creation batches from the queue.
+        /// Can process in parallel if multiple batches are available.
+        /// </summary>
+        private void ProcessDeferredCreationBatches()
+        {
+            if (_chunkManager == null || _world == null)
+                return;
+
+            // Drain queue into list
+            var batches = new List<EntityBatchCreatedEventArgs>();
+            while (_creationBatchQueue.TryDequeue(out var batch))
+            {
+                batches.Add(batch);
+            }
+
+            if (batches.Count == 0)
+                return;
+
+            // Decide parallel vs sequential
+            bool useParallel = SystemSettings.ParallelBatchProcessing.Value &&
+                               batches.Count >= SystemSettings.ParallelBatchThreshold.Value;
+
+            if (useParallel)
+            {
+                Parallel.ForEach(batches, batch => ProcessCreationBatchImmediate(batch));
+            }
+            else
+            {
+                foreach (var batch in batches)
+                {
+                    ProcessCreationBatchImmediate(batch);
+                }
+            }
+
+            if (SystemSettings.EnableDebugLogs.Value && batches.Count > 0)
+            {
+                Logging.Log($"[ChunkSystem] Processed {batches.Count} deferred creation batches ({(useParallel ? "parallel" : "sequential")})");
+            }
+        }
+
+        /// <summary>
+        /// Process all deferred movement batches from the queue.
+        /// Can process in parallel if multiple batches are available.
+        /// </summary>
+        private void ProcessDeferredMovementBatches()
+        {
+            if (_chunkManager == null || _world == null)
+                return;
+
+            // Drain queue into list
+            var batches = new List<EntityBatchProcessedEventArgs>();
+            while (_movementBatchQueue.TryDequeue(out var batch))
+            {
+                batches.Add(batch);
+            }
+
+            if (batches.Count == 0)
+                return;
+
+            // Decide parallel vs sequential
+            bool useParallel = SystemSettings.ParallelBatchProcessing.Value &&
+                               batches.Count >= SystemSettings.ParallelBatchThreshold.Value;
+
+            if (useParallel)
+            {
+                Parallel.ForEach(batches, batch => ProcessMovementBatchImmediate(batch));
+            }
+            else
+            {
+                foreach (var batch in batches)
+                {
+                    ProcessMovementBatchImmediate(batch);
+                }
+            }
+
+            if (SystemSettings.EnableDebugLogs.Value && batches.Count > 0)
+            {
+                Logging.Log($"[ChunkSystem] Processed {batches.Count} deferred movement batches ({(useParallel ? "parallel" : "sequential")})");
             }
         }
 
@@ -340,6 +449,15 @@ namespace UltraSim.Server.ECS.Systems
             // Scan for chunk entities that aren't registered yet
             RegisterNewChunks(world);
 
+            // === PROCESS DEFERRED BATCHES ===
+            // Process entity creation and movement batches from events
+            if (SystemSettings.EnableDeferredBatchProcessing.Value)
+            {
+                ProcessDeferredCreationBatches();
+                ProcessDeferredMovementBatches();
+            }
+
+            // === PROCESS ASSIGNMENT QUEUE ===
             bool queueProcessed = false;
             if (SystemSettings.UseDirtyAssignmentQueue.Value)
             {
