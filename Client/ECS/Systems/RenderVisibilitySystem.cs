@@ -88,9 +88,9 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(RenderVisibilitySystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: Chunk bounds and all zone tags for frustum tests
-        public override Type[] ReadSet { get; } = new[] { typeof(ChunkBounds), typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
-        // Write: Update Visible flag
+        // Read: Zone tags for archetype filtering, RenderChunk for bounds
+        public override Type[] ReadSet { get; } = new[] { typeof(RenderChunk), typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
+        // Write: Update Visible flag in RenderChunk
         public override Type[] WriteSet { get; } = new[] { typeof(RenderChunk) };
 
         private int _frameCounter = 0;

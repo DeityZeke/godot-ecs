@@ -1,0 +1,1795 @@
+Godot Engine v4.5.stable.mono.official.876b29033 - https://godotengine.org
+Vulkan 1.4.303 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4070 Ti SUPER
+
+========================================
+      ECS WORLD INITIALIZATION         
+========================================
+[HybridBootstrapper] World initialized.
+========================================
+         ECS WORLD READY                
+  Press F12 to open Control Panel      
+========================================
+
+[05:52:53] [Info] ECS: [SIMD] Initialized - Hardware: AVX512, Systems: Simd512, Showcase: False
+[05:52:53] [Info] ECS: [World] âœ… Auto-save enabled (interval: 60s)
+[05:52:53] [Info] ECS: [Hybrid Render System] Initialized - Core bubble: 5x5x5
+[05:52:53] [Info] ECS: [Hybrid Render System] Render distance: 16 chunks, Far zone: disabled
+[05:52:53] [Info] ECS: [SystemManager] Registered system: HybridRenderSystem
+[05:52:53] [Info] ECS: [MultiMesh Zone Manager] Initialized - Mesh: 6x3 sphere, Initial capacity: 1000/chunk
+[05:52:53] [Info] ECS: [SystemManager] Registered system: MultiMeshZoneManager
+[05:52:53] [Info] ECS: [SystemManager] Registered system: OptimizedMovementSystem
+[05:52:53] [Info] ECS: [Entity Spawner] Initialized with spawn radius 500
+[05:52:53] [Info] ECS: [Entity Spawner] Note: Entities will be assigned to chunks by ChunkSystem
+[05:52:53] [Info] ECS: [SystemManager] Registered system: EntitySpawnerSystem
+[05:52:53] [Info] ECS: [ChunkManager] Initialized - ChunkSize: 64x32x64
+[05:52:53] [Info] ECS: [ChunkSystem] Initialized with ChunkManager (64x32x64)
+[05:52:53] [Info] ECS: [SystemManager] Registered system: ChunkSystem
+[05:52:53] [Info] ECS: [SystemManager] Registered system: OptimizedPulsingMovementSystem
+[05:52:53] [Info] ECS: [MeshInstance Bubble Manager] Initialized - Mesh: 6x3 sphere, Radius: 0.4, Chunk pool reserve: 256
+[05:52:53] [Info] ECS: [SystemManager] Registered system: MeshInstanceBubbleManager
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: Hybrid Render System
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: MultiMesh Zone Manager
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: OptimizedMovementSystem
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: Entity Spawner
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: ChunkSystem
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: OptimizedPulsingMovementSystem
+[05:52:53] [Info] ECS: [SystemManager] Enabled system: MeshInstance Bubble Manager
+[05:52:53] [Info] ECS: Control Panel Initializing...
+[05:52:53] [Info] ECS:  - 5 Panels Detected
+[05:52:53] [Info] ECS:  - Loaded and Applied Panel Settings
+[05:52:54] [Info] ECS:  - Built Panel UI's
+[05:52:54] [Info] ECS: Control Panel Ready! Press F12 to toggle
+[HybridBootstrapper] Connected HybridRenderSystem to ChunkManager
+[HybridBootstrapper] Connected MultiMeshZoneManager to ChunkManager + ChunkSystem
+[HybridBootstrapper] Connected MeshInstanceBubbleManager to ChunkManager + ChunkSystem
+[HybridBootstrapper] Chunk debug overlay attached
+[05:52:54] [Info] ECS: [Hybrid Render System] ChunkManager reference set
+[05:52:54] [Info] ECS: [Hybrid Render System] ChunkDebugOverlay connected
+[05:52:54] [Info] ECS: [MultiMesh Zone Manager] ChunkManager + ChunkSystem references set
+[ECS] Frame: 0.700 ms (avg over 107 frames)
+[ECS] Frame: 0.292 ms (avg over 146 frames)
+[05:52:56] [Info] ECS: Systems Panel: 7/7 systems with settings
+[UI] FPS: 140.9 | Frame: 7.10ms | Tick: 0.298ms | Entities: 0
+[ECS] Frame: 0.286 ms (avg over 144 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.273ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.283ms | Entities: 0
+[ECS] Frame: 0.283 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.287ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.263ms | Entities: 0
+[ECS] Frame: 0.281 ms (avg over 144 frames)
+[UI] FPS: 138.7 | Frame: 7.21ms | Tick: 0.264ms | Entities: 0
+[UI] FPS: 143.4 | Frame: 6.97ms | Tick: 0.275ms | Entities: 0
+[ECS] Frame: 0.277 ms (avg over 145 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.273ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.274ms | Entities: 0
+[ECS] Frame: 0.275 ms (avg over 143 frames)
+[UI] FPS: 138.3 | Frame: 7.23ms | Tick: 0.266ms | Entities: 0
+[UI] FPS: 143.2 | Frame: 6.98ms | Tick: 0.265ms | Entities: 0
+[ECS] Frame: 0.272 ms (avg over 142 frames)
+[UI] FPS: 139.0 | Frame: 7.19ms | Tick: 0.266ms | Entities: 0
+[UI] FPS: 143.8 | Frame: 6.95ms | Tick: 0.282ms | Entities: 0
+[ECS] Frame: 0.276 ms (avg over 144 frames)
+[UI] FPS: 141.3 | Frame: 7.08ms | Tick: 0.274ms | Entities: 0
+[UI] FPS: 143.7 | Frame: 6.96ms | Tick: 0.264ms | Entities: 0
+[ECS] Frame: 0.279 ms (avg over 145 frames)
+[UI] FPS: 143.9 | Frame: 6.95ms | Tick: 0.265ms | Entities: 0
+[UI] FPS: 143.9 | Frame: 6.95ms | Tick: 0.269ms | Entities: 0
+[ECS] Frame: 0.271 ms (avg over 145 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.269ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.266ms | Entities: 0
+[ECS] Frame: 0.283 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.273ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.300ms | Entities: 0
+[ECS] Frame: 0.283 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.271ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.262ms | Entities: 0
+[ECS] Frame: 0.282 ms (avg over 146 frames)
+[UI] FPS: 143.8 | Frame: 6.96ms | Tick: 0.267ms | Entities: 0
+[UI] FPS: 142.3 | Frame: 7.03ms | Tick: 0.286ms | Entities: 0
+[ECS] Frame: 0.273 ms (avg over 145 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.265ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.273ms | Entities: 0
+[ECS] Frame: 0.275 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.261ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.263ms | Entities: 0
+[ECS] Frame: 0.271 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.268ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.264ms | Entities: 0
+[ECS] Frame: 0.270 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.269ms | Entities: 0
+[UI] FPS: 142.1 | Frame: 7.04ms | Tick: 0.272ms | Entities: 0
+[ECS] Frame: 0.269 ms (avg over 145 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.276ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.285ms | Entities: 0
+[ECS] Frame: 0.270 ms (avg over 144 frames)
+[UI] FPS: 141.0 | Frame: 7.09ms | Tick: 0.267ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.263ms | Entities: 0
+[ECS] Frame: 0.288 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.265ms | Entities: 0
+[UI] FPS: 146.4 | Frame: 6.83ms | Tick: 0.267ms | Entities: 0
+[ECS] Frame: 0.276 ms (avg over 143 frames)
+[UI] FPS: 135.6 | Frame: 7.37ms | Tick: 0.264ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.267ms | Entities: 0
+[ECS] Frame: 0.271 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.270ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.262ms | Entities: 0
+[ECS] Frame: 0.276 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.266ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.267ms | Entities: 0
+[ECS] Frame: 0.275 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.275ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.265ms | Entities: 0
+[ECS] Frame: 0.280 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.265ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.262ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.265ms | Entities: 0
+[ECS] Frame: 0.282 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.263ms | Entities: 0
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.270ms | Entities: 0
+[ECS] Frame: 0.272 ms (avg over 146 frames)
+[UI] FPS: 144.0 | Frame: 6.94ms | Tick: 0.269ms | Entities: 0
+[05:53:23] [Info] ECS: [Entity Spawner] Spawning 100000 entities...
+[05:53:23] [Info] ECS: [CommandBuffer] Applied: 100000 created, 0 destroyed in 172.150ms
+[05:53:23] [Info] ECS: [Entity Spawner] Spawned 100000 entities - Queue: 89.701ms, Apply: 172.176ms, Total: 261.877ms
+[05:53:23] [Info] ECS: [Entity Spawner] ChunkSystem will assign entities to chunks on next assignment cycle
+[UI] FPS: 109.5 | Frame: 9.13ms | Tick: 3.837ms | Entities: 100,000
+[ECS] Frame: 0.301 ms (avg over 128 frames)
+[05:53:23] [Info] ECS: [CommandBuffer] Applied: 4687 created, 0 destroyed in 15.588ms
+[UI] FPS: 75.9 | Frame: 13.17ms | Tick: 5.888ms | Entities: 104,687
+[UI] FPS: 136.4 | Frame: 7.33ms | Tick: 14.119ms | Entities: 104,687
+[ECS] Frame: 8.229 ms (avg over 108 frames)
+[UI] FPS: 132.9 | Frame: 7.52ms | Tick: 5.924ms | Entities: 104,687
+[UI] FPS: 129.1 | Frame: 7.75ms | Tick: 5.640ms | Entities: 104,687
+[ECS] Frame: 6.687 ms (avg over 132 frames)
+[UI] FPS: 134.6 | Frame: 7.43ms | Tick: 14.361ms | Entities: 104,687
+[UI] FPS: 133.4 | Frame: 7.50ms | Tick: 5.729ms | Entities: 104,687
+[ECS] Frame: 6.698 ms (avg over 136 frames)
+[UI] FPS: 133.1 | Frame: 7.51ms | Tick: 6.329ms | Entities: 104,687
+[UI] FPS: 133.0 | Frame: 7.52ms | Tick: 6.013ms | Entities: 104,687
+[ECS] Frame: 6.684 ms (avg over 135 frames)
+[UI] FPS: 132.4 | Frame: 7.55ms | Tick: 5.623ms | Entities: 104,687
+[UI] FPS: 133.2 | Frame: 7.51ms | Tick: 5.745ms | Entities: 104,687
+[ECS] Frame: 6.613 ms (avg over 134 frames)
+[UI] FPS: 127.1 | Frame: 7.87ms | Tick: 5.671ms | Entities: 104,687
+[UI] FPS: 132.2 | Frame: 7.56ms | Tick: 5.712ms | Entities: 104,687
+[ECS] Frame: 6.713 ms (avg over 131 frames)
+[UI] FPS: 133.8 | Frame: 7.47ms | Tick: 5.976ms | Entities: 104,687
+[UI] FPS: 134.4 | Frame: 7.44ms | Tick: 5.846ms | Entities: 104,687
+[ECS] Frame: 6.633 ms (avg over 136 frames)
+[UI] FPS: 134.4 | Frame: 7.44ms | Tick: 13.802ms | Entities: 104,687
+[UI] FPS: 132.6 | Frame: 7.54ms | Tick: 5.690ms | Entities: 104,687
+[ECS] Frame: 6.706 ms (avg over 135 frames)
+[UI] FPS: 133.7 | Frame: 7.48ms | Tick: 5.735ms | Entities: 104,687
+[UI] FPS: 132.2 | Frame: 7.56ms | Tick: 5.797ms | Entities: 104,687
+[ECS] Frame: 6.607 ms (avg over 134 frames)
+[UI] FPS: 130.6 | Frame: 7.66ms | Tick: 5.655ms | Entities: 104,687
+[UI] FPS: 130.2 | Frame: 7.68ms | Tick: 5.978ms | Entities: 104,687
+[ECS] Frame: 6.621 ms (avg over 132 frames)
+[UI] FPS: 133.2 | Frame: 7.50ms | Tick: 13.411ms | Entities: 104,687
+[UI] FPS: 133.0 | Frame: 7.52ms | Tick: 5.397ms | Entities: 104,687
+[ECS] Frame: 6.477 ms (avg over 135 frames)
+[UI] FPS: 133.4 | Frame: 7.50ms | Tick: 5.616ms | Entities: 104,687
+[UI] FPS: 127.4 | Frame: 7.85ms | Tick: 5.502ms | Entities: 104,687
+[ECS] Frame: 6.372 ms (avg over 132 frames)
+[05:53:35] [Info] ECS: [Entity Spawner] Spawning 100000 entities...
+[05:53:35] [Info] ECS: [CommandBuffer] Applied: 100000 created, 0 destroyed in 141.652ms
+[05:53:35] [Info] ECS: [Entity Spawner] Spawned 100000 entities - Queue: 69.746ms, Apply: 141.679ms, Total: 211.426ms
+[05:53:35] [Info] ECS: [Entity Spawner] ChunkSystem will assign entities to chunks on next assignment cycle
+[05:53:35] [Info] ECS: [CommandBuffer] Applied: 69 created, 0 destroyed in 3.911ms
+[UI] FPS: 66.8 | Frame: 14.96ms | Tick: 11.401ms | Entities: 204,756
+[UI] FPS: 74.8 | Frame: 13.37ms | Tick: 25.773ms | Entities: 204,756
+[ECS] Frame: 11.585 ms (avg over 70 frames)
+[UI] FPS: 73.6 | Frame: 13.60ms | Tick: 10.382ms | Entities: 204,756
+[UI] FPS: 75.0 | Frame: 13.34ms | Tick: 10.206ms | Entities: 204,756
+[ECS] Frame: 12.228 ms (avg over 76 frames)
+[UI] FPS: 75.6 | Frame: 13.22ms | Tick: 11.024ms | Entities: 204,756
+[UI] FPS: 74.0 | Frame: 13.52ms | Tick: 25.820ms | Entities: 204,756
+[ECS] Frame: 12.012 ms (avg over 76 frames)
+[UI] FPS: 76.2 | Frame: 13.12ms | Tick: 11.538ms | Entities: 204,756
+[UI] FPS: 74.9 | Frame: 13.35ms | Tick: 10.188ms | Entities: 204,756
+[ECS] Frame: 12.047 ms (avg over 77 frames)
+[UI] FPS: 76.4 | Frame: 13.09ms | Tick: 10.453ms | Entities: 204,756
+[UI] FPS: 75.6 | Frame: 13.23ms | Tick: 10.210ms | Entities: 204,756
+[ECS] Frame: 11.998 ms (avg over 78 frames)
+[UI] FPS: 74.3 | Frame: 13.45ms | Tick: 10.187ms | Entities: 204,756
+[UI] FPS: 73.2 | Frame: 13.66ms | Tick: 11.069ms | Entities: 204,756
+[ECS] Frame: 11.983 ms (avg over 75 frames)
+[UI] FPS: 73.2 | Frame: 13.66ms | Tick: 10.546ms | Entities: 204,756
+[UI] FPS: 73.8 | Frame: 13.55ms | Tick: 10.628ms | Entities: 204,756
+[ECS] Frame: 12.165 ms (avg over 76 frames)
+[UI] FPS: 74.7 | Frame: 13.40ms | Tick: 10.618ms | Entities: 204,756
+[UI] FPS: 75.2 | Frame: 13.30ms | Tick: 10.146ms | Entities: 204,756
+[ECS] Frame: 11.953 ms (avg over 75 frames)
+[UI] FPS: 72.6 | Frame: 13.77ms | Tick: 10.932ms | Entities: 204,756
+[UI] FPS: 73.2 | Frame: 13.67ms | Tick: 10.716ms | Entities: 204,756
+[ECS] Frame: 12.481 ms (avg over 75 frames)
+[UI] FPS: 74.0 | Frame: 13.52ms | Tick: 25.804ms | Entities: 204,756
+[UI] FPS: 73.9 | Frame: 13.53ms | Tick: 10.595ms | Entities: 204,756
+[ECS] Frame: 11.974 ms (avg over 76 frames)
+[UI] FPS: 74.5 | Frame: 13.43ms | Tick: 10.207ms | Entities: 204,756
+[UI] FPS: 74.7 | Frame: 13.39ms | Tick: 10.665ms | Entities: 204,756
+[ECS] Frame: 12.331 ms (avg over 76 frames)
+[UI] FPS: 74.2 | Frame: 13.47ms | Tick: 10.877ms | Entities: 204,756
+[UI] FPS: 74.9 | Frame: 13.35ms | Tick: 10.623ms | Entities: 204,756
+[ECS] Frame: 12.264 ms (avg over 76 frames)
+[UI] FPS: 73.3 | Frame: 13.63ms | Tick: 10.212ms | Entities: 204,756
+[UI] FPS: 77.4 | Frame: 12.92ms | Tick: 9.696ms | Entities: 204,756
+[ECS] Frame: 11.596 ms (avg over 78 frames)
+[UI] FPS: 81.4 | Frame: 12.28ms | Tick: 9.623ms | Entities: 204,756
+[UI] FPS: 79.8 | Frame: 12.53ms | Tick: 9.850ms | Entities: 204,756
+[ECS] Frame: 11.580 ms (avg over 83 frames)
+[UI] FPS: 81.1 | Frame: 12.33ms | Tick: 9.682ms | Entities: 204,756
+[UI] FPS: 81.4 | Frame: 12.28ms | Tick: 10.138ms | Entities: 204,756
+[ECS] Frame: 11.422 ms (avg over 82 frames)
+[UI] FPS: 80.2 | Frame: 12.47ms | Tick: 9.946ms | Entities: 204,756
+[UI] FPS: 81.4 | Frame: 12.29ms | Tick: 25.714ms | Entities: 204,756
+[ECS] Frame: 11.509 ms (avg over 82 frames)
+[UI] FPS: 78.6 | Frame: 12.72ms | Tick: 25.162ms | Entities: 204,756
+[UI] FPS: 80.4 | Frame: 12.44ms | Tick: 10.418ms | Entities: 204,756
+[ECS] Frame: 11.615 ms (avg over 81 frames)
+[UI] FPS: 74.7 | Frame: 13.38ms | Tick: 10.473ms | Entities: 204,756
+[UI] FPS: 74.4 | Frame: 13.44ms | Tick: 10.792ms | Entities: 204,756
+[ECS] Frame: 12.271 ms (avg over 76 frames)
+[05:53:53] [Info] ECS: 
+ðŸ’¾ WORLD SAVED
+[05:53:53] [Info] ECS:    Path: D:\MEGA\Godot Projects\godot-ecs\Saves\ECS\World\autosave_1.sav
+[05:53:53] [Info] ECS:    Time: 4.45ms
+[05:53:53] [Info] ECS:    Entities: 204756, Systems: 7
+[UI] FPS: 73.3 | Frame: 13.64ms | Tick: 10.243ms | Entities: 204,756
+[UI] FPS: 72.8 | Frame: 13.73ms | Tick: 10.613ms | Entities: 204,756
+[ECS] Frame: 12.108 ms (avg over 75 frames)
+[UI] FPS: 73.5 | Frame: 13.61ms | Tick: 10.884ms | Entities: 204,756
+[UI] FPS: 74.5 | Frame: 13.42ms | Tick: 10.239ms | Entities: 204,756
+[ECS] Frame: 12.360 ms (avg over 75 frames)
+[UI] FPS: 73.1 | Frame: 13.67ms | Tick: 11.823ms | Entities: 204,756
+[UI] FPS: 73.5 | Frame: 13.61ms | Tick: 26.617ms | Entities: 204,756
+[ECS] Frame: 12.030 ms (avg over 75 frames)
+[UI] FPS: 72.9 | Frame: 13.73ms | Tick: 10.821ms | Entities: 204,756
+[UI] FPS: 73.6 | Frame: 13.60ms | Tick: 10.943ms | Entities: 204,756
+[ECS] Frame: 12.382 ms (avg over 75 frames)
+[UI] FPS: 73.9 | Frame: 13.52ms | Tick: 10.974ms | Entities: 204,756
+[UI] FPS: 73.6 | Frame: 13.59ms | Tick: 10.631ms | Entities: 204,756
+[ECS] Frame: 12.226 ms (avg over 75 frames)
+[UI] FPS: 74.6 | Frame: 13.41ms | Tick: 10.503ms | Entities: 204,756
+[UI] FPS: 72.1 | Frame: 13.87ms | Tick: 10.723ms | Entities: 204,756
+[ECS] Frame: 12.307 ms (avg over 75 frames)
+[UI] FPS: 73.6 | Frame: 13.59ms | Tick: 25.561ms | Entities: 204,756
+[UI] FPS: 74.1 | Frame: 13.49ms | Tick: 10.673ms | Entities: 204,756
+[ECS] Frame: 11.960 ms (avg over 75 frames)
+[UI] FPS: 72.4 | Frame: 13.82ms | Tick: 10.213ms | Entities: 204,756
+[UI] FPS: 73.3 | Frame: 13.64ms | Tick: 10.451ms | Entities: 204,756
+[ECS] Frame: 12.103 ms (avg over 75 frames)
+[UI] FPS: 72.8 | Frame: 13.73ms | Tick: 10.658ms | Entities: 204,756
+[UI] FPS: 72.8 | Frame: 13.73ms | Tick: 10.255ms | Entities: 204,756
+[ECS] Frame: 12.222 ms (avg over 74 frames)
+[UI] FPS: 72.0 | Frame: 13.89ms | Tick: 10.847ms | Entities: 204,756
+[UI] FPS: 74.8 | Frame: 13.37ms | Tick: 10.243ms | Entities: 204,756
+[ECS] Frame: 12.198 ms (avg over 75 frames)
+[UI] FPS: 75.5 | Frame: 13.24ms | Tick: 10.272ms | Entities: 204,756
+[UI] FPS: 75.3 | Frame: 13.27ms | Tick: 10.518ms | Entities: 204,756
+[ECS] Frame: 11.956 ms (avg over 76 frames)
+[UI] FPS: 71.9 | Frame: 13.90ms | Tick: 10.760ms | Entities: 204,756
+[UI] FPS: 70.7 | Frame: 14.14ms | Tick: 26.380ms | Entities: 204,756
+[ECS] Frame: 12.472 ms (avg over 73 frames)
+[UI] FPS: 74.5 | Frame: 13.42ms | Tick: 10.196ms | Entities: 204,756
+[UI] FPS: 74.5 | Frame: 13.43ms | Tick: 10.573ms | Entities: 204,756
+[ECS] Frame: 12.075 ms (avg over 76 frames)
+[UI] FPS: 73.1 | Frame: 13.69ms | Tick: 10.088ms | Entities: 204,756
+[UI] FPS: 76.6 | Frame: 13.06ms | Tick: 10.636ms | Entities: 204,756
+[ECS] Frame: 12.063 ms (avg over 77 frames)
+[UI] FPS: 74.9 | Frame: 13.35ms | Tick: 26.375ms | Entities: 204,756
+[UI] FPS: 72.9 | Frame: 13.72ms | Tick: 10.711ms | Entities: 204,756
+[ECS] Frame: 12.271 ms (avg over 74 frames)
+[UI] FPS: 70.2 | Frame: 14.24ms | Tick: 10.614ms | Entities: 204,756
+[UI] FPS: 69.8 | Frame: 14.32ms | Tick: 10.627ms | Entities: 204,756
+[ECS] Frame: 12.657 ms (avg over 72 frames)
+[UI] FPS: 72.7 | Frame: 13.75ms | Tick: 10.764ms | Entities: 204,756
+[05:54:10] [Info] ECS: [Entity Spawner] Spawning 1000 entities...
+[05:54:10] [Info] ECS: [CommandBuffer] Applied: 1000 created, 0 destroyed in 0.951ms
+[05:54:10] [Info] ECS: [Entity Spawner] Spawned 1000 entities - Queue: 0.635ms, Apply: 0.953ms, Total: 1.588ms
+[05:54:10] [Info] ECS: [Entity Spawner] ChunkSystem will assign entities to chunks on next assignment cycle
+[05:54:10] [Info] ECS: [SIMD] ProcessPulsing_Scalar CALLED (1 entity per iteration)
+[05:54:10] [Info] ECS: [SIMD] ApplyVelocity_SSE CALLED (4 entities per iteration) - SSE hardware confirmed
+[UI] FPS: 67.6 | Frame: 14.79ms | Tick: 10.524ms | Entities: 205,756
+[ECS] Frame: 12.683 ms (avg over 71 frames)
+[UI] FPS: 70.2 | Frame: 14.24ms | Tick: 10.312ms | Entities: 205,756
+[UI] FPS: 70.5 | Frame: 14.19ms | Tick: 10.462ms | Entities: 205,756
+[ECS] Frame: 12.328 ms (avg over 72 frames)
+[UI] FPS: 68.8 | Frame: 14.54ms | Tick: 11.125ms | Entities: 205,756
+[UI] FPS: 69.9 | Frame: 14.30ms | Tick: 10.710ms | Entities: 205,756
+[ECS] Frame: 12.413 ms (avg over 71 frames)
+[UI] FPS: 69.9 | Frame: 14.31ms | Tick: 11.148ms | Entities: 205,756
+[UI] FPS: 70.9 | Frame: 14.11ms | Tick: 10.737ms | Entities: 205,756
+[ECS] Frame: 12.284 ms (avg over 72 frames)
+[UI] FPS: 70.4 | Frame: 14.20ms | Tick: 10.444ms | Entities: 205,756
+[05:54:14] [Info] ECS: [Entity Spawner] Spawning 1000 entities...
+[05:54:14] [Info] ECS: [CommandBuffer] Applied: 1000 created, 0 destroyed in 0.789ms
+[05:54:14] [Info] ECS: [Entity Spawner] Spawned 1000 entities - Queue: 0.465ms, Apply: 0.792ms, Total: 1.257ms
+[05:54:14] [Info] ECS: [Entity Spawner] ChunkSystem will assign entities to chunks on next assignment cycle
+[UI] FPS: 68.0 | Frame: 14.71ms | Tick: 10.536ms | Entities: 206,756
+[ECS] Frame: 12.193 ms (avg over 70 frames)
+[UI] FPS: 67.1 | Frame: 14.90ms | Tick: 10.546ms | Entities: 206,756
+[UI] FPS: 68.1 | Frame: 14.68ms | Tick: 10.661ms | Entities: 206,756
+[ECS] Frame: 12.319 ms (avg over 69 frames)
+[UI] FPS: 67.3 | Frame: 14.85ms | Tick: 10.488ms | Entities: 206,756
+[UI] FPS: 68.6 | Frame: 14.58ms | Tick: 26.414ms | Entities: 206,756
+[ECS] Frame: 12.312 ms (avg over 69 frames)
+[UI] FPS: 66.9 | Frame: 14.94ms | Tick: 10.568ms | Entities: 206,756
+[UI] FPS: 68.4 | Frame: 14.62ms | Tick: 11.016ms | Entities: 206,756
+[ECS] Frame: 12.290 ms (avg over 69 frames)
+[UI] FPS: 67.8 | Frame: 14.74ms | Tick: 10.620ms | Entities: 206,756
+[UI] FPS: 67.4 | Frame: 14.84ms | Tick: 10.840ms | Entities: 206,756
+[ECS] Frame: 12.344 ms (avg over 69 frames)
+[UI] FPS: 67.2 | Frame: 14.88ms | Tick: 10.684ms | Entities: 206,756
+[UI] FPS: 68.4 | Frame: 14.63ms | Tick: 10.544ms | Entities: 206,756
+[ECS] Frame: 12.283 ms (avg over 69 frames)
+[UI] FPS: 67.1 | Frame: 14.91ms | Tick: 27.969ms | Entities: 206,756
+[UI] FPS: 66.3 | Frame: 15.08ms | Tick: 11.091ms | Entities: 206,756
+[ECS] Frame: 12.320 ms (avg over 68 frames)
+[UI] FPS: 66.7 | Frame: 15.00ms | Tick: 10.444ms | Entities: 206,756
+[UI] FPS: 67.0 | Frame: 14.93ms | Tick: 10.992ms | Entities: 206,756
+[ECS] Frame: 12.280 ms (avg over 68 frames)
+[UI] FPS: 66.8 | Frame: 14.97ms | Tick: 10.437ms | Entities: 206,756
+[UI] FPS: 66.7 | Frame: 14.99ms | Tick: 26.175ms | Entities: 206,756
+[ECS] Frame: 12.177 ms (avg over 68 frames)
+[UI] FPS: 66.4 | Frame: 15.07ms | Tick: 10.945ms | Entities: 206,756
+[UI] FPS: 66.7 | Frame: 15.00ms | Tick: 10.656ms | Entities: 206,756
+[ECS] Frame: 12.350 ms (avg over 68 frames)
+[UI] FPS: 67.7 | Frame: 14.76ms | Tick: 11.058ms | Entities: 206,756
+[UI] FPS: 67.8 | Frame: 14.75ms | Tick: 10.528ms | Entities: 206,756
+[ECS] Frame: 12.302 ms (avg over 69 frames)
+[UI] FPS: 67.2 | Frame: 14.88ms | Tick: 26.538ms | Entities: 206,756
+[UI] FPS: 68.6 | Frame: 14.57ms | Tick: 10.841ms | Entities: 206,756
+[ECS] Frame: 12.326 ms (avg over 69 frames)
+[UI] FPS: 66.8 | Frame: 14.98ms | Tick: 10.393ms | Entities: 206,756
+[UI] FPS: 65.8 | Frame: 15.19ms | Tick: 10.421ms | Entities: 206,756
+[ECS] Frame: 12.117 ms (avg over 68 frames)
+[UI] FPS: 67.0 | Frame: 14.92ms | Tick: 10.543ms | Entities: 206,756
+[UI] FPS: 66.7 | Frame: 14.99ms | Tick: 26.385ms | Entities: 206,756
+[ECS] Frame: 12.298 ms (avg over 68 frames)
+[UI] FPS: 66.6 | Frame: 15.02ms | Tick: 11.087ms | Entities: 206,756
+[UI] FPS: 64.2 | Frame: 15.57ms | Tick: 10.791ms | Entities: 206,756
+[ECS] Frame: 12.550 ms (avg over 68 frames)
+[UI] FPS: 67.4 | Frame: 14.83ms | Tick: 10.554ms | Entities: 206,756
+[UI] FPS: 65.7 | Frame: 15.22ms | Tick: 10.553ms | Entities: 206,756
+[ECS] Frame: 12.239 ms (avg over 67 frames)
+[UI] FPS: 67.1 | Frame: 14.90ms | Tick: 10.695ms | Entities: 206,756
+[UI] FPS: 65.2 | Frame: 15.34ms | Tick: 10.483ms | Entities: 206,756
+[ECS] Frame: 12.124 ms (avg over 67 frames)
+[UI] FPS: 66.1 | Frame: 15.12ms | Tick: 10.877ms | Entities: 206,756
+[05:54:31] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:31] [Info] ECS: [MultiMesh Zone Manager] MultiMesh window diff: +1071, -0
+[UI] FPS: 66.6 | Frame: 15.01ms | Tick: 10.400ms | Entities: 206,756
+[ECS] Frame: 12.463 ms (avg over 68 frames)
+[UI] FPS: 65.5 | Frame: 15.26ms | Tick: 11.213ms | Entities: 206,756
+[05:54:32] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[UI] FPS: 64.1 | Frame: 15.61ms | Tick: 10.970ms | Entities: 206,756
+[05:54:33] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[ECS] Frame: 12.512 ms (avg over 67 frames)
+[UI] FPS: 68.0 | Frame: 14.71ms | Tick: 10.470ms | Entities: 206,756
+[UI] FPS: 63.6 | Frame: 15.73ms | Tick: 10.901ms | Entities: 206,756
+[05:54:34] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[ECS] Frame: 12.380 ms (avg over 66 frames)
+[UI] FPS: 64.9 | Frame: 15.40ms | Tick: 10.834ms | Entities: 206,756
+[UI] FPS: 66.7 | Frame: 14.99ms | Tick: 10.555ms | Entities: 206,756
+[05:54:35] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[ECS] Frame: 12.249 ms (avg over 68 frames)
+[UI] FPS: 66.9 | Frame: 14.96ms | Tick: 10.510ms | Entities: 206,756
+[UI] FPS: 66.4 | Frame: 15.06ms | Tick: 10.492ms | Entities: 206,756
+[05:54:36] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[ECS] Frame: 12.238 ms (avg over 68 frames)
+[UI] FPS: 66.7 | Frame: 14.98ms | Tick: 26.286ms | Entities: 206,756
+[05:54:37] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[UI] FPS: 66.2 | Frame: 15.11ms | Tick: 10.380ms | Entities: 206,756
+[ECS] Frame: 12.197 ms (avg over 68 frames)
+[UI] FPS: 67.1 | Frame: 14.89ms | Tick: 10.651ms | Entities: 206,756
+[05:54:38] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[UI] FPS: 67.1 | Frame: 14.91ms | Tick: 10.679ms | Entities: 206,756
+[ECS] Frame: 12.260 ms (avg over 68 frames)
+[UI] FPS: 66.4 | Frame: 15.06ms | Tick: 10.552ms | Entities: 206,756
+[05:54:39] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[UI] FPS: 66.3 | Frame: 15.08ms | Tick: 27.125ms | Entities: 206,756
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.235 ms (avg over 67 frames)
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.0 | Frame: 15.63ms | Tick: 11.076ms | Entities: 206,756
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:39] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.7 | Frame: 15.45ms | Tick: 11.052ms | Entities: 206,756
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 19 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.795 ms (avg over 66 frames)
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 63.8 | Frame: 15.67ms | Tick: 11.039ms | Entities: 206,756
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:40] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[UI] FPS: 65.1 | Frame: 15.36ms | Tick: 10.485ms | Entities: 206,756
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[ECS] Frame: 12.632 ms (avg over 67 frames)
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.6 | Frame: 15.48ms | Tick: 10.946ms | Entities: 206,756
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:41] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 21 entities to chunks
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.8 | Frame: 15.43ms | Tick: 10.708ms | Entities: 206,756
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:42] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4756
+  XZ Columns: 216
+  Avg Chunks/Column: 22.02
+  Max Vertical Chunks: 32
+  Frame: 10500
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.171 ms (avg over 67 frames)
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[UI] FPS: 66.2 | Frame: 15.11ms | Tick: 10.730ms | Entities: 206,756
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:42] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Reassigned 19 entities to chunks
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Reassigned 14 entities to chunks
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.9 | Frame: 15.40ms | Tick: 11.073ms | Entities: 206,756
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1998, Pools: 125
+[05:54:43] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +4599, -2601
+[05:54:43] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.563 ms (avg over 67 frames)
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.9 | Frame: 15.17ms | Tick: 10.900ms | Entities: 206,756
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:43] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.0 | Frame: 15.40ms | Tick: 26.957ms | Entities: 206,756
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1998, Pools: 125
+[05:54:44] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +74, -74
+[05:54:44] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.450 ms (avg over 67 frames)
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 66.9 | Frame: 14.95ms | Tick: 11.137ms | Entities: 206,756
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:44] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 66.8 | Frame: 14.98ms | Tick: 11.025ms | Entities: 206,756
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Reassigned 18 entities to chunks
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1999, Pools: 125
+[05:54:45] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +78, -77
+[05:54:45] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Reassigned 19 entities to chunks
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.507 ms (avg over 66 frames)
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 62.8 | Frame: 15.93ms | Tick: 27.606ms | Entities: 206,756
+[05:54:45] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 2000, Pools: 125
+[05:54:46] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +81, -80
+[05:54:46] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.7 | Frame: 15.22ms | Tick: 11.315ms | Entities: 206,756
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Reassigned 5 entities to chunks
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.485 ms (avg over 68 frames)
+[05:54:46] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 66.4 | Frame: 15.07ms | Tick: 10.822ms | Entities: 206,756
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 14 entities to chunks
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:47] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4756
+  XZ Columns: 216
+  Avg Chunks/Column: 22.02
+  Max Vertical Chunks: 32
+  Frame: 10800
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 2000, Pools: 125
+[05:54:47] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +65, -65
+[05:54:47] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[UI] FPS: 66.0 | Frame: 15.16ms | Tick: 10.783ms | Entities: 206,756
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:47] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:47] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.641 ms (avg over 67 frames)
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.8 | Frame: 15.19ms | Tick: 10.654ms | Entities: 206,756
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Reassigned 22 entities to chunks
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 2000, Pools: 125
+[05:54:48] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +84, -84
+[05:54:48] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.4 | Frame: 15.53ms | Tick: 10.660ms | Entities: 206,756
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:48] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.193 ms (avg over 66 frames)
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.6 | Frame: 15.48ms | Tick: 26.693ms | Entities: 206,756
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 2000, Pools: 125
+[05:54:49] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +73, -73
+[05:54:49] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 62.5 | Frame: 15.99ms | Tick: 10.677ms | Entities: 206,756
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:49] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.578 ms (avg over 65 frames)
+[UI] FPS: 63.6 | Frame: 15.73ms | Tick: 10.622ms | Entities: 206,756
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 18 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 2000, Pools: 125
+[05:54:50] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +89, -89
+[05:54:50] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.8 | Frame: 15.19ms | Tick: 11.274ms | Entities: 206,756
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:50] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.7 | Frame: 15.45ms | Tick: 27.140ms | Entities: 206,756
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[ECS] Frame: 12.499 ms (avg over 67 frames)
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 2000, Pools: 125
+[05:54:51] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +63, -63
+[05:54:51] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.6 | Frame: 15.25ms | Tick: 10.522ms | Entities: 206,756
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:51] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 205994 to pool
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:51] [Info] ECS: [ChunkSystem] Reassigned 7 entities to chunks
+[05:54:51] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4756
+  XZ Columns: 216
+  Avg Chunks/Column: 22.02
+  Max Vertical Chunks: 32
+  Frame: 11100
+[05:54:51] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1999, Pools: 125
+[05:54:52] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +68, -69
+[05:54:52] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 67.4 | Frame: 14.83ms | Tick: 10.556ms | Entities: 206,756
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.233 ms (avg over 68 frames)
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Reassigned 14 entities to chunks
+[UI] FPS: 66.9 | Frame: 14.94ms | Tick: 11.009ms | Entities: 206,756
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Reassigned 25 entities to chunks
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Reassigned 21 entities to chunks
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1999, Pools: 125
+[05:54:52] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +98, -98
+[05:54:52] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:52] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 66.6 | Frame: 15.02ms | Tick: 10.523ms | Entities: 206,756
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.426 ms (avg over 68 frames)
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 7 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 67.0 | Frame: 14.92ms | Tick: 11.468ms | Entities: 206,756
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 10 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1999, Pools: 125
+[05:54:53] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +62, -62
+[05:54:53] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:53] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: 
+ðŸ’¾ WORLD SAVED
+[05:54:54] [Info] ECS:    Path: D:\MEGA\Godot Projects\godot-ecs\Saves\ECS\World\autosave_2.sav
+[05:54:54] [Info] ECS:    Time: 1.93ms
+[05:54:54] [Info] ECS:    Entities: 206756, Systems: 7
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 65.6 | Frame: 15.23ms | Tick: 10.661ms | Entities: 206,756
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.590 ms (avg over 68 frames)
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 19 entities to chunks
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 66.9 | Frame: 14.95ms | Tick: 10.694ms | Entities: 206,756
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1999, Pools: 125
+[05:54:54] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +87, -87
+[05:54:54] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:54] [Info] ECS: [ChunkSystem] Reassigned 22 entities to chunks
+[05:54:54] [Info] ECS: [MeshInstance Bubble Manager] Returned MeshInstance for entity 206631 to pool
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 66.7 | Frame: 15.00ms | Tick: 26.589ms | Entities: 206,756
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.439 ms (avg over 68 frames)
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Reassigned 15 entities to chunks
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1998, Pools: 125
+[05:54:55] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +77, -78
+[05:54:55] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 67.0 | Frame: 14.93ms | Tick: 10.749ms | Entities: 206,756
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Reassigned 8 entities to chunks
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:55] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 12 entities to chunks
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[UI] FPS: 64.1 | Frame: 15.61ms | Tick: 10.614ms | Entities: 206,756
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[ECS] Frame: 12.691 ms (avg over 67 frames)
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 16 entities to chunks
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 9 entities to chunks
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 7 entities to chunks
+[05:54:56] [Info] ECS: ChunkManager Statistics:
+  Total Chunks: 4756
+  XZ Columns: 216
+  Avg Chunks/Column: 22.02
+  Max Vertical Chunks: 32
+  Frame: 11400
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [MeshInstance Bubble Manager] Active MeshInstances: 1998, Pools: 125
+[05:54:56] [Info] ECS: [MeshInstance Bubble Manager] MeshInstance diff: +63, -63
+[05:54:56] [Info] ECS: [MultiMesh Zone Manager] Active chunk meshes: 1071, Total entities: 47558, Pool: 0
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[UI] FPS: 67.8 | Frame: 14.76ms | Tick: 10.661ms | Entities: 206,756
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 13 entities to chunks
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Reassigned 11 entities to chunks
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:56] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Reassigned 17 entities to chunks
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+[05:54:57] [Info] ECS: [ChunkSystem] Processed 2,000 dirty chunk assignments
+--- Debugging process stopped ---

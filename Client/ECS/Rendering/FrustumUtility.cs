@@ -18,22 +18,28 @@ namespace Client.ECS.Rendering
                 (bounds.MinZ + bounds.MaxZ) * 0.5f
             );
 
+            // Apply padding by expanding extents (prevents pop-in at frustum edges)
             var extents = new Vector3(
-                (bounds.MaxX - bounds.MinX) * 0.5f,
-                (bounds.MaxY - bounds.MinY) * 0.5f,
-                (bounds.MaxZ - bounds.MinZ) * 0.5f
+                (bounds.MaxX - bounds.MinX) * 0.5f + padding,
+                (bounds.MaxY - bounds.MinY) * 0.5f + padding,
+                (bounds.MaxZ - bounds.MinZ) * 0.5f + padding
             );
 
+            // Separating axis test: For each frustum plane, project AABB extents onto plane normal
             for (int i = 0; i < 6; i++)
             {
                 var plane = frustumPlanes[i];
                 var normal = plane.Normal;
+
+                // Compute projected radius (maximum distance from center to AABB corner along plane normal)
                 float r = extents.X * MathF.Abs(normal.X) +
                           extents.Y * MathF.Abs(normal.Y) +
                           extents.Z * MathF.Abs(normal.Z);
 
+                // Distance from plane to AABB center
                 float d = normal.Dot(center) + plane.D;
 
+                // If center is farther outside than projected radius, AABB is completely outside
                 if (d + r < 0)
                     return false; // Outside
             }
