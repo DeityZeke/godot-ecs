@@ -12,6 +12,7 @@ using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
+using UltraSim.ECS.Events;
 
 namespace UltraSim.Server.ECS.Systems
 {
@@ -156,6 +157,10 @@ namespace UltraSim.Server.ECS.Systems
             _cachedQuery = world.QueryArchetypes(typeof(Position));
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
 
+            // Subscribe to World's entity batch created event for initial chunk assignment
+            world.EntityBatchCreated += OnEntityBatchCreated;
+            Logging.Log($"[ChunkSystem] Subscribed to World entity creation events");
+
             // Subscribe to MovementSystem's entity batch processed event
             var movementSystem = world.Systems.GetSystem<OptimizedMovementSystem>() as OptimizedMovementSystem;
             if (movementSystem != null)
@@ -168,6 +173,49 @@ namespace UltraSim.Server.ECS.Systems
         }
 
         public ChunkManager? GetChunkManager() => _chunkManager;
+
+        /// <summary>
+        /// Event handler for World's EntityBatchCreated event.
+        /// Performs initial chunk assignment for newly created entities with Position components.
+        /// </summary>
+        private void OnEntityBatchCreated(EntityBatchCreatedEventArgs args)
+        {
+            if (_chunkManager == null || _world == null)
+                return;
+
+            var entitySpan = args.GetSpan();
+
+            // Process each newly created entity
+            for (int i = 0; i < entitySpan.Length; i++)
+            {
+                var entity = entitySpan[i];
+
+                // Get entity's location in the ECS
+                if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
+                    continue;
+
+                // Skip if entity doesn't have Position component
+                if (!archetype.HasComponent(PosTypeId))
+                    continue;
+
+                // Skip chunk entities themselves
+                if (archetype.HasComponent(ChunkLocationTypeId))
+                    continue;
+
+                // Read initial position
+                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
+                if ((uint)slot >= (uint)positions.Length)
+                    continue;
+
+                var position = positions[slot];
+
+                // Calculate which chunk this position belongs to
+                var chunkLoc = _chunkManager.WorldToChunk(position.X, position.Y, position.Z);
+
+                // Assign to chunk (initial assignment - entity shouldn't have ChunkOwner yet)
+                ChunkAssignmentQueue.Enqueue(entity, chunkLoc);
+            }
+        }
 
         /// <summary>
         /// Event handler for MovementSystem's EntityBatchProcessed event.

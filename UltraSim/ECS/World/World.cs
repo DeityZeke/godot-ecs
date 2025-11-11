@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 
 using UltraSim;
 using UltraSim.ECS.Systems;
+using UltraSim.ECS.Events;
 
 namespace UltraSim.ECS
 {
@@ -40,6 +41,12 @@ namespace UltraSim.ECS
 
         public SystemManager Systems => _systems;
         private bool _settingsInitialized = false;
+
+        /// <summary>
+        /// Event fired after a batch of entities has been created.
+        /// Subscribers can perform initial setup/assignment on newly created entities.
+        /// </summary>
+        public event EntityBatchCreatedHandler? EntityBatchCreated;
 
         public World(IHost host)
         {
@@ -153,6 +160,23 @@ namespace UltraSim.ECS
 
         public void EnqueueComponentAdd(uint entityIndex, int compId, object boxedValue) =>
             _components.EnqueueAdd(entityIndex, compId, boxedValue);
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Fires the EntityBatchCreated event with the specified entities.
+        /// Called by EntityManager and CommandBuffer after batch entity creation.
+        /// </summary>
+        internal void FireEntityBatchCreated(Entity[] entities, int startIndex, int count)
+        {
+            if (EntityBatchCreated != null && count > 0)
+            {
+                var args = new EntityBatchCreatedEventArgs(entities, startIndex, count);
+                EntityBatchCreated(args);
+            }
+        }
 
         #endregion
 

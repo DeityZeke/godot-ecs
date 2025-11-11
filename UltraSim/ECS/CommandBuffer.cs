@@ -263,13 +263,15 @@ namespace UltraSim.ECS
         private int ApplyEntityCreations(World world)
         {
             int created = 0;
+            var createdEntities = new List<Entity>();
 
             foreach (ref var cmd in CollectionsMarshal.AsSpan(_creates))
             {
                 if (cmd.Components.Count == 0)
                 {
                     // Empty entity
-                    world.CreateEntity();
+                    var entity = world.CreateEntity();
+                    createdEntities.Add(entity);
                     created++;
                     ReturnComponentList(cmd.Components);
                     continue;
@@ -285,6 +287,7 @@ namespace UltraSim.ECS
 
                 // Create entity directly in target archetype (ONE archetype move!)
                 var entity = world.CreateEntityWithSignature(signature);
+                createdEntities.Add(entity);
 
                 // Set all component values using pre-computed typeIds
                 if (!world.TryGetEntityLocation(entity, out var archetype, out var slot))
@@ -301,6 +304,12 @@ namespace UltraSim.ECS
 
                 created++;
                 ReturnComponentList(cmd.Components);
+            }
+
+            // Fire entity batch created event if any entities were created
+            if (createdEntities.Count > 0)
+            {
+                world.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
             }
 
             return created;

@@ -228,18 +228,26 @@ namespace UltraSim.ECS
                 Destroy(entity);
             }
 
-            // Then process creations
+            // Then process creations and track them
+            var createdEntities = new List<Entity>();
             while (_createQueue.TryDequeue(out var builder))
             {
                 var entity = Create();
-                try 
-                { 
-                    builder?.Invoke(entity); 
+                createdEntities.Add(entity);
+                try
+                {
+                    builder?.Invoke(entity);
                 }
-                catch (Exception ex) 
-                { 
-                    Logging.Log($"[EntityManager] Entity builder exception: {ex}", LogSeverity.Error); 
+                catch (Exception ex)
+                {
+                    Logging.Log($"[EntityManager] Entity builder exception: {ex}", LogSeverity.Error);
                 }
+            }
+
+            // Fire entity batch created event if any entities were created
+            if (createdEntities.Count > 0)
+            {
+                _world.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
             }
         }
 
