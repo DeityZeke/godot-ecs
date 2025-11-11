@@ -131,8 +131,8 @@ namespace Client.ECS.Systems
             public Node3D Container = null!;
         }
 
-        private readonly Dictionary<ChunkLocation, ChunkPoolEntry> _chunkPools = new();
-        private readonly Queue<ChunkPoolEntry> _pooledChunkEntries = new();
+        private readonly ConcurrentDictionary<ChunkLocation, ChunkPoolEntry> _chunkPools = new();
+        private readonly ConcurrentQueue<ChunkPoolEntry> _pooledChunkEntries = new();
         private readonly DynamicBitSet _activeEntitiesThisFrame = new();
         private readonly DynamicBitSet _activeEntitiesLastFrame = new();
         private readonly List<int> _entitiesToRelease = new();
@@ -357,11 +357,8 @@ namespace Client.ECS.Systems
 
         private ChunkVisualPool<MeshInstance3D> GetOrCreateChunkPool(ChunkLocation chunkLocation)
         {
-            if (_chunkPools.TryGetValue(chunkLocation, out var existing))
-                return existing.Pool;
-
-            var entry = CreateChunkPoolEntry(chunkLocation);
-            _chunkPools[chunkLocation] = entry;
+            // Thread-safe: GetOrAdd ensures only one thread creates the entry
+            var entry = _chunkPools.GetOrAdd(chunkLocation, CreateChunkPoolEntry);
             return entry.Pool;
         }
 

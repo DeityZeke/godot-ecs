@@ -43,9 +43,9 @@ namespace Client.ECS.Systems
     /// Runs AFTER zone systems to ensure visuals are built before culling.
     /// </summary>
     [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
-    [RequireSystem("Client.ECS.Systems.NearZoneRenderSystem")]
-    [RequireSystem("Client.ECS.Systems.MidZoneRenderSystem")]
-    [RequireSystem("Client.ECS.Systems.FarZoneRenderSystem")]
+    [RequireSystem("Client.ECS.Systems.DynamicEntityRenderSystem")]
+    [RequireSystem("Client.ECS.Systems.StaticEntityRenderSystem")]
+    [RequireSystem("Client.ECS.Systems.BillboardEntityRenderSystem")]
     public sealed class RenderVisibilitySystem : BaseSystem
     {
         #region Settings
