@@ -16,10 +16,15 @@ namespace Client.ECS.Systems
     /// Design doc quote: "FarChunkSystem handles billboard/impostor generation."
     ///
     /// This system:
-    /// 1. Queries chunks where RenderChunk.Zone == ChunkZone.Far
+    /// 1. Queries chunks with FarZoneTag component (archetype-based filtering)
     /// 2. Generates billboard/impostor visuals for ultra-low detail rendering
     /// 3. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
     /// 4. Parallelizes per-chunk processing
+    ///
+    /// ECS PATTERN: Queries by FarZoneTag, not enum check.
+    /// - Only iterates chunks in Far zone archetype (automatic filtering)
+    /// - No read conflicts with Near/MidZoneRenderSystems (different tags)
+    /// - Can run in parallel with other zone systems
     ///
     /// DOES NOT:
     /// - Assign zones (that's RenderChunkManager's job)
@@ -68,8 +73,8 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(FarZoneRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: Chunk zone assignments
-        public override Type[] ReadSet { get; } = new[] { typeof(RenderChunk) };
+        // Read: Far zone tag
+        public override Type[] ReadSet { get; } = new[] { typeof(FarZoneTag), typeof(RenderChunk) };
         // Write: None (stub system)
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
 
@@ -124,7 +129,10 @@ namespace Client.ECS.Systems
         private List<(ChunkLocation Location, bool Visible)> GetFarChunks(World world)
         {
             var farChunks = new List<(ChunkLocation, bool)>();
-            var archetypes = world.QueryArchetypes(typeof(RenderChunk));
+
+            // Query by FarZoneTag - automatic archetype filtering!
+            // Only gets chunks in Far zone (no manual enum check needed)
+            var archetypes = world.QueryArchetypes(typeof(FarZoneTag));
 
             foreach (var archetype in archetypes)
             {
@@ -136,10 +144,7 @@ namespace Client.ECS.Systems
                 for (int i = 0; i < renderChunks.Length; i++)
                 {
                     ref var renderChunk = ref renderChunks[i];
-                    if (renderChunk.Zone == ChunkZone.Far)
-                    {
-                        farChunks.Add((renderChunk.Location, renderChunk.Visible));
-                    }
+                    farChunks.Add((renderChunk.Location, renderChunk.Visible));
                 }
             }
 

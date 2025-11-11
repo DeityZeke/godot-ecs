@@ -21,9 +21,13 @@ namespace Client.ECS.Systems
     ///
     /// This system:
     /// 1. Runs EVERY FRAME (EveryFrame tick rate)
-    /// 2. Queries all RenderChunk entities
+    /// 2. Queries chunks from all zone tag archetypes (Near/Mid/Far)
     /// 3. Tests chunk bounds against camera frustum
     /// 4. Toggles RenderChunk.Visible flag
+    ///
+    /// ECS PATTERN: Queries all zone tags to cull all visible chunks.
+    /// - No read conflicts with zone systems (they read their specific tags, we read all tags)
+    /// - Each zone tag query returns separate archetype
     ///
     /// DOES NOT:
     /// - Build visuals (that's zone systems' job)
@@ -75,8 +79,8 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(RenderVisibilitySystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: Chunk bounds for frustum tests
-        public override Type[] ReadSet { get; } = new[] { typeof(ChunkBounds), typeof(ChunkZone) };
+        // Read: Chunk bounds and all zone tags for frustum tests
+        public override Type[] ReadSet { get; } = new[] { typeof(ChunkBounds), typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
         // Write: Update Visible flag
         public override Type[] WriteSet { get; } = new[] { typeof(RenderChunk) };
 
@@ -123,20 +127,24 @@ namespace Client.ECS.Systems
         private void MarkAllVisible(World world)
         {
             var renderChunkTypeId = ComponentManager.GetTypeId<RenderChunk>();
-            var archetypes = world.QueryArchetypes(typeof(RenderChunk));
 
-            foreach (var archetype in archetypes)
+            // Query all zone tag archetypes (Near, Mid, Far)
+            var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
+
+            foreach (var zoneTagType in zoneTagTypes)
             {
-                if (archetype.Count == 0)
-                    continue;
+                var archetypes = world.QueryArchetypes(zoneTagType);
 
-                var renderChunks = archetype.GetComponentSpan<RenderChunk>(renderChunkTypeId);
-
-                for (int i = 0; i < renderChunks.Length; i++)
+                foreach (var archetype in archetypes)
                 {
-                    ref var renderChunk = ref renderChunks[i];
-                    if (renderChunk.Zone != ChunkZone.Culled)
+                    if (archetype.Count == 0)
+                        continue;
+
+                    var renderChunks = archetype.GetComponentSpan<RenderChunk>(renderChunkTypeId);
+
+                    for (int i = 0; i < renderChunks.Length; i++)
                     {
+                        ref var renderChunk = ref renderChunks[i];
                         renderChunk.Visible = true;
                     }
                 }
@@ -146,14 +154,23 @@ namespace Client.ECS.Systems
         private void PerformFrustumCulling(World world, Godot.Collections.Array<Plane> frustumPlanes)
         {
             var renderChunkTypeId = ComponentManager.GetTypeId<RenderChunk>();
-            var archetypes = world.QueryArchetypes(typeof(RenderChunk));
+
+            // Query all zone tag archetypes (Near, Mid, Far)
+            var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
+            var allArchetypes = new List<Archetype>();
+
+            foreach (var zoneTagType in zoneTagTypes)
+            {
+                var archetypes = world.QueryArchetypes(zoneTagType);
+                allArchetypes.AddRange(archetypes);
+            }
 
             _visibleCount = 0;
             _culledCount = 0;
 
             // Count total chunks for parallelization decision
             int totalChunks = 0;
-            foreach (var archetype in archetypes)
+            foreach (var archetype in allArchetypes)
             {
                 totalChunks += archetype.Count;
             }
@@ -163,16 +180,16 @@ namespace Client.ECS.Systems
 
             if (useParallel)
             {
-                PerformParallelCulling(archetypes, renderChunkTypeId, frustumPlanes);
+                PerformParallelCulling(allArchetypes, renderChunkTypeId, frustumPlanes);
             }
             else
             {
-                PerformSequentialCulling(archetypes, renderChunkTypeId, frustumPlanes);
+                PerformSequentialCulling(allArchetypes, renderChunkTypeId, frustumPlanes);
             }
         }
 
         private void PerformSequentialCulling(
-            Archetype[] archetypes,
+            List<Archetype> archetypes,
             int renderChunkTypeId,
             Godot.Collections.Array<Plane> frustumPlanes)
         {
@@ -189,15 +206,7 @@ namespace Client.ECS.Systems
                 {
                     ref var renderChunk = ref renderChunks[i];
 
-                    // Already culled by RenderChunkManager
-                    if (renderChunk.Zone == ChunkZone.Culled)
-                    {
-                        renderChunk.Visible = false;
-                        _culledCount++;
-                        continue;
-                    }
-
-                    // Perform frustum test
+                    // Perform frustum test (all chunks with zone tags are active)
                     bool visible = FrustumUtility.IsVisible(renderChunk.Bounds, frustumPlanes, padding);
                     renderChunk.Visible = visible;
 
@@ -210,7 +219,7 @@ namespace Client.ECS.Systems
         }
 
         private void PerformParallelCulling(
-            Archetype[] archetypes,
+            List<Archetype> archetypes,
             int renderChunkTypeId,
             Godot.Collections.Array<Plane> frustumPlanes)
         {
@@ -231,15 +240,7 @@ namespace Client.ECS.Systems
                 {
                     ref var renderChunk = ref renderChunks[i];
 
-                    // Already culled by RenderChunkManager
-                    if (renderChunk.Zone == ChunkZone.Culled)
-                    {
-                        renderChunk.Visible = false;
-                        localCulled++;
-                        continue;
-                    }
-
-                    // Perform frustum test
+                    // Perform frustum test (all chunks with zone tags are active)
                     bool visible = FrustumUtility.IsVisible(renderChunk.Bounds, frustumPlanes, padding);
                     renderChunk.Visible = visible;
 

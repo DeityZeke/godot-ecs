@@ -24,12 +24,17 @@ namespace Client.ECS.Systems
     /// Design doc quote: "NearChunkSystem handles MeshInstances + MultiMeshes (interactive + static)."
     ///
     /// This system:
-    /// 1. Queries chunks where RenderChunk.Zone == ChunkZone.Near
+    /// 1. Queries chunks with NearZoneTag component (archetype-based filtering)
     /// 2. Gets entities in each chunk from ChunkSystem
     /// 3. Builds MeshInstance3D for dynamic entities (full interactivity)
     /// 4. Builds MultiMesh for static entities (batched)
     /// 5. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
     /// 6. Parallelizes per-chunk processing
+    ///
+    /// ECS PATTERN: Queries by NearZoneTag, not enum check.
+    /// - Only iterates chunks in Near zone archetype (automatic filtering)
+    /// - No read conflicts with Mid/FarZoneRenderSystems (different tags)
+    /// - Can run in parallel with other zone systems
     ///
     /// DOES NOT:
     /// - Assign zones (that's RenderChunkManager's job)
@@ -94,8 +99,8 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(NearZoneRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: Position, chunk assignments, render metadata
-        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(RenderChunk), typeof(ChunkOwner), typeof(StaticRenderTag), typeof(RenderPrototype) };
+        // Read: Position, Near zone tag, render metadata
+        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(NearZoneTag), typeof(RenderChunk), typeof(ChunkOwner), typeof(StaticRenderTag), typeof(RenderPrototype) };
         // Write: None (we modify Godot scene graph, not ECS components)
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
 
@@ -214,7 +219,10 @@ namespace Client.ECS.Systems
         private List<(ChunkLocation Location, bool Visible)> GetNearChunks(World world)
         {
             var nearChunks = new List<(ChunkLocation, bool)>();
-            var archetypes = world.QueryArchetypes(typeof(RenderChunk));
+
+            // Query by NearZoneTag - automatic archetype filtering!
+            // Only gets chunks in Near zone (no manual enum check needed)
+            var archetypes = world.QueryArchetypes(typeof(NearZoneTag));
 
             foreach (var archetype in archetypes)
             {
@@ -226,10 +234,7 @@ namespace Client.ECS.Systems
                 for (int i = 0; i < renderChunks.Length; i++)
                 {
                     ref var renderChunk = ref renderChunks[i];
-                    if (renderChunk.Zone == ChunkZone.Near)
-                    {
-                        nearChunks.Add((renderChunk.Location, renderChunk.Visible));
-                    }
+                    nearChunks.Add((renderChunk.Location, renderChunk.Visible));
                 }
             }
 

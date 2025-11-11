@@ -24,11 +24,16 @@ namespace Client.ECS.Systems
     /// Design doc quote: "MidChunkSystem handles only MultiMeshes."
     ///
     /// This system:
-    /// 1. Queries chunks where RenderChunk.Zone == ChunkZone.Mid
+    /// 1. Queries chunks with MidZoneTag component (archetype-based filtering)
     /// 2. Gets entities in each chunk from ChunkSystem
     /// 3. Builds MultiMesh batches for ALL entities (no individual MeshInstances)
     /// 4. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
     /// 5. Parallelizes per-chunk processing
+    ///
+    /// ECS PATTERN: Queries by MidZoneTag, not enum check.
+    /// - Only iterates chunks in Mid zone archetype (automatic filtering)
+    /// - No read conflicts with Near/FarZoneRenderSystems (different tags)
+    /// - Can run in parallel with other zone systems
     ///
     /// DOES NOT:
     /// - Assign zones (that's RenderChunkManager's job)
@@ -94,8 +99,8 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(MidZoneRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: Position, chunk data, render metadata
-        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(RenderChunk), typeof(ChunkOwner), typeof(RenderPrototype) };
+        // Read: Position, Mid zone tag, render metadata
+        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(MidZoneTag), typeof(RenderChunk), typeof(ChunkOwner), typeof(RenderPrototype) };
         // Write: None (we modify Godot scene graph)
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
 
@@ -254,7 +259,10 @@ namespace Client.ECS.Systems
         private List<(ChunkLocation Location, bool Visible)> GetMidChunks(World world)
         {
             var midChunks = new List<(ChunkLocation, bool)>();
-            var archetypes = world.QueryArchetypes(typeof(RenderChunk));
+
+            // Query by MidZoneTag - automatic archetype filtering!
+            // Only gets chunks in Mid zone (no manual enum check needed)
+            var archetypes = world.QueryArchetypes(typeof(MidZoneTag));
 
             foreach (var archetype in archetypes)
             {
@@ -266,10 +274,7 @@ namespace Client.ECS.Systems
                 for (int i = 0; i < renderChunks.Length; i++)
                 {
                     ref var renderChunk = ref renderChunks[i];
-                    if (renderChunk.Zone == ChunkZone.Mid)
-                    {
-                        midChunks.Add((renderChunk.Location, renderChunk.Visible));
-                    }
+                    midChunks.Add((renderChunk.Location, renderChunk.Visible));
                 }
             }
 
