@@ -86,14 +86,14 @@ namespace Client
             world.EnqueueSystemCreate<RenderVisibilitySystem>();
             world.EnqueueSystemEnable<RenderVisibilitySystem>();
 
-            world.EnqueueSystemCreate<NearZoneRenderSystem>();
-            world.EnqueueSystemEnable<NearZoneRenderSystem>();
+            world.EnqueueSystemCreate<DynamicEntityRenderSystem>();
+            world.EnqueueSystemEnable<DynamicEntityRenderSystem>();
 
-            world.EnqueueSystemCreate<MidZoneRenderSystem>();
-            world.EnqueueSystemEnable<MidZoneRenderSystem>();
+            world.EnqueueSystemCreate<StaticEntityRenderSystem>();
+            world.EnqueueSystemEnable<StaticEntityRenderSystem>();
 
-            world.EnqueueSystemCreate<FarZoneRenderSystem>();
-            world.EnqueueSystemEnable<FarZoneRenderSystem>();
+            world.EnqueueSystemCreate<BillboardEntityRenderSystem>();
+            world.EnqueueSystemEnable<BillboardEntityRenderSystem>();
         }
 
         protected override void OnWorldFrameProgress(int frameIndex)
@@ -131,19 +131,19 @@ namespace Client
                 GD.Print("[ClientHost] Connected RenderChunkManager to ChunkManager");
             }
 
-            if (world.Systems.GetSystem<NearZoneRenderSystem>() is NearZoneRenderSystem nearZoneSystem)
+            if (world.Systems.GetSystem<DynamicEntityRenderSystem>() is DynamicEntityRenderSystem dynamicSystem)
             {
-                nearZoneSystem.SetChunkManager(chunkManager, chunkSystem);
-                GD.Print("[ClientHost] Connected NearZoneRenderSystem to ChunkManager + ChunkSystem");
+                dynamicSystem.SetChunkManager(chunkManager, chunkSystem);
+                GD.Print("[ClientHost] Connected DynamicEntityRenderSystem to ChunkManager + ChunkSystem");
             }
 
-            if (world.Systems.GetSystem<MidZoneRenderSystem>() is MidZoneRenderSystem midZoneSystem)
+            if (world.Systems.GetSystem<StaticEntityRenderSystem>() is StaticEntityRenderSystem staticSystem)
             {
-                midZoneSystem.SetChunkManager(chunkManager, chunkSystem);
-                GD.Print("[ClientHost] Connected MidZoneRenderSystem to ChunkManager + ChunkSystem");
+                staticSystem.SetChunkManager(chunkManager, chunkSystem);
+                GD.Print("[ClientHost] Connected StaticEntityRenderSystem to ChunkManager + ChunkSystem");
             }
 
-            GD.Print("[ClientHost] Clean architecture rendering systems connected successfully!");
+            GD.Print("[ClientHost] Strategy-based rendering systems connected successfully!");
     }
     }
 }

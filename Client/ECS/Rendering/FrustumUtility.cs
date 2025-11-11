@@ -9,6 +9,53 @@ namespace Client.ECS.Rendering
 {
     internal static class FrustumUtility
     {
+                /// <summary>
+        /// Standard frustum-AABB culling using "positive vertex" test.
+        ///
+        /// For each frustum plane, we test the corner of the AABB that is
+        /// farthest in the direction of the plane normal (the "positive vertex").
+        /// If even that vertex is on the negative side of the plane, the entire
+        /// AABB is outside the frustum.
+        ///
+        /// Godot's frustum planes have normals pointing INWARD (toward frustum center).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsVisible(in ChunkBounds bounds, Godot.Collections.Array<Plane> frustumPlanes, float padding = 0f)
+        {
+            var min = new Vector3(bounds.MinX, bounds.MinY, bounds.MinZ);
+            var max = new Vector3(bounds.MaxX, bounds.MaxY, bounds.MaxZ);
+
+            if (padding > 0f)
+            {
+                var paddingVec = new Vector3(padding, padding, padding);
+                min -= paddingVec;
+                max += paddingVec;
+            }
+
+            // Standard frustum culling: test each plane
+            foreach (Plane plane in frustumPlanes)
+            {
+                // Get the "negative vertex" - the corner farthest from the normal direction
+                // (closest to the plane, most likely to be inside frustum with outward normals)
+                Vector3 negativeVertex = new Vector3(
+                    plane.Normal.X >= 0 ? min.X : max.X,  // Opposite of positive vertex
+                    plane.Normal.Y >= 0 ? min.Y : max.Y,
+                    plane.Normal.Z >= 0 ? min.Z : max.Z
+                );
+
+                // If even the negative vertex is on the positive side (outside the plane),
+                // the entire AABB is outside this frustum plane
+                if (plane.DistanceTo(negativeVertex) > 0)
+                {
+                    return false; // Culled - completely outside this plane
+                }
+            }
+
+            return true; // Visible - inside or intersecting frustum
+        }
+
+
+        /*
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsVisible(in ChunkBounds bounds, Godot.Collections.Array<Plane> frustumPlanes, float padding = 0f)
         {

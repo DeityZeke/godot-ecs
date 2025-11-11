@@ -132,11 +132,13 @@ public partial class HybridBootstrapper : WorldHostBase
     {
         if (EnableHybridRendering)
         {
-            // NEW: Clean architecture rendering systems (design doc compliant)
+            // NEW: Clean architecture rendering systems (strategy-based split)
             // Each system has SINGLE RESPONSIBILITY:
             // 1. RenderChunkManager: Window + zone tagging + pooling
             // 2. RenderVisibilitySystem: Frustum culling
-            // 3-5. Zone systems: Build visuals for their assigned zones
+            // 3. DynamicEntityRenderSystem: Dynamic entities with MeshInstance3D (Near zone)
+            // 4. StaticEntityRenderSystem: Static entities with MultiMesh (Near + Mid zones)
+            // 5. BillboardEntityRenderSystem: Billboard entities (Far zone)
 
             world.EnqueueSystemCreate<RenderChunkManager>();
             world.EnqueueSystemEnable<RenderChunkManager>();
@@ -144,14 +146,14 @@ public partial class HybridBootstrapper : WorldHostBase
             world.EnqueueSystemCreate<RenderVisibilitySystem>();
             world.EnqueueSystemEnable<RenderVisibilitySystem>();
 
-            world.EnqueueSystemCreate<NearZoneRenderSystem>();
-            world.EnqueueSystemEnable<NearZoneRenderSystem>();
+            world.EnqueueSystemCreate<DynamicEntityRenderSystem>();
+            world.EnqueueSystemEnable<DynamicEntityRenderSystem>();
 
-            world.EnqueueSystemCreate<MidZoneRenderSystem>();
-            world.EnqueueSystemEnable<MidZoneRenderSystem>();
+            world.EnqueueSystemCreate<StaticEntityRenderSystem>();
+            world.EnqueueSystemEnable<StaticEntityRenderSystem>();
 
-            world.EnqueueSystemCreate<FarZoneRenderSystem>();
-            world.EnqueueSystemEnable<FarZoneRenderSystem>();
+            world.EnqueueSystemCreate<BillboardEntityRenderSystem>();
+            world.EnqueueSystemEnable<BillboardEntityRenderSystem>();
         }
 
         if (EnableAdaptiveRenderer)
@@ -182,7 +184,7 @@ public partial class HybridBootstrapper : WorldHostBase
             return;
         }
 
-        // NEW: Connect clean architecture systems (design doc compliant)
+        // NEW: Connect clean architecture systems (strategy-based split)
 
         if (world.Systems.GetSystem<RenderChunkManager>() is RenderChunkManager renderChunkManager)
         {
@@ -190,16 +192,16 @@ public partial class HybridBootstrapper : WorldHostBase
             GD.Print("[HybridBootstrapper] Connected RenderChunkManager to ChunkManager");
         }
 
-        if (world.Systems.GetSystem<NearZoneRenderSystem>() is NearZoneRenderSystem nearZoneSystem)
+        if (world.Systems.GetSystem<DynamicEntityRenderSystem>() is DynamicEntityRenderSystem dynamicSystem)
         {
-            nearZoneSystem.SetChunkManager(chunkManager, chunkSystem);
-            GD.Print("[HybridBootstrapper] Connected NearZoneRenderSystem to ChunkManager + ChunkSystem");
+            dynamicSystem.SetChunkManager(chunkManager, chunkSystem);
+            GD.Print("[HybridBootstrapper] Connected DynamicEntityRenderSystem to ChunkManager + ChunkSystem");
         }
 
-        if (world.Systems.GetSystem<MidZoneRenderSystem>() is MidZoneRenderSystem midZoneSystem)
+        if (world.Systems.GetSystem<StaticEntityRenderSystem>() is StaticEntityRenderSystem staticSystem)
         {
-            midZoneSystem.SetChunkManager(chunkManager, chunkSystem);
-            GD.Print("[HybridBootstrapper] Connected MidZoneRenderSystem to ChunkManager + ChunkSystem");
+            staticSystem.SetChunkManager(chunkManager, chunkSystem);
+            GD.Print("[HybridBootstrapper] Connected StaticEntityRenderSystem to ChunkManager + ChunkSystem");
         }
 
         if (_chunkDebugOverlay != null)

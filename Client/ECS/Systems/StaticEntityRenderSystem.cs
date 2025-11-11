@@ -19,32 +19,41 @@ using Client.ECS.Components;
 namespace Client.ECS.Systems
 {
     /// <summary>
-    /// MidZoneRenderSystem - SINGLE RESPONSIBILITY: Build MultiMesh visuals for Mid zone chunks.
+    /// StaticEntityRenderSystem - SINGLE RESPONSIBILITY: Render ALL STATIC entities with MultiMesh batching.
     ///
-    /// Design doc quote: "MidChunkSystem handles only MultiMeshes."
+    /// Rendering strategy split:
+    /// - DynamicEntityRenderSystem: DYNAMIC entities → Individual MeshInstance3D
+    /// - StaticEntityRenderSystem: STATIC entities → MultiMesh batches (this system)
+    /// - BillboardEntityRenderSystem: BILLBOARD entities → Impostors/sprites (far distance)
     ///
-    /// This system:
-    /// 1. Queries chunks with MidZoneTag component (archetype-based filtering)
+    /// This system renders ALL static entities in BOTH Near and Mid zones using MultiMesh batching:
+    /// - Near zone statics (NearZoneTag + StaticRenderTag): MultiMesh batches (efficient batching for non-interactive entities)
+    /// - Mid zone statics (MidZoneTag): MultiMesh batches (visual only, far from player)
+    ///
+    /// Process:
+    /// 1. Queries chunks with NearZoneTag OR MidZoneTag (archetype-based filtering)
     /// 2. Gets entities in each chunk from ChunkSystem
-    /// 3. Builds MultiMesh batches for ALL entities (no individual MeshInstances)
-    /// 4. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
-    /// 5. Parallelizes per-chunk processing
+    /// 3. Filters to ONLY static entities (has StaticRenderTag)
+    /// 4. Builds MultiMesh batches per chunk per prototype (no individual MeshInstances)
+    /// 5. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
+    /// 6. Parallelizes per-chunk processing
     ///
-    /// ECS PATTERN: Queries by MidZoneTag, not enum check.
-    /// - Only iterates chunks in Mid zone archetype (automatic filtering)
-    /// - No read conflicts with Near/FarZoneRenderSystems (different tags)
-    /// - Can run in parallel with other zone systems
+    /// ECS PATTERN: Queries by NearZoneTag + MidZoneTag, filters by StaticRenderTag.
+    /// - Queries both Near and Mid zone archetypes
+    /// - Dynamic entities handled separately by DynamicEntityRenderSystem
+    /// - Can run in parallel with DynamicEntityRenderSystem (different entity sets)
     ///
     /// DOES NOT:
+    /// - Render dynamic entities (DynamicEntityRenderSystem handles those with MeshInstance3D)
     /// - Assign zones (that's RenderChunkManager's job)
     /// - Do frustum culling (that's RenderVisibilitySystem's job)
-    /// - Build individual MeshInstances (Mid zone is visual-only batched)
-    /// - Handle Near or Far zones (that's other zone systems' job)
+    /// - Build individual MeshInstances (all statics use MultiMesh batching)
+    /// - Operate on Far zone (that's BillboardEntityRenderSystem's job)
     ///
     /// DEPENDENCIES: Requires RenderChunkManager to tag chunks before building visuals.
     /// </summary>
     [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
-    public sealed class MidZoneRenderSystem : BaseSystem
+    public sealed class StaticEntityRenderSystem : BaseSystem
     {
         #region Settings
 
@@ -98,12 +107,12 @@ namespace Client.ECS.Systems
 
         #endregion
 
-        public override string Name => "Mid Zone Render System";
-        public override int SystemId => typeof(MidZoneRenderSystem).GetHashCode();
+        public override string Name => "Static Entity Render System";
+        public override int SystemId => typeof(StaticEntityRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read: Position, Mid zone tag, render metadata
-        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(MidZoneTag), typeof(RenderChunk), typeof(ChunkOwner), typeof(RenderPrototype) };
+        // Read: Position, Near/Mid zone tags, render metadata, static tag
+        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(NearZoneTag), typeof(MidZoneTag), typeof(RenderChunk), typeof(ChunkOwner), typeof(StaticRenderTag), typeof(RenderPrototype) };
         // Write: None (we modify Godot scene graph)
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
 
@@ -156,6 +165,7 @@ namespace Client.ECS.Systems
 
         private static readonly int PositionTypeId = ComponentManager.GetTypeId<Position>();
         private static readonly int RenderChunkTypeId = ComponentManager.GetTypeId<RenderChunk>();
+        private static readonly int StaticRenderTypeId = ComponentManager.GetTypeId<StaticRenderTag>();
         private static readonly int RenderPrototypeTypeId = ComponentManager.GetTypeId<RenderPrototype>();
 
         private int _frameCounter = 0;
@@ -172,7 +182,7 @@ namespace Client.ECS.Systems
                 return;
             }
 
-            _midZoneContainer = new Node3D { Name = "ECS_MidZone" };
+            _midZoneContainer = new Node3D { Name = "ECS_StaticEntities" };
             _rootNode.CallDeferred("add_child", _midZoneContainer);
 
             _sphereMesh = new SphereMesh
@@ -225,10 +235,10 @@ namespace Client.ECS.Systems
                     chunkData.IsDirty = true;
             }
 
-            // Query all chunks with Mid zone assignment
-            var midChunks = GetMidChunks(world);
+            // Query all chunks with Near OR Mid zone assignment (for static entities)
+            var staticChunks = GetStaticRenderChunks(world);
 
-            if (midChunks.Count == 0)
+            if (staticChunks.Count == 0)
             {
                 MarkAllChunksForRemoval();
                 RemoveInactiveChunks();
@@ -236,19 +246,19 @@ namespace Client.ECS.Systems
             }
 
             // Parallelize per-chunk processing if we have enough chunks
-            if (midChunks.Count >= SystemSettings.ParallelThreshold.Value)
+            if (staticChunks.Count >= SystemSettings.ParallelThreshold.Value)
             {
-                ProcessChunksParallel(world, midChunks);
+                ProcessChunksParallel(world, staticChunks);
             }
             else
             {
-                ProcessChunksSequential(world, midChunks);
+                ProcessChunksSequential(world, staticChunks);
             }
 
             // Upload dirty chunks to GPU
             UpdateChunkMultiMeshes();
 
-            // Remove chunks that are no longer in Mid zone
+            // Remove chunks that are no longer in Near/Mid zones
             RemoveInactiveChunks();
 
             if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 60 == 0)
@@ -261,45 +271,50 @@ namespace Client.ECS.Systems
             }
         }
 
-        private List<(ChunkLocation Location, bool Visible)> GetMidChunks(World world)
+        private List<(ChunkLocation Location, bool Visible)> GetStaticRenderChunks(World world)
         {
-            var midChunks = new List<(ChunkLocation, bool)>();
+            var staticChunks = new List<(ChunkLocation, bool)>();
 
-            // Query by MidZoneTag - automatic archetype filtering!
-            // Only gets chunks in Mid zone (no manual enum check needed)
-            var archetypes = world.QueryArchetypes(typeof(MidZoneTag));
+            // Query by NearZoneTag AND MidZoneTag - automatic archetype filtering!
+            // Gets chunks in BOTH Near and Mid zones (for static entity rendering)
+            var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag) };
 
-            foreach (var archetype in archetypes)
+            foreach (var zoneTagType in zoneTagTypes)
             {
-                if (archetype.Count == 0)
-                    continue;
+                var archetypes = world.QueryArchetypes(zoneTagType);
 
-                var renderChunks = archetype.GetComponentSpan<RenderChunk>(RenderChunkTypeId);
-
-                for (int i = 0; i < renderChunks.Length; i++)
+                foreach (var archetype in archetypes)
                 {
-                    ref var renderChunk = ref renderChunks[i];
-                    midChunks.Add((renderChunk.Location, renderChunk.Visible));
+                    if (archetype.Count == 0)
+                        continue;
+
+                    var renderChunks = archetype.GetComponentSpan<RenderChunk>(RenderChunkTypeId);
+
+                    for (int i = 0; i < renderChunks.Length; i++)
+                    {
+                        ref var renderChunk = ref renderChunks[i];
+                        staticChunks.Add((renderChunk.Location, renderChunk.Visible));
+                    }
                 }
             }
 
-            return midChunks;
+            return staticChunks;
         }
 
-        private void ProcessChunksSequential(World world, List<(ChunkLocation Location, bool Visible)> midChunks)
+        private void ProcessChunksSequential(World world, List<(ChunkLocation Location, bool Visible)> staticChunks)
         {
             // Use AsSpan for read-only iteration (better performance)
-            var chunksSpan = CollectionsMarshal.AsSpan(midChunks);
+            var chunksSpan = CollectionsMarshal.AsSpan(staticChunks);
             for (int i = 0; i < chunksSpan.Length; i++)
             {
                 ProcessChunk(world, chunksSpan[i].Location, chunksSpan[i].Visible);
             }
         }
 
-        private void ProcessChunksParallel(World world, List<(ChunkLocation Location, bool Visible)> midChunks)
+        private void ProcessChunksParallel(World world, List<(ChunkLocation Location, bool Visible)> staticChunks)
         {
             // Parallel.ForEach over chunks - each chunk is independent
-            Parallel.ForEach(midChunks, chunkInfo =>
+            Parallel.ForEach(staticChunks, chunkInfo =>
             {
                 ProcessChunk(world, chunkInfo.Location, chunkInfo.Visible);
             });
@@ -320,6 +335,11 @@ namespace Client.ECS.Systems
                     continue;
 
                 if (!archetype.HasComponent(PositionTypeId))
+                    continue;
+
+                // Static entities only - dynamic entities handled by DynamicEntityRenderSystem
+                // This system renders statics in BOTH Near and Mid zones with MultiMesh batching
+                if (!archetype.HasComponent(StaticRenderTypeId))
                     continue;
 
                 var positions = archetype.GetComponentSpan<Position>(PositionTypeId);

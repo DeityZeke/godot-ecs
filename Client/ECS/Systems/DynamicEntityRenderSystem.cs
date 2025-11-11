@@ -18,32 +18,40 @@ using Client.ECS.Collections;
 namespace Client.ECS.Systems
 {
     /// <summary>
-    /// NearZoneRenderSystem - SINGLE RESPONSIBILITY: Build visuals for Near zone chunks.
+    /// DynamicEntityRenderSystem - SINGLE RESPONSIBILITY: Render DYNAMIC entities with MeshInstance3D.
     ///
-    /// Design doc quote: "NearChunkSystem handles MeshInstances + MultiMeshes (interactive + static)."
+    /// Rendering strategy split:
+    /// - DynamicEntityRenderSystem: DYNAMIC entities → Individual MeshInstance3D (this system)
+    /// - StaticEntityRenderSystem: STATIC entities → MultiMesh batches
+    /// - BillboardEntityRenderSystem: BILLBOARD entities → Impostors/sprites (far distance)
     ///
-    /// This system:
+    /// This system renders ONLY dynamic entities in the Near zone using individual MeshInstance3D:
+    /// - Near zone dynamics (NearZoneTag + !StaticRenderTag): MeshInstance3D (full interactivity)
+    /// - Ignores static entities (handled by StaticEntityRenderSystem with MultiMesh)
+    ///
+    /// Process:
     /// 1. Queries chunks with NearZoneTag component (archetype-based filtering)
     /// 2. Gets entities in each chunk from ChunkSystem
-    /// 3. Builds MeshInstance3D for dynamic entities (full interactivity)
-    /// 4. Builds MultiMesh for static entities (batched)
+    /// 3. Filters to ONLY dynamic entities (does NOT have StaticRenderTag)
+    /// 4. Builds MeshInstance3D for each dynamic entity (full interactivity)
     /// 5. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
     /// 6. Parallelizes per-chunk processing
     ///
-    /// ECS PATTERN: Queries by NearZoneTag, not enum check.
+    /// ECS PATTERN: Queries by NearZoneTag, filters by !StaticRenderTag.
     /// - Only iterates chunks in Near zone archetype (automatic filtering)
-    /// - No read conflicts with Mid/FarZoneRenderSystems (different tags)
-    /// - Can run in parallel with other zone systems
+    /// - Static entities handled separately by StaticEntityRenderSystem
+    /// - Can run in parallel with StaticEntityRenderSystem (different entity sets)
     ///
     /// DOES NOT:
+    /// - Render static entities (StaticEntityRenderSystem handles those with MultiMesh)
     /// - Assign zones (that's RenderChunkManager's job)
     /// - Do frustum culling (that's RenderVisibilitySystem's job)
-    /// - Handle Mid or Far zones (that's other zone systems' job)
+    /// - Operate on Mid or Far zones (Near zone only for dynamics)
     ///
     /// DEPENDENCIES: Requires RenderChunkManager to tag chunks before building visuals.
     /// </summary>
     [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
-    public sealed class NearZoneRenderSystem : BaseSystem
+    public sealed class DynamicEntityRenderSystem : BaseSystem
     {
         #region Settings
 
@@ -97,8 +105,8 @@ namespace Client.ECS.Systems
 
         #endregion
 
-        public override string Name => "Near Zone Render System";
-        public override int SystemId => typeof(NearZoneRenderSystem).GetHashCode();
+        public override string Name => "Dynamic Entity Render System";
+        public override int SystemId => typeof(DynamicEntityRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
         // Read: Position, Near zone tag, render metadata
@@ -150,7 +158,7 @@ namespace Client.ECS.Systems
                 return;
             }
 
-            _nearZoneContainer = new Node3D { Name = "ECS_NearZone" };
+            _nearZoneContainer = new Node3D { Name = "ECS_DynamicEntities" };
             _rootNode.CallDeferred("add_child", _nearZoneContainer);
 
             _sphereMesh = new SphereMesh

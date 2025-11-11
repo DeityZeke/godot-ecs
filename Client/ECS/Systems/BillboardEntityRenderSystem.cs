@@ -13,26 +13,33 @@ using Client.ECS.Components;
 namespace Client.ECS.Systems
 {
     /// <summary>
-    /// FarZoneRenderSystem - SINGLE RESPONSIBILITY: Build billboard/impostor visuals for Far zone chunks.
+    /// BillboardEntityRenderSystem - SINGLE RESPONSIBILITY: Render billboard/impostor entities at far distance.
     ///
-    /// Design doc quote: "FarChunkSystem handles billboard/impostor generation."
+    /// Rendering strategy split:
+    /// - DynamicEntityRenderSystem: DYNAMIC entities → Individual MeshInstance3D
+    /// - StaticEntityRenderSystem: STATIC entities → MultiMesh batches
+    /// - BillboardEntityRenderSystem: BILLBOARD entities → Impostors/sprites (this system)
     ///
-    /// This system:
+    /// This system renders entities in the Far zone using billboard/impostor techniques:
+    /// - Far zone entities (FarZoneTag): Billboard sprites or low-res impostors
+    /// - Ultra-low detail for maximum viewing distance
+    /// - Minimal GPU overhead (texture quads instead of geometry)
+    ///
+    /// Process:
     /// 1. Queries chunks with FarZoneTag component (archetype-based filtering)
     /// 2. Generates billboard/impostor visuals for ultra-low detail rendering
     /// 3. Respects RenderChunk.Visible flag (set by RenderVisibilitySystem)
     /// 4. Parallelizes per-chunk processing
     ///
-    /// ECS PATTERN: Queries by FarZoneTag, not enum check.
+    /// ECS PATTERN: Queries by FarZoneTag.
     /// - Only iterates chunks in Far zone archetype (automatic filtering)
-    /// - No read conflicts with Near/MidZoneRenderSystems (different tags)
-    /// - Can run in parallel with other zone systems
+    /// - Can run in parallel with DynamicEntityRenderSystem and StaticEntityRenderSystem
     ///
     /// DOES NOT:
+    /// - Render dynamic or static entities (other systems handle those)
     /// - Assign zones (that's RenderChunkManager's job)
     /// - Do frustum culling (that's RenderVisibilitySystem's job)
-    /// - Build full geometry (Far zone is ultra-low detail only)
-    /// - Handle Near or Mid zones (that's other zone systems' job)
+    /// - Build full geometry (Far zone is ultra-low detail billboards only)
     ///
     /// STATUS: STUB - Billboard/impostor rendering not yet implemented.
     /// This system currently only logs Far zone chunks for future development.
@@ -40,7 +47,7 @@ namespace Client.ECS.Systems
     /// DEPENDENCIES: Requires RenderChunkManager to tag chunks before building visuals.
     /// </summary>
     [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
-    public sealed class FarZoneRenderSystem : BaseSystem
+    public sealed class BillboardEntityRenderSystem : BaseSystem
     {
         #region Settings
 
@@ -74,8 +81,8 @@ namespace Client.ECS.Systems
 
         #endregion
 
-        public override string Name => "Far Zone Render System";
-        public override int SystemId => typeof(FarZoneRenderSystem).GetHashCode();
+        public override string Name => "Billboard Entity Render System";
+        public override int SystemId => typeof(BillboardEntityRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
         // Read: Far zone tag
