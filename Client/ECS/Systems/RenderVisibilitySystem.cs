@@ -36,7 +36,14 @@ namespace Client.ECS.Systems
     ///
     /// Performance: O(active chunks) per frame - lightweight, ~1k checks max
     /// Parallelization: Per-chunk culling tests run in parallel
+    ///
+    /// DEPENDENCIES: Requires RenderChunkManager to have tagged chunks with zones.
+    /// Runs AFTER zone systems to ensure visuals are built before culling.
     /// </summary>
+    [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
+    [RequireSystem("Client.ECS.Systems.NearZoneRenderSystem")]
+    [RequireSystem("Client.ECS.Systems.MidZoneRenderSystem")]
+    [RequireSystem("Client.ECS.Systems.FarZoneRenderSystem")]
     public sealed class RenderVisibilitySystem : BaseSystem
     {
         #region Settings
@@ -130,10 +137,11 @@ namespace Client.ECS.Systems
 
             // Query all zone tag archetypes (Near, Mid, Far)
             var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
+            var zoneTagTypesSpan = zoneTagTypes.AsSpan();
 
-            foreach (var zoneTagType in zoneTagTypes)
+            for (int t = 0; t < zoneTagTypesSpan.Length; t++)
             {
-                var archetypes = world.QueryArchetypes(zoneTagType);
+                var archetypes = world.QueryArchetypes(zoneTagTypesSpan[t]);
 
                 foreach (var archetype in archetypes)
                 {
@@ -157,11 +165,12 @@ namespace Client.ECS.Systems
 
             // Query all zone tag archetypes (Near, Mid, Far)
             var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
+            var zoneTagTypesSpan = zoneTagTypes.AsSpan();
             var allArchetypes = new List<Archetype>();
 
-            foreach (var zoneTagType in zoneTagTypes)
+            for (int t = 0; t < zoneTagTypesSpan.Length; t++)
             {
-                var archetypes = world.QueryArchetypes(zoneTagType);
+                var archetypes = world.QueryArchetypes(zoneTagTypesSpan[t]);
                 allArchetypes.AddRange(archetypes);
             }
 

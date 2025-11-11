@@ -34,7 +34,10 @@ namespace Client.ECS.Systems
     ///
     /// STATUS: STUB - Billboard/impostor rendering not yet implemented.
     /// This system currently only logs Far zone chunks for future development.
+    ///
+    /// DEPENDENCIES: Requires RenderChunkManager to tag chunks before building visuals.
     /// </summary>
+    [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
     public sealed class FarZoneRenderSystem : BaseSystem
     {
         #region Settings

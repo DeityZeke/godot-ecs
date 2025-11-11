@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -40,7 +38,10 @@ namespace Client.ECS.Systems
     /// - Assign zones (that's RenderChunkManager's job)
     /// - Do frustum culling (that's RenderVisibilitySystem's job)
     /// - Handle Mid or Far zones (that's other zone systems' job)
+    ///
+    /// DEPENDENCIES: Requires RenderChunkManager to tag chunks before building visuals.
     /// </summary>
+    [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
     public sealed class NearZoneRenderSystem : BaseSystem
     {
         #region Settings
@@ -243,9 +244,11 @@ namespace Client.ECS.Systems
 
         private void ProcessChunksSequential(World world, List<(ChunkLocation Location, bool Visible)> nearChunks)
         {
-            foreach (var (chunkLocation, visible) in nearChunks)
+            // Use AsSpan for read-only iteration (better performance)
+            var chunksSpan = CollectionsMarshal.AsSpan(nearChunks);
+            for (int i = 0; i < chunksSpan.Length; i++)
             {
-                ProcessChunk(world, chunkLocation, visible);
+                ProcessChunk(world, chunksSpan[i].Location, chunksSpan[i].Visible);
             }
         }
 
@@ -260,12 +263,6 @@ namespace Client.ECS.Systems
 
         private void ProcessChunk(World world, ChunkLocation chunkLocation, bool visible)
         {
-            if (!visible)
-            {
-                // Chunk is culled by RenderVisibilitySystem - skip building visuals
-                return;
-            }
-
             var chunkEntity = _chunkManager!.GetChunk(chunkLocation);
             if (chunkEntity == Entity.Invalid)
                 return;
@@ -293,7 +290,8 @@ namespace Client.ECS.Systems
                 uint entityIndex = entity.Index;
                 _activeEntitiesThisFrame.Set((int)entityIndex);
 
-                UpdateOrAttachVisual(entityIndex, chunkLocation, position, prototype);
+                // Always build/update visuals, but set Godot node visibility based on frustum culling
+                UpdateOrAttachVisual(entityIndex, chunkLocation, position, prototype, visible);
             }
         }
 
@@ -307,7 +305,7 @@ namespace Client.ECS.Systems
             return RenderPrototypeKind.Sphere;
         }
 
-        private void UpdateOrAttachVisual(uint entityIndex, ChunkLocation chunkLocation, Position position, RenderPrototypeKind prototype)
+        private void UpdateOrAttachVisual(uint entityIndex, ChunkLocation chunkLocation, Position position, RenderPrototypeKind prototype, bool chunkVisible)
         {
             EnsureBindingCapacity(entityIndex);
 
@@ -323,6 +321,7 @@ namespace Client.ECS.Systems
                         _entityBindings[entityIndex] = new EntityVisualBinding(existing.Chunk, existing.Visual, prototype);
                     }
                     UpdateVisualPosition(existing.Visual, position);
+                    UpdateVisualVisibility(existing.Visual, chunkVisible);
                     return;
                 }
 
@@ -344,6 +343,7 @@ namespace Client.ECS.Systems
             }
 
             UpdateVisualPosition(visual, position);
+            UpdateVisualVisibility(visual, chunkVisible);
         }
 
         private ChunkVisualPool<MeshInstance3D> GetOrCreateChunkPool(ChunkLocation chunkLocation)
@@ -426,6 +426,12 @@ namespace Client.ECS.Systems
         {
             if (visual.IsInsideTree())
                 visual.CallDeferred(Node3D.MethodName.SetGlobalPosition, new Vector3(position.X, position.Y, position.Z));
+        }
+
+        private static void UpdateVisualVisibility(MeshInstance3D visual, bool visible)
+        {
+            if (visual.IsInsideTree())
+                visual.SetDeferred(Node3D.PropertyName.Visible, visible);
         }
 
         private void ReleaseEntityVisual(uint entityIndex)

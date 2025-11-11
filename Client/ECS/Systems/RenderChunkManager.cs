@@ -329,7 +329,8 @@ namespace Client.ECS.Systems
 
             if (!archetype.HasComponent(renderChunkTypeId))
             {
-                var renderChunk = new RenderChunk(chunkLoc, bounds, visible: true);
+                // Start invisible - RenderVisibilitySystem will set to true if in frustum
+                var renderChunk = new RenderChunk(chunkLoc, bounds, visible: false);
                 world.EnqueueComponentAdd(chunkEntity, renderChunk);
             }
         }

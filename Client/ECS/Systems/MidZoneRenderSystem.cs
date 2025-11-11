@@ -40,7 +40,10 @@ namespace Client.ECS.Systems
     /// - Do frustum culling (that's RenderVisibilitySystem's job)
     /// - Build individual MeshInstances (Mid zone is visual-only batched)
     /// - Handle Near or Far zones (that's other zone systems' job)
+    ///
+    /// DEPENDENCIES: Requires RenderChunkManager to tag chunks before building visuals.
     /// </summary>
+    [RequireSystem("Client.ECS.Systems.RenderChunkManager")]
     public sealed class MidZoneRenderSystem : BaseSystem
     {
         #region Settings
@@ -124,6 +127,7 @@ namespace Client.ECS.Systems
             public RenderPrototypeKind Prototype;
             public bool IsDirty;
             public int LastUploadedCount;
+            public bool Visible; // Frustum culling result from RenderVisibilitySystem
         }
 
         private readonly struct ChunkMeshKey : IEquatable<ChunkMeshKey>
@@ -283,9 +287,11 @@ namespace Client.ECS.Systems
 
         private void ProcessChunksSequential(World world, List<(ChunkLocation Location, bool Visible)> midChunks)
         {
-            foreach (var (chunkLocation, visible) in midChunks)
+            // Use AsSpan for read-only iteration (better performance)
+            var chunksSpan = CollectionsMarshal.AsSpan(midChunks);
+            for (int i = 0; i < chunksSpan.Length; i++)
             {
-                ProcessChunk(world, chunkLocation, visible);
+                ProcessChunk(world, chunksSpan[i].Location, chunksSpan[i].Visible);
             }
         }
 
@@ -300,13 +306,6 @@ namespace Client.ECS.Systems
 
         private void ProcessChunk(World world, ChunkLocation chunkLocation, bool visible)
         {
-            if (!visible)
-            {
-                // Chunk is culled by RenderVisibilitySystem - hide MultiMesh
-                HideChunkMultiMesh(chunkLocation);
-                return;
-            }
-
             var chunkEntity = _chunkManager!.GetChunk(chunkLocation);
             if (chunkEntity == Entity.Invalid)
                 return;
@@ -335,6 +334,10 @@ namespace Client.ECS.Systems
                 }
 
                 var chunkData = chunkDataRef;
+
+                // Always build transforms, but track visibility for GPU upload
+                chunkData.Visible = visible;
+
                 int nextIndex = chunkData.Count;
                 EnsureCapacity(chunkData, nextIndex + 1);
                 chunkData.Transforms[nextIndex] = new Transform3D(Basis.Identity, new Vector3(pos.X, pos.Y, pos.Z));
@@ -452,17 +455,6 @@ namespace Client.ECS.Systems
             return prototype == RenderPrototypeKind.Cube ? (_staticMidMaterial ?? _midMaterial) : _midMaterial;
         }
 
-        private void HideChunkMultiMesh(ChunkLocation location)
-        {
-            foreach (var kvp in _chunkMultiMeshes)
-            {
-                if (kvp.Key.Location.Equals(location))
-                {
-                    kvp.Value.Instance.SetDeferred(Node3D.PropertyName.Visible, false);
-                    kvp.Value.MultiMesh.VisibleInstanceCount = 0;
-                }
-            }
-        }
 
         private void UpdateChunkMultiMeshes()
         {
@@ -504,6 +496,10 @@ namespace Client.ECS.Systems
         private void UploadChunkMultiMesh(ChunkMultiMesh chunkData)
         {
             int count = chunkData.Count;
+
+            // Set Godot node visibility based on RenderVisibilitySystem's frustum culling
+            bool shouldBeVisible = chunkData.Visible && count > 0;
+
             if (count == 0)
             {
                 if (chunkData.LastUploadedCount != 0)
@@ -524,7 +520,8 @@ namespace Client.ECS.Systems
             chunkData.MultiMesh.VisibleInstanceCount = count;
             RenderingServer.MultimeshSetBuffer(chunkData.MultiMesh.GetRid(), bufferSpan);
 
-            chunkData.Instance.SetDeferred(Node3D.PropertyName.Visible, true);
+            // Set visibility based on frustum culling result
+            chunkData.Instance.SetDeferred(Node3D.PropertyName.Visible, shouldBeVisible);
             chunkData.LastUploadedCount = count;
             chunkData.IsDirty = false;
         }
