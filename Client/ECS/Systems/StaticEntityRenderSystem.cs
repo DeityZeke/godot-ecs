@@ -157,7 +157,7 @@ namespace Client.ECS.Systems
 
         // Thread-safe dictionary for parallel chunk processing
         private readonly ConcurrentDictionary<ChunkMeshKey, ChunkMultiMesh> _chunkMultiMeshes = new();
-        private readonly Queue<ChunkMultiMesh> _pooledChunkMeshes = new();
+        private readonly ConcurrentQueue<ChunkMultiMesh> _pooledChunkMeshes = new();
         private readonly List<ChunkMeshKey> _chunkUploadList = new();
         private readonly List<ChunkMeshKey> _chunksToRemove = new();
         private float[] _multimeshBuffer = Array.Empty<float>();
@@ -374,12 +374,8 @@ namespace Client.ECS.Systems
 
         private ChunkMultiMesh AcquireChunkMultiMesh(ChunkLocation location, RenderPrototypeKind prototype)
         {
-            ChunkMultiMesh chunkData;
-            if (_pooledChunkMeshes.Count > 0)
-            {
-                chunkData = _pooledChunkMeshes.Dequeue();
-            }
-            else
+            // Thread-safe: Try to reuse from pool, otherwise create new
+            if (!_pooledChunkMeshes.TryDequeue(out var chunkData))
             {
                 chunkData = CreateChunkMultiMesh();
             }
