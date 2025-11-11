@@ -160,6 +160,7 @@ namespace Client.ECS.Systems
         private readonly ConcurrentQueue<ChunkMultiMesh> _pooledChunkMeshes = new();
         private readonly List<ChunkMeshKey> _chunkUploadList = new();
         private readonly List<ChunkMeshKey> _chunksToRemove = new();
+        private readonly HashSet<ChunkMeshKey> _activeChunksThisFrame = new(); // Track which chunks have entities this frame
         private float[] _multimeshBuffer = Array.Empty<float>();
         private const int FloatsPerInstance = 12;
 
@@ -229,13 +230,10 @@ namespace Client.ECS.Systems
 
             _frameCounter++;
 
-            // Reset all chunk counts
-            foreach (var chunkData in _chunkMultiMeshes.Values)
-            {
-                chunkData.Count = 0;
-                if (chunkData.LastUploadedCount != 0)
-                    chunkData.IsDirty = true;
-            }
+            // OPTIMIZATION: Don't reset all chunk counts every frame.
+            // Instead, track which chunks are active this frame and only rebuild changed chunks.
+            // Static entities don't move, so if the count hasn't changed, we skip the rebuild.
+            _activeChunksThisFrame.Clear();
 
             // Query all chunks with Near OR Mid zone assignment (for static entities)
             var staticChunks = GetStaticRenderChunks(world);
@@ -331,6 +329,10 @@ namespace Client.ECS.Systems
             // Get entities in this chunk
             var entitiesInChunk = _chunkSystem!.GetEntitiesInChunk(chunkEntity);
 
+            // OPTIMIZATION STEP 1: Count static entities per prototype FIRST (before building transforms)
+            // This lets us detect if the count changed and skip rebuilding if nothing changed.
+            var prototypeEntityCounts = new Dictionary<RenderPrototypeKind, (List<(Position pos, int slot, Archetype archetype)> entities, int count)>();
+
             foreach (var entity in entitiesInChunk)
             {
                 if (!world.TryGetEntityLocation(entity, out var archetype, out var entitySlot))
@@ -348,19 +350,62 @@ namespace Client.ECS.Systems
                 var pos = positions[entitySlot];
                 var prototype = ResolvePrototype(archetype, entitySlot);
 
+                if (!prototypeEntityCounts.TryGetValue(prototype, out var entry))
+                {
+                    entry = (new List<(Position, int, Archetype)>(), 0);
+                    prototypeEntityCounts[prototype] = entry;
+                }
+
+                entry.entities.Add((pos, entitySlot, archetype));
+                entry.count++;
+                prototypeEntityCounts[prototype] = entry;
+            }
+
+            // OPTIMIZATION STEP 2: For each prototype, check if count changed
+            // Only rebuild transforms if count changed (entities added/removed)
+            foreach (var kvp in prototypeEntityCounts)
+            {
+                var prototype = kvp.Key;
+                var entities = kvp.Value.entities;
+                var newCount = kvp.Value.count;
+
                 var key = new ChunkMeshKey(chunkLocation, prototype);
+
+                // Mark this chunk as active (processed this frame)
+                // Note: HashSet is NOT thread-safe, but we'll handle this carefully
+                lock (_activeChunksThisFrame)
+                {
+                    _activeChunksThisFrame.Add(key);
+                }
 
                 // GetOrAdd is thread-safe for ConcurrentDictionary
                 var chunkData = _chunkMultiMeshes.GetOrAdd(key, k => AcquireChunkMultiMesh(chunkLocation, prototype));
 
-                // Always build transforms, but track visibility for GPU upload
+                // Update visibility (may have changed due to frustum culling)
                 chunkData.Visible = visible;
 
-                int nextIndex = chunkData.Count;
-                EnsureCapacity(chunkData, nextIndex + 1);
-                chunkData.Transforms[nextIndex] = new Transform3D(Basis.Identity, new Vector3(pos.X, pos.Y, pos.Z));
-                chunkData.Count++;
-                chunkData.IsDirty = true;
+                // OPTIMIZATION: Only rebuild if count changed OR if this is a new chunk
+                // For static entities, if count hasn't changed, transforms are still valid!
+                if (chunkData.Count == newCount && chunkData.LastUploadedCount != 0)
+                {
+                    // Count unchanged and chunk was previously uploaded - skip rebuild!
+                    // This is the key optimization for static entities.
+                    continue;
+                }
+
+                // Count changed (entities added/removed) - rebuild transforms
+                chunkData.Count = 0; // Reset for rebuild
+                EnsureCapacity(chunkData, newCount);
+
+                for (int i = 0; i < entities.Count; i++)
+                {
+                    var pos = entities[i].pos;
+                    int nextIndex = chunkData.Count;
+                    chunkData.Transforms[nextIndex] = new Transform3D(Basis.Identity, new Vector3(pos.X, pos.Y, pos.Z));
+                    chunkData.Count++;
+                }
+
+                chunkData.IsDirty = true; // Mark for GPU upload
             }
         }
 
@@ -591,11 +636,14 @@ namespace Client.ECS.Systems
         {
             _chunksToRemove.Clear();
 
-            // Find chunks that have 0 entities (not updated this frame)
-            foreach (var kvp in _chunkMultiMeshes)
+            // OPTIMIZATION: Remove chunks that weren't processed this frame
+            // (i.e., chunks that no longer have entities or moved out of Near/Mid zones)
+            foreach (var key in _chunkMultiMeshes.Keys)
             {
-                if (kvp.Value.Count == 0 && kvp.Value.LastUploadedCount == 0)
-                    _chunksToRemove.Add(kvp.Key);
+                if (!_activeChunksThisFrame.Contains(key))
+                {
+                    _chunksToRemove.Add(key);
+                }
             }
 
             foreach (var key in _chunksToRemove)

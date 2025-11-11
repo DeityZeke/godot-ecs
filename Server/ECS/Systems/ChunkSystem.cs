@@ -111,7 +111,7 @@ namespace UltraSim.Server.ECS.Systems
 
         public override string Name => "ChunkSystem";
         public override int SystemId => typeof(ChunkSystem).GetHashCode();
-        public override TickRate Rate => TickRate.EveryFrame;
+        public override TickRate Rate => TickRate.Tick100ms; // 10Hz - spatial indexing doesn't need 60fps
 
         public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(ChunkOwner), typeof(ChunkLocation) };
         public override Type[] WriteSet { get; } = new[] { typeof(ChunkOwner), typeof(ChunkState) };
