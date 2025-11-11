@@ -61,6 +61,7 @@ namespace Client
         {
             var world = ActiveWorld;
 
+            // Server-side systems
             world.EnqueueSystemCreate<ChunkSystem>();
             world.EnqueueSystemEnable<ChunkSystem>();
 
@@ -73,14 +74,26 @@ namespace Client
             world.EnqueueSystemCreate<OptimizedPulsingMovementSystem>();
             world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
 
-            world.EnqueueSystemCreate<HybridRenderSystem>();
-            world.EnqueueSystemEnable<HybridRenderSystem>();
+            // NEW: Clean architecture rendering systems (design doc compliant)
+            // Each system has SINGLE RESPONSIBILITY:
+            // 1. RenderChunkManager: Window + zone tagging
+            // 2. RenderVisibilitySystem: Frustum culling
+            // 3-5. Zone systems: Build visuals for their assigned zones
 
-            world.EnqueueSystemCreate<MeshInstanceBubbleManager>();
-            world.EnqueueSystemEnable<MeshInstanceBubbleManager>();
+            world.EnqueueSystemCreate<RenderChunkManager>();
+            world.EnqueueSystemEnable<RenderChunkManager>();
 
-            world.EnqueueSystemCreate<MultiMeshZoneManager>();
-            world.EnqueueSystemEnable<MultiMeshZoneManager>();
+            world.EnqueueSystemCreate<RenderVisibilitySystem>();
+            world.EnqueueSystemEnable<RenderVisibilitySystem>();
+
+            world.EnqueueSystemCreate<NearZoneRenderSystem>();
+            world.EnqueueSystemEnable<NearZoneRenderSystem>();
+
+            world.EnqueueSystemCreate<MidZoneRenderSystem>();
+            world.EnqueueSystemEnable<MidZoneRenderSystem>();
+
+            world.EnqueueSystemCreate<FarZoneRenderSystem>();
+            world.EnqueueSystemEnable<FarZoneRenderSystem>();
         }
 
         protected override void OnWorldFrameProgress(int frameIndex)
@@ -110,23 +123,27 @@ namespace Client
                 return;
             }
 
-            if (world.Systems.GetSystem<HybridRenderSystem>() is HybridRenderSystem hybridRenderSystem)
+            // NEW: Connect clean architecture systems (design doc compliant)
+
+            if (world.Systems.GetSystem<RenderChunkManager>() is RenderChunkManager renderChunkManager)
             {
-                hybridRenderSystem.SetChunkManager(chunkManager);
-                GD.Print("[ClientHost] Connected HybridRenderSystem to ChunkManager");
+                renderChunkManager.SetChunkManager(chunkManager);
+                GD.Print("[ClientHost] Connected RenderChunkManager to ChunkManager");
             }
 
-            if (world.Systems.GetSystem<MultiMeshZoneManager>() is MultiMeshZoneManager multiMeshManager)
+            if (world.Systems.GetSystem<NearZoneRenderSystem>() is NearZoneRenderSystem nearZoneSystem)
             {
-                multiMeshManager.SetChunkManager(chunkManager, chunkSystem);
-                GD.Print("[ClientHost] Connected MultiMeshZoneManager to ChunkManager + ChunkSystem");
+                nearZoneSystem.SetChunkManager(chunkManager, chunkSystem);
+                GD.Print("[ClientHost] Connected NearZoneRenderSystem to ChunkManager + ChunkSystem");
             }
 
-            if (world.Systems.GetSystem<MeshInstanceBubbleManager>() is MeshInstanceBubbleManager bubbleManager)
+            if (world.Systems.GetSystem<MidZoneRenderSystem>() is MidZoneRenderSystem midZoneSystem)
             {
-                bubbleManager.SetChunkManager(chunkManager, chunkSystem);
-                GD.Print("[ClientHost] Connected MeshInstanceBubbleManager to ChunkManager + ChunkSystem");
+                midZoneSystem.SetChunkManager(chunkManager, chunkSystem);
+                GD.Print("[ClientHost] Connected MidZoneRenderSystem to ChunkManager + ChunkSystem");
             }
+
+            GD.Print("[ClientHost] Clean architecture rendering systems connected successfully!");
     }
     }
 }

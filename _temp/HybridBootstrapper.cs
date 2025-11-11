@@ -85,6 +85,16 @@ public partial class HybridBootstrapper : WorldHostBase
         }
     }
 
+    protected override void AfterWorldTick(double delta)
+    {
+        // Process main thread operations for HybridRenderSystem (e.g., chunk debug overlay refresh)
+        var world = ActiveWorld;
+        if (world != null && world.Systems.GetSystem<HybridRenderSystem>() is HybridRenderSystem hybridRenderSystem)
+        {
+            hybridRenderSystem.ProcessMainThreadOperations();
+        }
+    }
+
     protected override void RegisterSystems()
     {
         var world = ActiveWorld;
@@ -168,6 +178,7 @@ public partial class HybridBootstrapper : WorldHostBase
         if (world.Systems.GetSystem<HybridRenderSystem>() is HybridRenderSystem hybridRenderSystem)
         {
             hybridRenderSystem.SetChunkManager(chunkManager);
+            hybridRenderSystem.SetChunkDebugOverlay(_chunkDebugOverlay);
             GD.Print("[HybridBootstrapper] Connected HybridRenderSystem to ChunkManager");
         }
 

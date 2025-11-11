@@ -96,6 +96,9 @@ namespace Client.ECS.Settings
 
                 Setting.ValueChanged += (value) =>
                 {
+                    if (_updatingUI) return;
+                    if (_spinBox == null || !GodotObject.IsInstanceValid(_spinBox)) return;
+
                     _updatingUI = true;
                     try
                     {
@@ -117,6 +120,10 @@ namespace Client.ECS.Settings
 
                 Setting.ValueChanged += (value) =>
                 {
+                    if (_updatingUI) return;
+                    if (_slider == null || !GodotObject.IsInstanceValid(_slider)) return;
+                    if (_valueLabel == null || !GodotObject.IsInstanceValid(_valueLabel)) return;
+
                     _updatingUI = true;
                     try
                     {

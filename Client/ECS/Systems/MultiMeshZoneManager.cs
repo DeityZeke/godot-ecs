@@ -323,38 +323,38 @@ namespace Client.ECS.Systems
             chunkData.MultiMesh.VisibleInstanceCount = 0;
         }
 
-        private static int _visibilityCheckCount = 0;
+        private static int _debugCheckCount = 0;
 
         private bool IsChunkVisible(ChunkLocation chunkLocation)
         {
             if (!_sharedState.FrustumCullingEnabled || _chunkManager == null)
-            {
-                if (_visibilityCheckCount < 3)
-                {
-                    Logging.Log($"[{Name}] IsChunkVisible early return: cullingEnabled={_sharedState.FrustumCullingEnabled}, chunkManager={(_chunkManager != null ? "OK" : "NULL")}");
-                    _visibilityCheckCount++;
-                }
                 return true;
-            }
 
             var planes = _sharedState.FrustumPlanes;
             if (planes == null || planes.Count == 0)
-            {
-                if (_visibilityCheckCount < 3)
-                {
-                    Logging.Log($"[{Name}] IsChunkVisible early return: planes={(planes == null ? "NULL" : $"empty ({planes.Count})")}");
-                    _visibilityCheckCount++;
-                }
                 return true;
-            }
 
             var bounds = _chunkManager.ChunkToWorldBounds(chunkLocation);
             bool visible = FrustumUtility.IsVisible(bounds, planes, FrustumPadding);
 
-            if (_visibilityCheckCount < 10)
+            // Debug: Log first few checks to see what's happening
+            if (SystemSettings.EnableDebugLogs.Value && _debugCheckCount < 5)
             {
-                Logging.Log($"[{Name}] IsChunkVisible for chunk {chunkLocation}: visible={visible}, planes={planes.Count}, padding={FrustumPadding}");
-                _visibilityCheckCount++;
+                var center = new Vector3(
+                    (bounds.MinX + bounds.MaxX) * 0.5f,
+                    (bounds.MinY + bounds.MaxY) * 0.5f,
+                    (bounds.MinZ + bounds.MaxZ) * 0.5f
+                );
+                Logging.Log($"[{Name}] Chunk {chunkLocation} at {center}: visible={visible}, planeCount={planes.Count}");
+
+                // Log first plane details
+                if (planes.Count > 0)
+                {
+                    var plane = planes[0];
+                    Logging.Log($"[{Name}]   Plane[0]: normal={plane.Normal}, d={plane.D}");
+                }
+
+                _debugCheckCount++;
             }
 
             return visible;

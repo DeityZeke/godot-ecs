@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Runtime.CompilerServices;
 using Godot;
 using UltraSim.ECS.Components;
 
@@ -8,6 +9,38 @@ namespace Client.ECS.Rendering
 {
     internal static class FrustumUtility
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsVisible(in ChunkBounds bounds, Godot.Collections.Array<Plane> frustumPlanes, float padding = 0f)
+        {
+            var center = new Vector3(
+                (bounds.MinX + bounds.MaxX) * 0.5f,
+                (bounds.MinY + bounds.MaxY) * 0.5f,
+                (bounds.MinZ + bounds.MaxZ) * 0.5f
+            );
+
+            var extents = new Vector3(
+                (bounds.MaxX - bounds.MinX) * 0.5f,
+                (bounds.MaxY - bounds.MinY) * 0.5f,
+                (bounds.MaxZ - bounds.MinZ) * 0.5f
+            );
+
+            for (int i = 0; i < 6; i++)
+            {
+                var plane = frustumPlanes[i];
+                var normal = plane.Normal;
+                float r = extents.X * MathF.Abs(normal.X) +
+                          extents.Y * MathF.Abs(normal.Y) +
+                          extents.Z * MathF.Abs(normal.Z);
+
+                float d = normal.Dot(center) + plane.D;
+
+                if (d + r < 0)
+                    return false; // Outside
+            }
+            return true;
+        }
+
+        /*
         public static bool IsVisible(in ChunkBounds bounds, Godot.Collections.Array<Plane> frustumPlanes, float padding = 0f)
         {
             var min = new Vector3(bounds.MinX, bounds.MinY, bounds.MinZ);
@@ -20,31 +53,34 @@ namespace Client.ECS.Rendering
                 max += paddingVec;
             }
 
-            var aabb = new Godot.Aabb(min, max - min);
-
-            // Test each frustum plane
-            // For each plane, check if AABB is completely on the "outside" side
+            // Godot's frustum planes point INWARD (toward the inside of the frustum)
+            // For an object to be visible, it must be on the POSITIVE side (or intersecting) ALL 6 planes.
+            // If the object is on the NEGATIVE side of ANY plane, it's outside the frustum → culled.
+            //
+            // For each plane, we check the "negative vertex" (closest corner to the plane).
+            // If even the negative vertex is on the negative side of the plane, the entire AABB is outside.
             foreach (Plane plane in frustumPlanes)
             {
-                // Use Godot's built-in intersection test
-                // If AABB doesn't intersect the plane, it's completely on one side
-                if (!aabb.IntersectsPlane(plane))
-                {
-                    // AABB is completely on one side of the plane
-                    // Check which side using the center point
-                    var center = aabb.GetCenter();
-                    float dist = plane.DistanceTo(center);
+                var normal = plane.Normal;
 
-                    // If distance is positive, center is on the "over" side (normal direction)
-                    // For frustum planes pointing outward, positive = outside frustum
-                    if (dist > 0)
-                    {
-                        return false; // Outside this plane = cull
-                    }
+                // Find the negative vertex (closest point to the plane, opposite of normal direction)
+                // If normal.X >= 0, plane faces +X, so closest point has minimum X
+                var negativeVertex = new Vector3(
+                    normal.X >= 0 ? min.X : max.X,
+                    normal.Y >= 0 ? min.Y : max.Y,
+                    normal.Z >= 0 ? min.Z : max.Z
+                );
+
+                // Check if the closest vertex is behind the plane (negative distance)
+                // If even the closest vertex is behind, the entire AABB is outside this plane
+                if (plane.DistanceTo(negativeVertex) < 0)
+                {
+                    return false; // Culled - AABB is completely outside this frustum plane
                 }
             }
 
-            return true; // Inside or intersecting all planes = visible
+            return true; // Visible (inside or intersecting frustum)
         }
+        */
     }
 }

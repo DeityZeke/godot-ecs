@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Godot;
 using UltraSim;
 using UltraSim.ECS;
@@ -21,6 +22,9 @@ namespace Client.Terrain
     {
         private readonly TerrainMeshCache _meshCache = new();
         private int _meshesBuiltPerFrame = 2;
+        private IEnumerable<Archetype>? _cachedQuery;
+
+        private static readonly int TerrainChunkId = ComponentManager.GetTypeId<TerrainChunkComponent>();
 
         public override int SystemId => GetHashCode();
         public override string Name => "Terrain Mesh Provider";
@@ -28,38 +32,57 @@ namespace Client.Terrain
         public override Type[] WriteSet => new[] { typeof(TerrainChunkComponent) }; // Modifies IsDirty flag
         public override TickRate Rate => TickRate.EveryFrame;
 
+        public override void OnInitialize(World world)
+        {
+            _cachedQuery = world.QueryArchetypes(typeof(TerrainChunkComponent));
+        }
+
         public override void Update(World world, double delta)
         {
-            // Query terrain entities directly
-            var archetype = world.GetArchetype<TerrainChunkComponent>();
-            if (archetype == null)
+            if (_cachedQuery == null)
                 return;
 
-            var terrainComponents = archetype.GetComponentSpan<TerrainChunkComponent>();
             int meshesBuilt = 0;
 
-            // Process dirty terrain chunks (need mesh generation)
-            for (int i = 0; i < terrainComponents.Length && meshesBuilt < _meshesBuiltPerFrame; i++)
+            // Process all archetypes that contain terrain chunks
+            foreach (var arch in _cachedQuery)
             {
-                ref var terrain = ref terrainComponents[i];
+                if (arch.Count == 0) continue;
 
-                if (!terrain.IsDirty || terrain.ChunkData == null)
+                var terrainComponentList = arch.GetComponentListTyped<TerrainChunkComponent>(TerrainChunkId);
+                if (terrainComponentList == null)
                     continue;
 
-                // Generate or retrieve cached mesh
-                var mesh = _meshCache.GetOrCreateMesh(terrain.Location, () =>
+                var terrainComponents = terrainComponentList.GetList();
+                var terrainSpan = CollectionsMarshal.AsSpan(terrainComponents);
+
+                // Process dirty terrain chunks (need mesh generation)
+                for (int i = 0; i < terrainSpan.Length && meshesBuilt < _meshesBuiltPerFrame; i++)
                 {
-                    return GreedyMesher.GenerateMesh(terrain.ChunkData);
-                });
+                    ref var terrain = ref terrainSpan[i];
 
-                if (mesh == null)
-                    continue;
+                    if (!terrain.IsDirty || terrain.ChunkData == null)
+                        continue;
 
-                // Mark as clean - mesh is now available in cache
-                terrain.IsDirty = false;
-                terrain.MeshVersion = terrain.ChunkData.Version;
+                    // Capture values needed for lambda (avoid ref capture)
+                    var chunkData = terrain.ChunkData;
+                    var location = terrain.Location;
 
-                meshesBuilt++;
+                    // Generate or retrieve cached mesh
+                    var mesh = _meshCache.GetOrCreateMesh(location, () =>
+                    {
+                        return GreedyMesher.GenerateMesh(chunkData);
+                    });
+
+                    if (mesh == null)
+                        continue;
+
+                    // Mark as clean - mesh is now available in cache
+                    terrain.IsDirty = false;
+                    terrain.MeshVersion = chunkData.Version;
+
+                    meshesBuilt++;
+                }
             }
         }
 

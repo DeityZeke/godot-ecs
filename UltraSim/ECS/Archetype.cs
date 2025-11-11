@@ -126,6 +126,11 @@ namespace UltraSim.ECS
         public void RemoveAtSwap(int slot)
         {
             int last = _entities.Count - 1;
+
+            // Bounds check - slot may be invalid if entity already removed
+            if (slot < 0 || slot > last)
+                return;
+
             if (slot != last)
             {
                 var movedEntity = _entities[last];

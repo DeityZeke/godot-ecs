@@ -38,6 +38,7 @@ namespace Client.ECS.Systems
             public IntSetting UpdateFrequency { get; private set; }
             public BoolSetting EnableDebugLogs { get; private set; }
             public FloatSetting ChunkWindowRecenterDelaySeconds { get; private set; }
+            public BoolSetting EnableChunkDebugOverlay { get; private set; }
             public Settings()
             {
                 CoreBubbleSize = RegisterInt("Core Bubble Size", 3,
@@ -61,6 +62,8 @@ namespace Client.ECS.Systems
                 ChunkWindowRecenterDelaySeconds = RegisterFloat("Chunk Window Recenter Delay (s)", 0.0f,
                     min: 0.0f, max: 1.0f, step: 0.05f,
                     tooltip: "Delay before chunk windows recenters around a new camera chunk.");
+                EnableChunkDebugOverlay = RegisterBool("Enable Chunk Debug Overlay", false,
+                    tooltip: "Show wireframe boxes for chunk boundaries (useful for debugging spatial partitioning)");
             }
         }
         public Settings SystemSettings { get; } = new();
@@ -69,12 +72,15 @@ namespace Client.ECS.Systems
         public override string Name => "Hybrid Render System";
         public override int SystemId => typeof(HybridRenderSystem).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
-        public override Type[] ReadSet { get; } = Array.Empty<Type>();
+        public override Type[] ReadSet { get; } = new[] { typeof(Position), typeof(ChunkOwner), typeof(RenderTag) };
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
         private ChunkManager? _chunkManager;
         private int _frameCounter = 0;
         private ChunkLocation _lastCameraChunk = new(int.MaxValue, int.MaxValue, int.MaxValue);
         private readonly HybridRenderSharedState _sharedState = HybridRenderSharedState.Instance;
+        private Debug.ChunkDebugOverlay? _chunkDebugOverlay;
+        private bool _lastOverlayState = false;
+        private bool _overlayNeedsRefresh = false;
         public override void OnInitialize(World world)
         {
             // ChunkManager will be accessed via static service locator pattern
@@ -90,6 +96,18 @@ namespace Client.ECS.Systems
         {
             _chunkManager = chunkManager;
             Logging.Log($"[{Name}] ChunkManager reference set");
+        }
+
+        /// <summary>
+        /// Set the ChunkDebugOverlay reference (called by bootstrapper after initialization).
+        /// </summary>
+        public void SetChunkDebugOverlay(Debug.ChunkDebugOverlay? overlay)
+        {
+            _chunkDebugOverlay = overlay;
+            if (_chunkDebugOverlay != null)
+            {
+                Logging.Log($"[{Name}] ChunkDebugOverlay connected");
+            }
         }
         public override void Update(World world, double delta)
         {
@@ -107,6 +125,21 @@ namespace Client.ECS.Systems
                 return;
             }
             _frameCounter++;
+
+            // Sync chunk debug overlay visibility with setting
+            if (_chunkDebugOverlay != null)
+            {
+                bool overlayEnabled = SystemSettings.EnableChunkDebugOverlay.Value;
+
+                // Detect state change - mark for refresh when enabling
+                if (overlayEnabled && !_lastOverlayState)
+                {
+                    _overlayNeedsRefresh = true;
+                }
+
+                _chunkDebugOverlay.OverlayEnabled = overlayEnabled;
+                _lastOverlayState = overlayEnabled;
+            }
 
             // Use camera cache (updated on main thread by WorldECS)
             if (!CameraCache.IsValid)
@@ -158,6 +191,19 @@ namespace Client.ECS.Systems
             if (SystemSettings.EnableDebugLogs.Value)
             {
                 Logging.Log($"[{Name}] Shutting down");
+            }
+        }
+
+        /// <summary>
+        /// Called on the main thread after system updates to handle overlay refresh.
+        /// Must be called from the main thread (e.g., WorldHostBase.AfterWorldTick).
+        /// </summary>
+        public void ProcessMainThreadOperations()
+        {
+            if (_overlayNeedsRefresh && _chunkDebugOverlay != null)
+            {
+                _chunkDebugOverlay.CallDeferred(Debug.ChunkDebugOverlay.MethodName.RefreshNow);
+                _overlayNeedsRefresh = false;
             }
         }
     }

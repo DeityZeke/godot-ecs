@@ -20,8 +20,8 @@ namespace Client.Debug
         [Export] public bool OverlayEnabled { get; set; } = true;
         [Export] public bool ShowWireframes { get; set; } = true;
         [Export] public bool ShowPlanes { get; set; } = true;
-        [Export(PropertyHint.Range, "0.05,5.0,0.05")] public float RefreshIntervalSeconds { get; set; } = 0.5f;
-        [Export] public bool AutoRefresh { get; set; } = true;
+        [Export(PropertyHint.Range, "0.05,5.0,0.05")] public float RefreshIntervalSeconds { get; set; } = 2.0f;
+        [Export] public bool AutoRefresh { get; set; } = false;
 
         [ExportCategory("Colors")]
         [Export] public Color WireColor { get; set; } = new Color(0.1f, 0.8f, 1.0f, 0.9f);

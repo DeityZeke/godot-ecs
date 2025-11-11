@@ -325,10 +325,14 @@ namespace UltraSim.ECS.Systems
 
         private void ComputeBatches()
         {
-            var batches = new List<List<BaseSystem>>();
-            var sysSpan = CollectionsMarshal.AsSpan(_systems);
+            // STEP 1: Topological sort systems based on RequireSystem dependencies
+            var sortedSystems = TopologicalSortSystems(_systems);
 
-            foreach (ref var sys in sysSpan)
+            // STEP 2: Batch systems for parallel execution (respecting sorted order)
+            var batches = new List<List<BaseSystem>>();
+            var sortedSpan = CollectionsMarshal.AsSpan(sortedSystems);
+
+            foreach (ref var sys in sortedSpan)
             {
                 if (sys.Rate == TickRate.Manual)
                     continue;
@@ -360,6 +364,89 @@ namespace UltraSim.ECS.Systems
                 Logging.Log($"[SystemManager]   Batch {i}: [{systemNames}]");
             }
 #endif
+        }
+
+        /// <summary>
+        /// Topologically sorts systems based on RequireSystem dependencies.
+        /// Systems that are required by others run first.
+        /// OPTIMIZATION: Early exit if no systems have RequireSystem attributes.
+        /// </summary>
+        private List<BaseSystem> TopologicalSortSystems(List<BaseSystem> systems)
+        {
+            // OPTIMIZATION: Check if ANY system has dependencies
+            bool hasDependencies = false;
+            foreach (var system in systems)
+            {
+                var requires = system.GetType().GetCustomAttributes(typeof(RequireSystemAttribute), inherit: true);
+                if (((object[])requires).Length > 0)
+                {
+                    hasDependencies = true;
+                    break;
+                }
+            }
+
+            // If no dependencies, return original list (no sorting needed)
+            if (!hasDependencies)
+                return systems;
+
+            var sorted = new List<BaseSystem>(systems.Count);
+            var visited = new HashSet<BaseSystem>();
+            var visiting = new HashSet<BaseSystem>();
+
+            // Build dependency map: system -> list of systems it depends on
+            var dependencies = new Dictionary<BaseSystem, List<BaseSystem>>(systems.Count);
+            foreach (var system in systems)
+            {
+                dependencies[system] = new List<BaseSystem>();
+
+                var requires = system.GetType().GetCustomAttributes(typeof(RequireSystemAttribute), inherit: true);
+                foreach (RequireSystemAttribute req in requires)
+                {
+                    var depType = Type.GetType(req.RequiredSystem);
+                    if (depType != null && _systemMap.TryGetValue(depType, out var depSystem))
+                    {
+                        dependencies[system].Add(depSystem);
+                    }
+                }
+            }
+
+            // Depth-first search for topological sort
+            foreach (var system in systems)
+            {
+                if (!visited.Contains(system))
+                    TopologicalSortVisit(system, dependencies, visited, visiting, sorted);
+            }
+
+            return sorted;
+        }
+
+        private void TopologicalSortVisit(
+            BaseSystem system,
+            Dictionary<BaseSystem, List<BaseSystem>> dependencies,
+            HashSet<BaseSystem> visited,
+            HashSet<BaseSystem> visiting,
+            List<BaseSystem> sorted)
+        {
+            if (visited.Contains(system))
+                return;
+
+            if (visiting.Contains(system))
+            {
+                Logging.Log($"[SystemManager] Circular dependency detected involving system: {system.Name}", LogSeverity.Error);
+                return;
+            }
+
+            visiting.Add(system);
+
+            // Visit all dependencies first (they must run before this system)
+            foreach (var dep in dependencies[system])
+            {
+                TopologicalSortVisit(dep, dependencies, visited, visiting, sorted);
+            }
+
+            visiting.Remove(system);
+            visited.Add(system);
+            sorted.Add(system); // Add to sorted list AFTER dependencies
         }
 
         private static bool ConflictsWithBatch(BaseSystem s, List<BaseSystem> batch)

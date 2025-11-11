@@ -73,6 +73,9 @@ namespace Client.ECS.Settings
 
         private void OnSettingChanged(object value)
         {
+            if (_updatingUI) return;
+            if (checkBox == null || !GodotObject.IsInstanceValid(checkBox)) return;
+
             _updatingUI = true;
             try
             {
