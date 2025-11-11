@@ -24,26 +24,28 @@ namespace Client.ECS.Systems
     /// 2. Calculates required render window (camera ± render distance)
     /// 3. Creates render chunk entities for all locations in window
     /// 4. Tags each chunk with zone components (NearZoneTag/MidZoneTag/FarZoneTag)
-    /// 5. Destroys chunks that exit the window (single-pass algorithm)
+    /// 5. Pools chunks that exit the window (single-pass algorithm)
     ///
     /// SINGLE-PASS ALGORITHM:
     /// - Query all existing RenderChunk entities
     /// - Calculate new window bounds
     /// - For existing chunks:
     ///   - Inside window → Update zone tags
-    ///   - Outside window → Destroy entity
-    /// - Create missing chunks (window - existing)
+    ///   - Outside window → Remove zone tags + pool entity
+    /// - Create missing chunks (window - existing) from pool or new
     ///
     /// ECS PATTERN: Uses tag components for zone assignment.
     /// - Near chunks: Have NearZoneTag → Query<NearZoneTag>() finds them
     /// - Mid chunks: Have MidZoneTag → Query<MidZoneTag>() finds them
     /// - Far chunks: Have FarZoneTag → Query<FarZoneTag>() finds them
+    /// - Pooled chunks: Have NO zone tag → Invisible to zone systems
     ///
     /// Benefits:
     /// - Zone systems query DIFFERENT archetypes (no read conflicts → parallelizable!)
     /// - Automatic filtering by ECS (no manual enum checks)
     /// - Complete render coverage (no gaps in frustum)
     /// - Predictable memory usage (fixed window size)
+    /// - Entity pooling prevents microstutters (no allocations on window slide)
     /// </summary>
     public sealed class RenderChunkManager : BaseSystem
     {
@@ -56,6 +58,7 @@ namespace Client.ECS.Systems
             public IntSetting FarRenderDistance { get; private set; }
             public BoolSetting EnableFarZone { get; private set; }
             public FloatSetting RecenterDelaySeconds { get; private set; }
+            public IntSetting PoolCapacity { get; private set; }
             public BoolSetting EnableDebugLogs { get; private set; }
 
             public Settings()
@@ -78,6 +81,10 @@ namespace Client.ECS.Systems
                 RecenterDelaySeconds = RegisterFloat("Recenter Delay", 0.5f,
                     min: 0.0f, max: 2.0f, step: 0.1f,
                     tooltip: "Delay before recentering window around new camera chunk (prevents thrashing)");
+
+                PoolCapacity = RegisterInt("Pool Capacity", 512,
+                    min: 64, max: 4096, step: 64,
+                    tooltip: "Maximum pooled render chunk entities (prevents allocation overhead)");
 
                 EnableDebugLogs = RegisterBool("Enable Debug Logs", false,
                     tooltip: "Log zone assignments and window updates");
@@ -107,12 +114,15 @@ namespace Client.ECS.Systems
         private enum ZoneType : byte { None, Near, Mid, Far }
         private readonly Dictionary<ChunkLocation, ZoneType> _previousZones = new();
 
+        // Entity pool: Reuse render chunk entities to prevent allocation overhead
+        private readonly Queue<Entity> _entityPool = new();
+
         private readonly CommandBuffer _buffer = new();
 
         public override void OnInitialize(World world)
         {
             Logging.Log($"[{Name}] Initialized - Near: {SystemSettings.NearBubbleSize.Value}x{SystemSettings.NearBubbleSize.Value}x{SystemSettings.NearBubbleSize.Value}, Mid: {SystemSettings.MidRenderDistance.Value} chunks");
-            Logging.Log($"[{Name}] Proactive render chunk creation enabled");
+            Logging.Log($"[{Name}] Proactive render chunk creation enabled with entity pooling (capacity: {SystemSettings.PoolCapacity.Value})");
         }
 
         public void SetChunkManager(ChunkManager chunkManager)
@@ -249,8 +259,8 @@ namespace Client.ECS.Systems
                 }
             }
 
-            // Process existing chunks: Update or Destroy
-            int destroyed = 0;
+            // Process existing chunks: Update or Pool
+            int pooled = 0;
             int updated = 0;
 
             foreach (var kvp in existingChunks)
@@ -272,44 +282,78 @@ namespace Client.ECS.Systems
                 }
                 else
                 {
-                    // Outside window - destroy
-                    _buffer.DestroyEntity(entity);
-                    destroyed++;
+                    // Outside window - remove zone tags and pool (if capacity allows)
+                    var previousZone = _previousZones.TryGetValue(location, out var prev) ? prev : ZoneType.None;
+                    RemoveAllZoneTags(_buffer, entity, previousZone);
+
+                    if (_entityPool.Count < SystemSettings.PoolCapacity.Value)
+                    {
+                        _entityPool.Enqueue(entity);
+                        pooled++;
+                    }
+                    else
+                    {
+                        // Pool full - destroy
+                        _buffer.DestroyEntity(entity);
+                    }
                 }
             }
 
-            // Create missing chunks
+            // Create missing chunks (from pool or new)
             int created = 0;
+            int reused = 0;
 
             foreach (var location in windowLocations)
             {
                 if (!existingChunks.ContainsKey(location))
                 {
-                    // Missing chunk - create it
                     var bounds = _chunkManager.ChunkToWorldBounds(location);
                     var zone = windowZones[location];
 
-                    _buffer.CreateEntity(builder =>
+                    // Try to reuse pooled entity first
+                    if (_entityPool.Count > 0)
                     {
-                        builder.Add(location);
-                        builder.Add(new RenderChunk(location, bounds, visible: false));
+                        var entity = _entityPool.Dequeue();
 
-                        // Add zone tag immediately
-                        switch (zone)
+                        // Update RenderChunk component with new location/bounds
+                        _buffer.RemoveComponent(entity.Index, renderChunkTypeId);
+                        _buffer.AddComponent(entity.Index, renderChunkTypeId, new RenderChunk(location, bounds, visible: false));
+
+                        // Update ChunkLocation component
+                        int chunkLocationTypeId = ComponentManager.GetTypeId<ChunkLocation>();
+                        _buffer.RemoveComponent(entity.Index, chunkLocationTypeId);
+                        _buffer.AddComponent(entity.Index, chunkLocationTypeId, location);
+
+                        // Add zone tag to activate
+                        AddZoneTag(_buffer, entity, zone);
+
+                        reused++;
+                    }
+                    else
+                    {
+                        // Pool empty - create new entity
+                        _buffer.CreateEntity(builder =>
                         {
-                            case ZoneType.Near:
-                                builder.Add(new NearZoneTag());
-                                break;
-                            case ZoneType.Mid:
-                                builder.Add(new MidZoneTag());
-                                break;
-                            case ZoneType.Far:
-                                builder.Add(new FarZoneTag());
-                                break;
-                        }
-                    });
+                            builder.Add(location);
+                            builder.Add(new RenderChunk(location, bounds, visible: false));
 
-                    created++;
+                            // Add zone tag immediately
+                            switch (zone)
+                            {
+                                case ZoneType.Near:
+                                    builder.Add(new NearZoneTag());
+                                    break;
+                                case ZoneType.Mid:
+                                    builder.Add(new MidZoneTag());
+                                    break;
+                                case ZoneType.Far:
+                                    builder.Add(new FarZoneTag());
+                                    break;
+                            }
+                        });
+
+                        created++;
+                    }
                 }
             }
 
@@ -327,14 +371,28 @@ namespace Client.ECS.Systems
                 int midCount = windowZones.Values.Count(z => z == ZoneType.Mid);
                 int farCount = windowZones.Values.Count(z => z == ZoneType.Far);
 
-                Logging.Log($"[{Name}] Window: Near={nearCount}, Mid={midCount}, Far={farCount}, Created={created}, Destroyed={destroyed}, Updated={updated}");
+                Logging.Log($"[{Name}] Window: Near={nearCount}, Mid={midCount}, Far={farCount}, Created={created}, Reused={reused}, Pooled={pooled}, Updated={updated}, PoolSize={_entityPool.Count}");
             }
         }
 
         private void UpdateZoneTags(CommandBuffer buffer, Entity chunkEntity, ChunkLocation location, ZoneType oldZone, ZoneType newZone)
         {
             // Remove old tag
-            switch (oldZone)
+            RemoveZoneTag(buffer, chunkEntity, oldZone);
+
+            // Add new tag
+            AddZoneTag(buffer, chunkEntity, newZone);
+        }
+
+        private void RemoveAllZoneTags(CommandBuffer buffer, Entity chunkEntity, ZoneType previousZone)
+        {
+            // Remove previous zone tag (if any) to make chunk invisible to zone systems
+            RemoveZoneTag(buffer, chunkEntity, previousZone);
+        }
+
+        private void RemoveZoneTag(CommandBuffer buffer, Entity chunkEntity, ZoneType zone)
+        {
+            switch (zone)
             {
                 case ZoneType.Near:
                     buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<NearZoneTag>());
@@ -346,9 +404,11 @@ namespace Client.ECS.Systems
                     buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<FarZoneTag>());
                     break;
             }
+        }
 
-            // Add new tag
-            switch (newZone)
+        private void AddZoneTag(CommandBuffer buffer, Entity chunkEntity, ZoneType zone)
+        {
+            switch (zone)
             {
                 case ZoneType.Near:
                     buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<NearZoneTag>(), new NearZoneTag());
@@ -365,6 +425,7 @@ namespace Client.ECS.Systems
         public override void OnShutdown(World world)
         {
             _previousZones.Clear();
+            _entityPool.Clear();
             _buffer.Dispose();
 
             if (SystemSettings.EnableDebugLogs.Value)
