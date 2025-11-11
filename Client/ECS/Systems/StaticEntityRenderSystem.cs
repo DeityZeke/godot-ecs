@@ -199,7 +199,8 @@ namespace Client.ECS.Systems
                 Metallic = 0.0f,
                 Roughness = 1.0f
             };
-            _sphereMesh.Material = _midMaterial;
+            // NOTE: Do NOT set .Material on mesh resources - procedural meshes haven't generated surfaces yet
+            // Material is applied via MultiMesh.Mesh after surfaces are generated
 
             _cubeMesh = new BoxMesh { Size = Vector3.One * SystemSettings.EntityRadius.Value * 2.0f };
             _staticMidMaterial = new StandardMaterial3D
@@ -208,7 +209,8 @@ namespace Client.ECS.Systems
                 Metallic = 0.0f,
                 Roughness = 0.9f
             };
-            _cubeMesh.Material = _staticMidMaterial;
+            // NOTE: Do NOT set .Material on mesh resources - procedural meshes haven't generated surfaces yet
+            // Material is applied via MultiMesh.Mesh after surfaces are generated
 
             Logging.Log($"[{Name}] Initialized - Initial capacity: {SystemSettings.InitialChunkCapacity.Value}/chunk");
         }

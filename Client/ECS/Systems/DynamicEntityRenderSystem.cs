@@ -124,6 +124,7 @@ namespace Client.ECS.Systems
 
         private EntityVisualBinding[] _entityBindings = Array.Empty<EntityVisualBinding>();
         private readonly DynamicBitSet _bindingMask = new();
+        private readonly object _bindingsLock = new(); // Thread-safety for array resize
 
         private sealed class ChunkPoolEntry
         {
@@ -175,10 +176,12 @@ namespace Client.ECS.Systems
                 Metallic = 0.0f,
                 Roughness = 0.7f
             };
-            _sphereMesh.Material = _nearMaterial;
+            // NOTE: Do NOT set .Material on mesh resources - procedural meshes haven't generated surfaces yet
+            // Material is applied via MaterialOverride on MeshInstance3D nodes (see CreateMeshInstance)
 
             _cubeMesh = new BoxMesh { Size = Vector3.One * SystemSettings.EntityRadius.Value * 2.0f };
-            _cubeMesh.Material = _nearMaterial;
+            // NOTE: Do NOT set .Material on mesh resources - procedural meshes haven't generated surfaces yet
+            // Material is applied via MaterialOverride on MeshInstance3D nodes (see CreateMeshInstance)
 
             Logging.Log($"[{Name}] Initialized - Max instances: {SystemSettings.MaxMeshInstances.Value}");
         }
@@ -425,7 +428,12 @@ namespace Client.ECS.Systems
         {
             Mesh? mesh = prototype == RenderPrototypeKind.Cube ? (_cubeMesh != null ? (Mesh)_cubeMesh : _sphereMesh) : _sphereMesh;
             if (mesh != null && visual.Mesh != mesh)
-                visual.Mesh = mesh;
+            {
+                // Use CallDeferred to avoid mesh_surface_set_material errors from parallel threads
+                // When MaterialOverride is set, Godot internally calls mesh_surface_set_material
+                // which must happen on the main thread
+                visual.CallDeferred(MeshInstance3D.PropertyName.Mesh, mesh);
+            }
         }
 
         private static void UpdateVisualPosition(MeshInstance3D visual, Position position)
@@ -480,14 +488,23 @@ namespace Client.ECS.Systems
 
         private void EnsureBindingCapacity(uint entityIndex)
         {
+            // Fast path: no lock needed if capacity is sufficient
             if (entityIndex < _entityBindings.Length)
                 return;
 
-            int newSize = _entityBindings.Length == 0 ? 1024 : _entityBindings.Length;
-            while (newSize <= entityIndex)
-                newSize *= 2;
+            // Slow path: lock to prevent race conditions during resize
+            lock (_bindingsLock)
+            {
+                // Double-check after acquiring lock (another thread may have resized)
+                if (entityIndex < _entityBindings.Length)
+                    return;
 
-            Array.Resize(ref _entityBindings, newSize);
+                int newSize = _entityBindings.Length == 0 ? 1024 : _entityBindings.Length;
+                while (newSize <= entityIndex)
+                    newSize *= 2;
+
+                Array.Resize(ref _entityBindings, newSize);
+            }
         }
 
         public override void OnShutdown(World world)

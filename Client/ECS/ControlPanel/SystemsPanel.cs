@@ -233,7 +233,6 @@ namespace Client.ECS.ControlPanel
         private Label? _statusLabel;
         private VBoxContainer? _settingsContainer;
         private Button? _applyButton;
-        private MeshInstanceBubbleManager? _bubbleManager;
 
         private Action<BaseSystem> _onSettingChanged;
         private Func<ISetting, ISettingUI?> _getSettingUI;
@@ -243,7 +242,6 @@ namespace Client.ECS.ControlPanel
         public SystemEntryUI(BaseSystem system, bool showTimings, Action<BaseSystem> onSettingChanged, Func<ISetting, ISettingUI?> getSettingUI)
         {
             _system = system;
-            _bubbleManager = system as MeshInstanceBubbleManager;
             _onSettingChanged = onSettingChanged;
             _getSettingUI = getSettingUI;
 
@@ -308,18 +306,6 @@ namespace Client.ECS.ControlPanel
             };
             _timingLabel.SetAnchorsPreset(LayoutPreset.FullRect);
             timingContainer.AddChild(_timingLabel);
-
-            if (_bubbleManager != null)
-            {
-                _statusLabel = new Label
-                {
-                    Text = "Bubble Entities: 0",
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    CustomMinimumSize = new Vector2(160, 0)
-                };
-                headerHBox.AddChild(_statusLabel);
-            }
 
             // Enabled checkbox (on far right)
             _enabledCheckBox = new CheckBox
@@ -512,10 +498,7 @@ namespace Client.ECS.ControlPanel
 
         public void UpdateStatus()
         {
-            if (_statusLabel != null && _bubbleManager != null)
-            {
-                _statusLabel.Text = $"Bubble Entities: {_bubbleManager.ActiveCoreEntities:N0}";
-            }
+
         }
 
         public void SetTimingVisible(bool visible)
