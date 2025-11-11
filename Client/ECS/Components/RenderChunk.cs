@@ -5,9 +5,17 @@ using UltraSim.ECS.Components;
 namespace Client.ECS.Components
 {
     /// <summary>
-    /// Render chunk component as described in UltraSim design doc.
-    /// Tracks location, zone assignment, bounds, and visibility state.
-    /// Updated by RenderChunkManager (zone tagging) and RenderVisibilitySystem (culling).
+    /// Base render chunk component shared by all rendering zones.
+    ///
+    /// Zone assignment is determined by which tag component is present:
+    /// - NearZoneTag: Full interactivity (MeshInstance3D + MultiMesh)
+    /// - MidZoneTag: Visual only (MultiMesh batching)
+    /// - FarZoneTag: Ultra low-res (billboards/impostors)
+    ///
+    /// This ECS pattern enables:
+    /// - Automatic archetype-based filtering (no manual enum checks)
+    /// - Parallel zone system execution (different archetypes = no conflicts)
+    /// - Cache-friendly iteration (archetype groups chunks by zone)
     /// </summary>
     public struct RenderChunk
     {
@@ -17,21 +25,17 @@ namespace Client.ECS.Components
         /// <summary>World-space bounds for frustum culling.</summary>
         public ChunkBounds Bounds;
 
-        /// <summary>Assigned render zone (Near/Mid/Far/Culled) based on distance from camera.</summary>
-        public ChunkZone Zone;
-
         /// <summary>Whether the chunk is currently visible (frustum culling result).</summary>
         public bool Visible;
 
-        public RenderChunk(ChunkLocation location, ChunkBounds bounds, ChunkZone zone, bool visible)
+        public RenderChunk(ChunkLocation location, ChunkBounds bounds, bool visible)
         {
             Location = location;
             Bounds = bounds;
-            Zone = zone;
             Visible = visible;
         }
 
         public override string ToString()
-            => $"RenderChunk[{Location}, Zone:{Zone}, Visible:{Visible}]";
+            => $"RenderChunk[{Location}, Visible:{Visible}]";
     }
 }

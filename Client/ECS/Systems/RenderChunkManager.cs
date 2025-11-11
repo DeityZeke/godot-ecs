@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.Chunk;
@@ -16,13 +17,24 @@ namespace Client.ECS.Systems
     /// RenderChunkManager - SINGLE RESPONSIBILITY: Window sliding + zone tagging.
     ///
     /// Design doc quote: "RenderChunkManager: Maintains active window, spawns/despawns pooled chunks,
-    /// and assigns Near/Mid/Far zones. Combines previous Zone + Window logic."
+    /// and assigns Near/Mid/Far zones."
     ///
     /// This system:
     /// 1. Determines player chunk location
     /// 2. Builds window of active chunks around player
-    /// 3. Tags each chunk with ChunkZone (Near/Mid/Far) based on distance
-    /// 4. Updates only when player crosses chunk boundary or every 2s
+    /// 3. Tags each chunk with zone tag components (NearZoneTag/MidZoneTag/FarZoneTag)
+    /// 4. Adds/removes tags to move chunks between archetypes
+    /// 5. Updates only when player crosses chunk boundary or every 2s
+    ///
+    /// ECS PATTERN: Uses tag components instead of enums for zone assignment.
+    /// - Near chunks: Have NearZoneTag component → Query<NearZoneTag>() finds them
+    /// - Mid chunks: Have MidZoneTag component → Query<MidZoneTag>() finds them
+    /// - Far chunks: Have FarZoneTag component → Query<FarZoneTag>() finds them
+    ///
+    /// Benefits:
+    /// - Zone systems query DIFFERENT archetypes (no read conflicts → parallelizable!)
+    /// - Automatic filtering by ECS (no manual enum checks)
+    /// - Cache-friendly (archetype groups chunks by zone)
     ///
     /// DOES NOT:
     /// - Build visuals (that's zone systems' job)
@@ -77,19 +89,24 @@ namespace Client.ECS.Systems
         public override int SystemId => typeof(RenderChunkManager).GetHashCode();
         public override TickRate Rate => TickRate.EveryFrame;
 
-        // Read-only: We read chunk locations and camera position
-        public override Type[] ReadSet { get; } = new[] { typeof(ChunkLocation), typeof(ChunkBounds) };
-        // Write: We update RenderChunk components
-        public override Type[] WriteSet { get; } = new[] { typeof(RenderChunk) };
+        // Read: Chunk locations for zone calculation
+        public override Type[] ReadSet { get; } = new[] { typeof(ChunkLocation), typeof(ChunkBounds), typeof(RenderChunk) };
+        // Write: Zone tags (add/remove components)
+        public override Type[] WriteSet { get; } = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
 
         private ChunkManager? _chunkManager;
         private ChunkLocation _lastPlayerChunk = new(int.MaxValue, int.MaxValue, int.MaxValue);
         private double _timeSinceLastUpdate = 0;
         private int _frameCounter = 0;
 
+        // Track previous zone assignments to know which tags to remove
+        private enum ZoneType : byte { None, Near, Mid, Far }
+        private readonly Dictionary<ChunkLocation, ZoneType> _previousZones = new();
+
         public override void OnInitialize(World world)
         {
             Logging.Log($"[{Name}] Initialized - Near: {SystemSettings.NearBubbleSize.Value}x{SystemSettings.NearBubbleSize.Value}x{SystemSettings.NearBubbleSize.Value}, Mid: {SystemSettings.MidRenderDistance.Value} chunks");
+            Logging.Log($"[{Name}] Using tag component pattern for archetype-based zone filtering");
         }
 
         public void SetChunkManager(ChunkManager chunkManager)
@@ -146,15 +163,16 @@ namespace Client.ECS.Systems
                 }
             }
 
-            // Rebuild window and assign zones
+            // Rebuild window and assign zones (via tag components)
             UpdateChunkWindowAndZones(world, playerChunk);
 
             _timeSinceLastUpdate = 0;
         }
 
         /// <summary>
-        /// Core logic: Build window of active chunks and tag each with Near/Mid/Far zone.
-        /// This is the ONLY place where ChunkZone is assigned.
+        /// Core logic: Build window of active chunks and tag each with appropriate zone tag component.
+        /// This is the ONLY place where zone tags are added/removed.
+        /// Chunks move between archetypes as tags are added/removed.
         /// </summary>
         private void UpdateChunkWindowAndZones(World world, ChunkLocation playerChunk)
         {
@@ -170,10 +188,12 @@ namespace Client.ECS.Systems
             // Determine Y range (for now, match near radius - can be configured separately)
             int yRadius = nearRadius;
 
-            int chunksTagged = 0;
             int nearCount = 0;
             int midCount = 0;
             int farCount = 0;
+            int updated = 0;
+
+            var currentZones = new Dictionary<ChunkLocation, ZoneType>();
 
             // Iterate over all chunks in the Far radius (largest window)
             for (int dz = -farRadius; dz <= farRadius; dz++)
@@ -190,71 +210,134 @@ namespace Client.ECS.Systems
                         // Get or ensure chunk exists
                         var chunkEntity = _chunkManager.GetChunk(chunkLoc);
                         if (chunkEntity == Entity.Invalid)
-                        {
-                            // Chunk doesn't exist yet - skip (ChunkSystem will create it)
                             continue;
-                        }
 
                         // Calculate XZ distance from player chunk (Y doesn't affect zone)
                         float distXZ = MathF.Sqrt(dx * dx + dz * dz);
 
-                        // Assign zone based on distance
-                        ChunkZone zone;
+                        // Determine desired zone based on distance
+                        ZoneType desiredZone;
                         if (distXZ <= nearRadius)
                         {
-                            zone = ChunkZone.Near;
+                            desiredZone = ZoneType.Near;
                             nearCount++;
                         }
                         else if (distXZ <= midRadius)
                         {
-                            zone = ChunkZone.Mid;
+                            desiredZone = ZoneType.Mid;
                             midCount++;
                         }
                         else if (distXZ <= farRadius)
                         {
-                            zone = ChunkZone.Far;
+                            desiredZone = ZoneType.Far;
                             farCount++;
                         }
                         else
                         {
-                            zone = ChunkZone.Culled;
+                            desiredZone = ZoneType.None; // Culled
                         }
 
-                        // Get chunk bounds
-                        var bounds = _chunkManager.ChunkToWorldBounds(chunkLoc);
+                        currentZones[chunkLoc] = desiredZone;
 
-                        // Create or update RenderChunk component
-                        if (world.TryGetEntityLocation(chunkEntity, out var archetype, out var slot))
+                        // Check if zone changed
+                        ZoneType previousZone = _previousZones.TryGetValue(chunkLoc, out var prev) ? prev : ZoneType.None;
+
+                        if (previousZone != desiredZone)
                         {
-                            var renderChunkTypeId = ComponentManager.GetTypeId<RenderChunk>();
-
-                            var renderChunk = new RenderChunk(chunkLoc, bounds, zone, visible: true);
-
-                            if (archetype.HasComponent(renderChunkTypeId))
-                            {
-                                // Update existing
-                                archetype.SetComponentValue(renderChunkTypeId, slot, renderChunk);
-                            }
-                            else
-                            {
-                                // Add new (shouldn't happen often)
-                                world.EnqueueComponentAdd(chunkEntity, renderChunk);
-                            }
-
-                            chunksTagged++;
+                            // Zone changed - update tags
+                            UpdateZoneTags(world, chunkEntity, chunkLoc, previousZone, desiredZone);
+                            updated++;
                         }
+
+                        // Ensure RenderChunk component exists with correct bounds
+                        EnsureRenderChunkComponent(world, chunkEntity, chunkLoc);
                     }
                 }
             }
 
+            // Remove tags from chunks that left the window
+            foreach (var kvp in _previousZones)
+            {
+                if (!currentZones.ContainsKey(kvp.Key))
+                {
+                    var chunkEntity = _chunkManager.GetChunk(kvp.Key);
+                    if (chunkEntity != Entity.Invalid)
+                    {
+                        RemoveAllZoneTags(world, chunkEntity, kvp.Value);
+                        updated++;
+                    }
+                }
+            }
+
+            // Update tracking
+            _previousZones.Clear();
+            foreach (var kvp in currentZones)
+                _previousZones[kvp.Key] = kvp.Value;
+
             if (SystemSettings.EnableDebugLogs.Value)
             {
-                Logging.Log($"[{Name}] Tagged {chunksTagged} chunks: Near={nearCount}, Mid={midCount}, Far={farCount}");
+                Logging.Log($"[{Name}] Tagged chunks: Near={nearCount}, Mid={midCount}, Far={farCount}, Updated={updated}");
+            }
+        }
+
+        private void UpdateZoneTags(World world, Entity chunkEntity, ChunkLocation location, ZoneType oldZone, ZoneType newZone)
+        {
+            // Remove old tag
+            RemoveAllZoneTags(world, chunkEntity, oldZone);
+
+            // Add new tag
+            switch (newZone)
+            {
+                case ZoneType.Near:
+                    world.EnqueueComponentAdd(chunkEntity, new NearZoneTag());
+                    break;
+                case ZoneType.Mid:
+                    world.EnqueueComponentAdd(chunkEntity, new MidZoneTag());
+                    break;
+                case ZoneType.Far:
+                    world.EnqueueComponentAdd(chunkEntity, new FarZoneTag());
+                    break;
+                case ZoneType.None:
+                    // No tag = culled
+                    break;
+            }
+        }
+
+        private void RemoveAllZoneTags(World world, Entity chunkEntity, ZoneType oldZone)
+        {
+            switch (oldZone)
+            {
+                case ZoneType.Near:
+                    world.EnqueueComponentRemove<NearZoneTag>(chunkEntity);
+                    break;
+                case ZoneType.Mid:
+                    world.EnqueueComponentRemove<MidZoneTag>(chunkEntity);
+                    break;
+                case ZoneType.Far:
+                    world.EnqueueComponentRemove<FarZoneTag>(chunkEntity);
+                    break;
+            }
+        }
+
+        private void EnsureRenderChunkComponent(World world, Entity chunkEntity, ChunkLocation chunkLoc)
+        {
+            if (!world.TryGetEntityLocation(chunkEntity, out var archetype, out var slot))
+                return;
+
+            var renderChunkTypeId = ComponentManager.GetTypeId<RenderChunk>();
+            var bounds = _chunkManager!.ChunkToWorldBounds(chunkLoc);
+
+            if (!archetype.HasComponent(renderChunkTypeId))
+            {
+                var renderChunk = new RenderChunk(chunkLoc, bounds, visible: true);
+                world.EnqueueComponentAdd(chunkEntity, renderChunk);
             }
         }
 
         public override void OnShutdown(World world)
         {
+            _previousZones.Clear();
+
             if (SystemSettings.EnableDebugLogs.Value)
             {
                 Logging.Log($"[{Name}] Shutting down");
