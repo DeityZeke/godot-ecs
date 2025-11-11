@@ -147,6 +147,7 @@ namespace UltraSim.Server.ECS.Systems
         private static readonly int ChunkBoundsTypeId = ComponentManager.GetTypeId<ChunkBounds>();
         private static readonly int ChunkStateTypeId = ComponentManager.GetTypeId<ChunkState>();
         private static readonly int ChunkHashTypeId = ComponentManager.GetTypeId<ChunkHash>();
+        private static readonly int UnregisteredChunkTagTypeId = ComponentManager.GetTypeId<UnregisteredChunkTag>();
 
         public override void OnInitialize(World world)
         {
@@ -325,7 +326,7 @@ namespace UltraSim.Server.ECS.Systems
 
                     // Remove UnregisteredChunkTag - chunk is now registered!
                     // Using CommandBuffer to defer component removal (safe during Update)
-                    _buffer.RemoveComponent<UnregisteredChunkTag>(entity);
+                    _buffer.RemoveComponent(entity.Index, UnregisteredChunkTagTypeId);
 
                     _chunksRegisteredThisFrame++;
                     _chunkManager.TouchChunk(entity);
