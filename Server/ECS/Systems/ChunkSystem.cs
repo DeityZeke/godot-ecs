@@ -238,6 +238,10 @@ namespace UltraSim.Server.ECS.Systems
             {
                 var entity = entitySpan[i];
 
+                // SAFETY: Skip entities that were destroyed before deferred processing
+                if (!_world!.IsEntityValid(entity))
+                    continue;
+
                 if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
 
@@ -268,6 +272,10 @@ namespace UltraSim.Server.ECS.Systems
             for (int i = 0; i < entitySpan.Length; i++)
             {
                 var entity = entitySpan[i];
+
+                // SAFETY: Skip entities that were destroyed during movement processing
+                if (!_world!.IsEntityValid(entity))
+                    continue;
 
                 if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
@@ -543,6 +551,12 @@ namespace UltraSim.Server.ECS.Systems
                 for (int i = 0; i < entities.Length; i++)
                 {
                     var entity = entities[i];
+
+                    // SAFETY: Verify entity is still valid before processing
+                    // (Could have been destroyed/pooled during deferred processing)
+                    if (!_world.IsEntityValid(entity))
+                        continue;
+
                     var location = locations[i];
                     if (!states.IsEmpty)
                     {
@@ -721,6 +735,10 @@ namespace UltraSim.Server.ECS.Systems
             if (request.Entity == Entity.Invalid || request.Entity.Index == 0)
                 return true;
 
+            // SAFETY: Check entity validity before processing
+            if (!world.IsEntityValid(request.Entity))
+                return true;
+
             var chunkEntity = cache.GetChunk(_chunkManager, request.Location);
             if (chunkEntity == Entity.Invalid)
                 return false;
@@ -897,6 +915,10 @@ namespace UltraSim.Server.ECS.Systems
 
             // Skip invalid entities (can happen during mass spawning/destruction)
             if (request.Entity == Entity.Invalid || request.Entity.Index == 0)
+                return;
+
+            // SAFETY: Check entity validity before processing
+            if (!world.IsEntityValid(request.Entity))
                 return;
 
             var chunkEntity = GetOrCreateChunk(world, request.Location);
