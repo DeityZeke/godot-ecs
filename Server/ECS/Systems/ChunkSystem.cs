@@ -717,6 +717,10 @@ namespace UltraSim.Server.ECS.Systems
             if (_chunkManager == null)
                 return false;
 
+            // Skip invalid entities (can happen during mass spawning/destruction)
+            if (request.Entity == Entity.Invalid || request.Entity.Index == 0)
+                return true;
+
             var chunkEntity = cache.GetChunk(_chunkManager, request.Location);
             if (chunkEntity == Entity.Invalid)
                 return false;
@@ -889,6 +893,10 @@ namespace UltraSim.Server.ECS.Systems
         private void ProcessAssignment(World world, ChunkAssignmentRequest request)
         {
             if (_chunkManager == null)
+                return;
+
+            // Skip invalid entities (can happen during mass spawning/destruction)
+            if (request.Entity == Entity.Invalid || request.Entity.Index == 0)
                 return;
 
             var chunkEntity = GetOrCreateChunk(world, request.Location);

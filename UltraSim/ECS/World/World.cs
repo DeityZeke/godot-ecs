@@ -188,7 +188,7 @@ namespace UltraSim.ECS
             var tempEntity = new Entity(entityIndex, 1); // Use version 1 as placeholder since we only need index
             if (!_entities.TryGetLocation(tempEntity, out var sourceArch, out var sourceSlot))
             {
-                Logging.Log($"[World] Tried to add component to invalid entity {entityIndex}", LogSeverity.Error);
+                // Entity was destroyed before deferred component addition was processed (valid race condition)
                 return;
             }
 
@@ -209,7 +209,7 @@ namespace UltraSim.ECS
             var tempEntity = new Entity(entityIndex, 1); // Use version 1 as placeholder
             if (!_entities.TryGetLocation(tempEntity, out var oldArch, out var slot))
             {
-                Logging.Log($"[World] Tried to remove component from invalid entity {entityIndex}", LogSeverity.Error);
+                // Entity was destroyed before deferred component removal was processed (valid race condition)
                 return;
             }
 

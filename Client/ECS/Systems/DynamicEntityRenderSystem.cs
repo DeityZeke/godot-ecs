@@ -429,10 +429,9 @@ namespace Client.ECS.Systems
             Mesh? mesh = prototype == RenderPrototypeKind.Cube ? (_cubeMesh != null ? (Mesh)_cubeMesh : _sphereMesh) : _sphereMesh;
             if (mesh != null && visual.Mesh != mesh)
             {
-                // Use CallDeferred to avoid mesh_surface_set_material errors from parallel threads
-                // When MaterialOverride is set, Godot internally calls mesh_surface_set_material
-                // which must happen on the main thread
-                visual.CallDeferred(MeshInstance3D.PropertyName.Mesh, mesh);
+                // Direct assignment is safe since this is called from Update() which runs on main thread
+                // The mesh_surface_set_material error only occurred when called from parallel threads
+                visual.Mesh = mesh;
             }
         }
 
