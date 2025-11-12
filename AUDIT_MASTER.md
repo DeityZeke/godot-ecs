@@ -3,211 +3,395 @@
 **Date Started**: 2025-11-12
 **Purpose**: Comprehensive trace of all ECS systems to understand architecture, find dead code, identify optimization opportunities, and plan potential rebuild.
 
-**Audit Status**: 🔴 IN PROGRESS
+**Audit Status**: 🟡 IN PROGRESS (5/10 complete)
+
+---
+
+## Executive Summary
+
+**Audits Completed**: 5/10 (50%)
+**Total Issues Found**: 24
+- 🔴 Critical: 7
+- 🟠 High: 4
+- 🟡 Medium: 6
+- 🟢 Low: 7
+
+**Key Findings**:
+- ✅ **Excellent Architecture** across all systems (especially Archetype & Chunk)
+- ❌ **2-3 Critical Bugs** per system (mostly implementation issues, not design)
+- ⚠️ **Dead Code**: 25% in Entity System, 0% in others
+- 💡 **Performance Opportunities**: Parallel entity creation, cache fixes, boxing elimination
+
+**Preliminary Recommendation**: **MODIFY, NOT REBUILD**
+- Architecture is solid (8-9/10 across the board)
+- Issues are surgical fixes (not systemic)
+- Total fix time: ~3-5 days for all critical bugs
+- Rebuild time: ~2-3 months
 
 ---
 
 ## Audit Scope
 
-### ✅ Completed
-- [ ] Entity System (Creation/Destruction)
-- [ ] Component System (Add/Remove/Storage)
-- [ [ Archetype System (Creation/Transitions/Caching)
-- [ ] Spatial Chunk System (Creation/Pooling/Assignment)
-- [ ] System Manager (Execution/Batching/Parallelism)
-- [ ] CommandBuffer (Queuing/Application/Threading)
-- [ ] World Tick Pipeline (Phase ordering/Timing)
-- [ ] Query System (Archetype queries/Filtering)
-- [ ] Serialization (Save/Load/IOProfile)
-- [ ] Event System (Firing/Subscription)
+### ✅ Completed (5/10)
+- ✅ **AUDIT 1**: Entity System (Creation/Destruction) - **Score: 7/10**
+- ✅ **AUDIT 2**: Component System (Add/Remove/Storage) - **Score: 6/10**
+- ✅ **AUDIT 3**: Archetype System (Creation/Transitions/Caching) - **Score: 8/10**
+- ✅ **AUDIT 4**: Spatial Chunk System (Creation/Pooling/Assignment) - **Score: 5/10**
+- ✅ **AUDIT 5**: System Manager (Execution/Batching/Parallelism) - **Score: 7/10**
 
-### 🔍 Findings Summary (Updated as audit progresses)
+### 🔄 In Progress (0/10)
+- None currently
 
-**Dead Code Discovered:**
-- EntityManager.EnqueueCreate() - Never used
-- EntityManager.ProcessQueues() - Processes empty queue
-- World.EnqueueCreateEntity() - Never called
-- TBD - More to discover
-
-**Architecture Issues:**
-- Component removals deferred to next frame, entities can be pooled/reused same frame
-- No parallelism in entity creation despite CommandBuffer infrastructure
-- CommandBuffer stores only entity.Index, not version (causes stale reference bugs)
-- TBD - More to discover
-
-**Performance Opportunities:**
-- Parallel entity creation (potential 3-7x speedup)
-- Bulk entity index allocation
-- Parallel CommandBuffer application
-- TBD - More to discover
+### ⚪ Not Started (5/10)
+- ⚪ **AUDIT 6**: CommandBuffer (Queuing/Application/Threading)
+- ⚪ **AUDIT 7**: World Tick Pipeline (Phase ordering/Timing)
+- ⚪ **AUDIT 8**: Query System (Archetype queries/Filtering)
+- ⚪ **AUDIT 9**: Serialization (Save/Load/IOProfile) - *Optional*
+- ⚪ **AUDIT 10**: Event System (Firing/Subscription) - *Optional*
 
 ---
 
-## Detailed Audits
+## Issues Tracker (Running List)
 
-Each section below contains:
-1. **API Surface** - All public methods/properties
-2. **Actual Usage** - Where it's actually called from
-3. **Data Flow** - How data moves through the system
-4. **Threading Model** - What's thread-safe, what's not
-5. **Performance Characteristics** - Hot paths, bottlenecks
-6. **Issues Found** - Dead code, bugs, optimization opportunities
+### 🔴 CRITICAL (7 issues)
 
----
+| # | System | Location | Description | Impact |
+|---|--------|----------|-------------|--------|
+| **#1** | Component | World.cs:209 | Version validation uses Entity(index, 1) placeholder | Operates on recycled entities |
+| **#2** | Component | World.cs | No immediate RemoveComponent() API exists | Non-compiling code in ChunkSystem |
+| **#7** | Chunk | ChunkSystem.cs:857 | Calls non-existent world.RemoveComponent<T>() | Won't compile when pooling enabled |
+| **#8** | Chunk | ChunkSystem.cs | Deferred removal + pooling race condition | "Invalid entity" errors |
+| **#18** | System Mgr | TickScheduling.cs:210 | Cache validation only checks count, not identity | Race conditions, wrong batches |
+| **#21** | System Mgr | ParallelScheduler.cs:59 | Sequential Task.Wait() instead of parallel | Performance degradation |
+| **#24** | System Mgr | SystemManager.cs:89 | Circular dependency causes stack overflow | Crash on registration |
 
-## [AUDIT 1] Entity System
+### 🟠 HIGH (4 issues)
 
-**Status**: 🔴 IN PROGRESS
-**Files**:
-- `UltraSim/ECS/Entities/Entity.cs`
-- `UltraSim/ECS/Entities/EntityManager.cs`
+| # | System | Location | Description | Impact |
+|---|--------|----------|-------------|--------|
+| **#3** | Component | ComponentSignature.cs | Fixed 256-byte allocation regardless of size | 32x memory waste |
+| **#9** | Chunk | ChunkSystem.cs | Non-compiling latent bug (pooling disabled) | Compilation failure |
+| **#10** | Chunk | ChunkSystem.cs | 48 settings (too many, overwhelming) | Poor UX |
+| **#19** | System Mgr | TickScheduling.cs:221 | Unbounded cache growth | Memory leak |
 
-See: [AUDIT_01_ENTITY_SYSTEM.md](AUDIT_01_ENTITY_SYSTEM.md)
+### 🟡 MEDIUM (6 issues)
 
----
+| # | System | Location | Description | Impact |
+|---|--------|----------|-------------|--------|
+| **#11** | Chunk | ChunkSystem.cs:400 | Potential race: parallel read/write to locations | Data corruption |
+| **#12** | Chunk | ChunkSystem.cs:900 | Inconsistent pooling (chunks vs visuals) | Complexity |
+| **#13** | Chunk | ChunkSystem.cs | ChunkOwner vs UnregisteredChunkTag duplication | Confusing |
+| **#14** | Chunk | ChunkSystem.cs | Complex event-driven architecture | Hard to debug |
+| **#16** | Archetype | ArchetypeManager.cs | 45 lines commented-out code | Code bloat |
+| **#20** | System Mgr | TickScheduling.cs:389 | Unnecessary allocation in cache rebuild | Minor perf hit |
 
-## [AUDIT 2] Component System
+### 🟢 LOW (7 issues)
 
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/Components/ComponentManager.cs`
-- `UltraSim/ECS/Components/ComponentSignature.cs`
-
-See: [AUDIT_02_COMPONENT_SYSTEM.md](AUDIT_02_COMPONENT_SYSTEM.md)
-
----
-
-## [AUDIT 3] Archetype System
-
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/Archetype.cs`
-- `UltraSim/ECS/ArchetypeManager.cs`
-
-See: [AUDIT_03_ARCHETYPE_SYSTEM.md](AUDIT_03_ARCHETYPE_SYSTEM.md)
-
----
-
-## [AUDIT 4] Spatial Chunk System
-
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/Chunk/ChunkManager.cs`
-- `Server/ECS/Systems/ChunkSystem.cs`
-
-See: [AUDIT_04_CHUNK_SYSTEM.md](AUDIT_04_CHUNK_SYSTEM.md)
+| # | System | Location | Description | Impact |
+|---|--------|----------|-------------|--------|
+| **#4** | Archetype | Archetype.cs:169 | Dead code: Signature.Add() discards result | Confusing |
+| **#5** | Archetype | Archetype.cs:143 | Global World.Current breaks multi-world | Hidden dependency |
+| **#6** | Archetype | Archetype.cs:112 | Boxing overhead in archetype transitions | GC pressure |
+| **#15** | Archetype | Archetype.cs:61 | TryGetIndex() declared but never used | Dead code |
+| **#17** | Chunk | ChunkSystem.cs | CollectStaleChunks() pagination not needed | Over-engineering |
+| **#22** | System Mgr | ParallelScheduler.cs:21 | Confusing ThreadStatic usage | Code clarity |
+| **#23** | System Mgr | SystemManager.cs:231 | Inconsistent retry logic | Minor |
 
 ---
 
-## [AUDIT 5] System Manager
+## System-by-System Breakdown
 
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/Systems/SystemManager.cs`
-- `UltraSim/ECS/Systems/BaseSystem.cs`
+### AUDIT 1: Entity System - 7/10 ⭐⭐⭐⭐⭐⭐⭐☆☆☆
 
-See: [AUDIT_05_SYSTEM_MANAGER.md](AUDIT_05_SYSTEM_MANAGER.md)
+**Files**: Entity.cs (59 lines), EntityManager.cs (315 lines)
+**Status**: ✅ Complete
+**Dead Code**: 25% (80 lines of EntityManager.cs)
+**Issues**: 0 critical, 0 high, 0 medium, 0 low
 
----
+**Key Findings**:
+- ✅ Good core design (packed ulong for entity versioning)
+- ❌ **25% dead code**: EnqueueCreate(), EnqueueDestroy(), ProcessQueues() (processes empty queues)
+- ⚠️ No parallelism in entity creation (missed optimization)
+- ⚠️ Double version increment reduces max recyclings by 50%
 
-## [AUDIT 6] CommandBuffer
+**Recommendation**: MODIFY (2-3 days to remove dead code, add parallelism)
 
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/CommandBuffer.cs`
-- `UltraSim/ECS/EntityBuilder.cs`
-
-See: [AUDIT_06_COMMAND_BUFFER.md](AUDIT_06_COMMAND_BUFFER.md)
-
----
-
-## [AUDIT 7] World Tick Pipeline
-
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/World/World.cs`
-- `UltraSim/ECS/World/World.Tick.cs` (if exists)
-
-See: [AUDIT_07_WORLD_PIPELINE.md](AUDIT_07_WORLD_PIPELINE.md)
+**See**: [AUDIT_01_ENTITY_SYSTEM.md](AUDIT_01_ENTITY_SYSTEM.md)
 
 ---
 
-## [AUDIT 8] Query System
+### AUDIT 2: Component System - 6/10 ⭐⭐⭐⭐⭐⭐☆☆☆☆
 
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/World/World.cs` (query methods)
-- `UltraSim/ECS/ArchetypeManager.cs` (query impl)
+**Files**: ComponentManager.cs (257 lines), ComponentSignature.cs (122 lines), World.cs
+**Status**: ✅ Complete
+**Dead Code**: 0%
+**Issues**: 2 critical, 1 high, 0 medium, 0 low
 
-See: [AUDIT_08_QUERY_SYSTEM.md](AUDIT_08_QUERY_SYSTEM.md)
+**Key Findings**:
+- ✅ Zero dead code (unlike Entity System)
+- ❌ **CRITICAL BUG #1**: Version validation uses Entity(index, 1) placeholder (can operate on recycled entities)
+- ❌ **CRITICAL BUG #2**: No immediate RemoveComponent() API (only deferred)
+- ⚠️ **HIGH**: Fixed 256-byte signatures waste memory (32x for small archetypes)
+- ⚠️ ROOT CAUSE of chunk pooling bug
 
----
+**Recommendation**: Fix critical bugs, then optimize signatures
 
-## [AUDIT 9] Serialization System
-
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/IO/*.cs`
-- `UltraSim/ECS/World/World.Save.cs`
-
-See: [AUDIT_09_SERIALIZATION.md](AUDIT_09_SERIALIZATION.md)
+**See**: [AUDIT_02_COMPONENT_SYSTEM.md](AUDIT_02_COMPONENT_SYSTEM.md)
 
 ---
 
-## [AUDIT 10] Event System
+### AUDIT 3: Archetype System - 8/10 ⭐⭐⭐⭐⭐⭐⭐⭐☆☆
 
-**Status**: ⚪ NOT STARTED
-**Files**:
-- `UltraSim/ECS/Events/WorldEvents.cs`
-- Event usage across systems
+**Files**: Archetype.cs (232 lines), ArchetypeManager.cs (302 lines)
+**Status**: ✅ Complete
+**Dead Code**: 2% (45 lines commented-out)
+**Issues**: 0 critical, 0 high, 1 medium, 3 low
 
-See: [AUDIT_10_EVENT_SYSTEM.md](AUDIT_10_EVENT_SYSTEM.md)
+**Key Findings**:
+- ✅ **BEST CORE DESIGN**: Clean SoA for cache-friendly iteration
+- ✅ Excellent archetype caching and batching
+- ⚠️ Signature.Add() dead code (line 169, discards result)
+- ⚠️ World.Current global state breaks multi-world scenarios
+- ⚠️ Boxing overhead during all transitions (GC pressure)
+- ⚠️ 45 lines commented-out old implementation
+
+**Recommendation**: MODIFY (2-4 days to optimize boxing, remove dead code)
+
+**See**: [AUDIT_03_ARCHETYPE_SYSTEM.md](AUDIT_03_ARCHETYPE_SYSTEM.md)
 
 ---
 
-## Rebuild Plan (Generated After Audit)
+### AUDIT 4: Chunk System - 5/10 ⭐⭐⭐⭐⭐☆☆☆☆☆
 
-See: [REBUILD_PLAN.md](REBUILD_PLAN.md) (will be created after audit completes)
+**Files**: ChunkManager.cs (353 lines), ChunkSystem.cs (1100+ lines)
+**Status**: ✅ Complete
+**Dead Code**: 0%
+**Issues**: 2 critical, 2 high, 4 medium, 1 low
 
-This will contain:
-- Architecture design for ECS v2
-- Step-by-step implementation plan
-- Benchmarking strategy
-- Migration plan
-- Estimated timeline
+**Key Findings**:
+- ✅ **EXCELLENT ARCHITECTURE**: Best separation of concerns (ChunkManager vs ChunkSystem)
+- ✅ Smart movement filtering (only processes boundary crossers)
+- ❌ **CRITICAL BUG #7**: Calls non-existent world.RemoveComponent<T>() (line 857)
+- ❌ **CRITICAL BUG #8**: Deferred removal + pooling race condition
+- ⚠️ Non-compiling code (latent because pooling disabled by default)
+- ⚠️ 48 settings (overwhelming)
+- ⚠️ Complex event-driven architecture (hard to debug)
+
+**Recommendation**: Fix bugs only (3-5 days) - don't rebuild, architecture is excellent
+
+**See**: [AUDIT_04_CHUNK_SYSTEM.md](AUDIT_04_CHUNK_SYSTEM.md)
+
+---
+
+### AUDIT 5: System Manager - 7/10 ⭐⭐⭐⭐⭐⭐⭐☆☆☆
+
+**Files**: SystemManager.cs (525 lines), BaseSystem.cs (277 lines), ParallelSystemScheduler.cs (69 lines), TickScheduling.cs (397 lines), TickRate.cs (151 lines), Debug.cs (228 lines)
+**Status**: ✅ Complete
+**Dead Code**: 0%
+**Issues**: 3 critical, 1 high, 2 medium, 3 low
+
+**Key Findings**:
+- ✅ **EXCELLENT ARCHITECTURE**: Tick scheduling, batching, dependency resolution
+- ✅ Zero-overhead statistics tracking (EMA-based, conditionally compiled)
+- ✅ Proper topological sort with circular dependency detection
+- ❌ **CRITICAL BUG #18**: Cache validation only checks count (race conditions)
+- ❌ **CRITICAL BUG #24**: Circular dependencies during registration cause stack overflow
+- ❌ **CRITICAL BUG #21**: Sequential Task.Wait() prevents true parallelism
+- ⚠️ Unbounded cache growth (memory leak)
+
+**Recommendation**: MODIFY (1 day to fix critical bugs) - architecture is best in codebase
+
+**See**: [AUDIT_05_SYSTEM_MANAGER.md](AUDIT_05_SYSTEM_MANAGER.md)
+
+---
+
+## Dead Code Summary
+
+| System | Total Lines | Dead Code Lines | Dead Code % |
+|--------|-------------|-----------------|-------------|
+| Entity System | 315 | 80 | **25%** |
+| Component System | 379 | 0 | 0% |
+| Archetype System | 534 | 45 (commented) | 2% |
+| Chunk System | 1453 | 0 | 0% |
+| System Manager | 1647 | 0 | 0% |
+| **TOTAL** | **4328** | **125** | **2.9%** |
+
+**Conclusion**: Only 2.9% dead code overall. Entity System is the outlier (25%), all others are clean.
+
+---
+
+## Performance Opportunities
+
+### High Impact (>5x speedup potential)
+1. **Parallel Entity Creation** (Entity System)
+   - Current: Single-threaded CommandBuffer.Apply()
+   - Potential: Concurrent entity index allocation + parallel batch creation
+   - Expected: 3-7x speedup for bulk entity creation
+
+2. **Fix Sequential Task.Wait()** (System Manager)
+   - Current: Sequential wait loop
+   - Potential: Task.WaitAll() for true parallelism
+   - Expected: 1.5-2x speedup for parallel batches
+
+### Medium Impact (2-3x speedup potential)
+3. **Eliminate Boxing Overhead** (Archetype System)
+   - Current: Box all components during archetype transitions
+   - Potential: Generic MoveEntity<T>() with Span copy
+   - Expected: Reduce GC pressure by 50-70%
+
+4. **Fix Cache Invalidation** (System Manager)
+   - Current: Cache validation bug causes wrong batches
+   - Potential: Proper cache with identity check
+   - Expected: Prevent data races (correctness, not just speed)
+
+### Low Impact (<2x speedup potential)
+5. **Optimize ComponentSignature** (Component System)
+   - Current: Fixed 256-byte allocation
+   - Potential: Dynamic sizing based on component count
+   - Expected: 32x memory reduction for small archetypes
+
+6. **Chunk Pooling** (Chunk System)
+   - Current: Disabled due to bugs
+   - Potential: Enable pooling after fixing race condition
+   - Expected: Reduce allocations by 80% for dynamic chunks
+
+---
+
+## Architecture Quality Ranking
+
+| Rank | System | Score | Architecture | Implementation | Notes |
+|------|--------|-------|--------------|----------------|-------|
+| 1 | Archetype | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best core design |
+| 2 | System Mgr | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | Best architecture, critical bugs |
+| 3 | Entity | 7/10 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 25% dead code |
+| 4 | Component | 6/10 | ⭐⭐⭐⭐ | ⭐⭐⭐ | Critical version bug |
+| 5 | Chunk | 5/10 | ⭐⭐⭐⭐⭐ | ⭐⭐ | Best architecture, most bugs |
+
+**Pattern**: Excellent architecture across the board (4-5 stars), implementation issues bring scores down.
 
 ---
 
 ## Decision Matrix (Rebuild vs Modify)
 
-Will be filled out after audit completes:
+| Factor | Weight | Rebuild Score | Modify Score | Winner | Notes |
+|--------|--------|---------------|--------------|--------|-------|
+| **Dead Code %** | High | 10/10 | 7/10 | Rebuild | Only 2.9% dead code (Modify viable) |
+| **Arch Quality** | High | 5/10 | 10/10 | **Modify** | Architecture is excellent (8-9/10) |
+| **Bug Severity** | High | 10/10 | 6/10 | Rebuild | 7 critical bugs, but all fixable |
+| **Fix Complexity** | High | 3/10 | 9/10 | **Modify** | All fixes are surgical (3-5 days) |
+| **Perf Gains** | Medium | 8/10 | 7/10 | Rebuild | Rebuild enables more optimization |
+| **Time Investment** | High | 2/10 | 10/10 | **Modify** | 3-5 days vs 2-3 months |
+| **Risk** | High | 3/10 | 9/10 | **Modify** | Rebuild breaks everything |
+| **Learning Value** | Low | 8/10 | 3/10 | Rebuild | Nice-to-have, not critical |
 
-| Factor | Weight | Rebuild Score | Modify Score | Notes |
-|--------|--------|---------------|--------------|-------|
-| Dead Code % | High | TBD | TBD | If >30%, rebuild favored |
-| Arch Issues | High | TBD | TBD | Fundamental vs surface |
-| Perf Gains | Medium | TBD | TBD | How much is on table? |
-| Time Investment | High | TBD | TBD | 2-3mo vs 1-2mo |
-| Risk | High | TBD | TBD | Breaking changes |
-| Learning Value | Low | TBD | TBD | Nice-to-have |
+**Weighted Scores**:
+- **Rebuild**: (10×3 + 5×3 + 10×3 + 3×3 + 8×2 + 2×3 + 3×3 + 8×1) / 21 = **5.8/10**
+- **Modify**: (7×3 + 10×3 + 6×3 + 9×3 + 7×2 + 10×3 + 9×3 + 3×1) / 21 = **8.1/10**
 
-**Final Recommendation**: TBD (after audit)
+**Final Recommendation**: **MODIFY** (wins 8.1 vs 5.8)
+
+**Reasoning**:
+1. ✅ Architecture is excellent (no need to rebuild foundation)
+2. ✅ All critical bugs have surgical fixes (3-5 days total)
+3. ✅ Dead code is minimal (2.9% overall)
+4. ✅ Risk is low (surgical fixes don't break other systems)
+5. ✅ Time investment is low (days vs months)
+6. ⚠️ Performance gains are achievable with modifications
+7. ❌ Rebuild would take 2-3 months and break all existing code
+
+---
+
+## Recommended Fix Priority
+
+### Phase 1: Critical Bug Fixes (1-2 days)
+1. **Issue #1**: Version validation placeholder → Fix World.cs:209
+2. **Issue #2**: Add immediate RemoveComponent() API → World.cs
+3. **Issue #7**: Fix ChunkSystem.cs:857 non-existent API call
+4. **Issue #8**: Fix deferred removal + pooling race → ChunkSystem.cs
+5. **Issue #18**: Fix cache validation bug → TickScheduling.cs:210
+6. **Issue #24**: Fix circular dependency stack overflow → SystemManager.cs:89
+
+**Total Effort**: 1-2 days (6 critical bugs, all surgical)
+
+### Phase 2: High Priority Optimizations (1-2 days)
+7. **Issue #3**: Optimize ComponentSignature allocation → ComponentSignature.cs
+8. **Issue #19**: Clean up unbounded cache growth → TickScheduling.cs
+9. **Issue #21**: Fix sequential Task.Wait() → ParallelScheduler.cs:59
+
+**Total Effort**: 1-2 days (3 high-priority issues)
+
+### Phase 3: Dead Code Removal (1 day)
+10. Remove EntityManager.EnqueueCreate(), EnqueueDestroy(), ProcessQueues()
+11. Remove commented-out code in ArchetypeManager.cs
+12. Remove unused TryGetIndex() in Archetype.cs
+
+**Total Effort**: 1 day (cleanup)
+
+### Phase 4: Low Priority Polish (1-2 days)
+13. Fix boxing overhead in archetype transitions (Issue #6)
+14. Remove World.Current global state (Issue #5)
+15. Clean up ThreadStatic usage (Issue #22)
+16. Consistent retry logic (Issue #23)
+
+**Total Effort**: 1-2 days (polish)
+
+**Grand Total**: **4-7 days** to fix all issues
+
+---
+
+## Next Steps
+
+1. ✅ Complete remaining 5 audits:
+   - ⚪ AUDIT 6: CommandBuffer
+   - ⚪ AUDIT 7: World Tick Pipeline
+   - ⚪ AUDIT 8: Query System
+   - ⚪ AUDIT 9: Serialization (optional)
+   - ⚪ AUDIT 10: Event System (optional)
+
+2. 📝 Generate final comprehensive report
+
+3. 🛠️ Create detailed fix plan with code examples
+
+4. 🚀 Begin Phase 1 critical bug fixes
 
 ---
 
 ## Progress Tracking
 
 - **Audit Started**: 2025-11-12
-- **Current Phase**: Entity System Audit
-- **Estimated Completion**: TBD (depends on findings)
-- **Time Invested**: 0 hours
+- **Current Phase**: System Manager Audit → **COMPLETE**
+- **Next Phase**: CommandBuffer Audit
+- **Completion**: 50% (5/10 audits)
+- **Time Invested**: ~6 hours
+- **Estimated Remaining**: ~6 hours (5 more audits)
 
 ---
 
-## Notes
+## Notes & Observations
 
-Add observations, "aha!" moments, and questions as we go:
+### Patterns Discovered
+- **Architecture vs Implementation**: Generally 8-9/10 architecture, 5-7/10 implementation
+- **Dead Code Pattern**: Only Entity System has significant dead code (25%), all others clean
+- **Bug Pattern**: Most critical bugs are in deferred operations (component removal, entity pooling)
+- **Common Root Cause**: Missing immediate component operations affects multiple systems
+- **Threading Pattern**: Thread-safe queuing, single-threaded processing (consistent pattern)
 
-- 2025-11-12: EntityManager.EnqueueCreate() never used - suggests more dead code exists
-- 2025-11-12: CommandBuffer stores only entity.Index - version mismatch bugs possible
-- 2025-11-12: No parallelism in entity creation despite infrastructure existing
+### "Aha!" Moments
+- 2025-11-12: EntityManager.EnqueueCreate() never used → CommandBuffer bypasses it completely
+- 2025-11-12: Component removal deferred but chunk pooling immediate → race condition
+- 2025-11-12: Version validation uses placeholder Entity(index, 1) → can operate on wrong entity
+- 2025-11-12: Chunk System calls non-existent API → won't compile when pooling enabled
+- 2025-11-12: System Manager cache validation only checks count → can use wrong batches
+- 2025-11-12: Circular dependencies during registration cause stack overflow (not caught until batching)
+
+### Questions to Investigate
+- ❓ Why was EntityManager.EnqueueCreate() created but never used?
+- ❓ Why does CommandBuffer only store entity.Index instead of full Entity struct?
+- ❓ Why is chunk pooling disabled by default? (Now answered: race condition bugs)
+- ❓ Can we unify ChunkOwner and UnregisteredChunkTag into single component?
+- ❓ Why no parallelism in CommandBuffer.Apply() when infrastructure exists?
+
+---
+
+*Last Updated: 2025-11-12 after completing System Manager audit*
+*Next Update: After CommandBuffer audit*
