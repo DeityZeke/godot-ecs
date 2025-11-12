@@ -159,6 +159,7 @@ namespace UltraSim.ECS.Systems
                 // Fire event with the processed entities for this archetype
                 if (EntityBatchProcessed != null && count > 0)
                 {
+                    //Logging.Log($"[MovementSystem] Firing event for {count} entities");
                     var args = new EntityBatchProcessedEventArgs(entities, 0, count);
                     EntityBatchProcessed(args);
                 }

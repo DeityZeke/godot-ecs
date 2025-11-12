@@ -109,13 +109,6 @@ namespace UltraSim.WorldECS
         {
             UltraSim.Logging.DrainToHost();
 
-                        // In WorldHostBase after world is ready
-if (_frameCount == 10) // Run after a few frames
-{
-    var benchmark = new Client.ECS.StressTests.ChunkAssignmentBenchmark(ActiveWorld);
-    var results = benchmark.RunBenchmarks();
-}
-
             BeforeWorldTick(delta);
 
             var start = Time.GetTicksUsec();
