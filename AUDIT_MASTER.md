@@ -3,18 +3,18 @@
 **Date Started**: 2025-11-12
 **Purpose**: Comprehensive trace of all ECS systems to understand architecture, find dead code, identify optimization opportunities, and plan potential rebuild.
 
-**Audit Status**: 🟡 IN PROGRESS (7/10 complete)
+**Audit Status**: 🟡 IN PROGRESS (9/10 complete)
 
 ---
 
 ## Executive Summary
 
-**Audits Completed**: 7/10 (70%)
-**Total Issues Found**: 36
+**Audits Completed**: 9/10 (90%)
+**Total Issues Found**: 42
 - 🔴 Critical: 7
 - 🟠 High: 5
-- 🟡 Medium: 10
-- 🟢 Low: 14
+- 🟡 Medium: 11
+- 🟢 Low: 19
 
 **Key Findings**:
 - ✅ **Excellent Architecture** across all systems (especially Archetype & Chunk)
@@ -32,7 +32,7 @@
 
 ## Audit Scope
 
-### ✅ Completed (7/10)
+### ✅ Completed (9/10)
 - ✅ **AUDIT 1**: Entity System (Creation/Destruction) - **Score: 7/10**
 - ✅ **AUDIT 2**: Component System (Add/Remove/Storage) - **Score: 6/10**
 - ✅ **AUDIT 3**: Archetype System (Creation/Transitions/Caching) - **Score: 8/10**
@@ -40,13 +40,13 @@
 - ✅ **AUDIT 5**: System Manager (Execution/Batching/Parallelism) - **Score: 7/10**
 - ✅ **AUDIT 6**: CommandBuffer (Queuing/Application/Threading) - **Score: 7/10**
 - ✅ **AUDIT 7**: World Tick Pipeline (Phase ordering/Timing) - **Score: 8/10**
+- ✅ **AUDIT 8**: Query System (Archetype queries/Filtering) - **Score: 8/10**
+- ✅ **AUDIT 9**: Serialization (Save/Load/IOProfile) - **Score: 8/10**
 
 ### 🔄 In Progress (0/10)
 - None currently
 
-### ⚪ Not Started (3/10)
-- ⚪ **AUDIT 8**: Query System (Archetype queries/Filtering)
-- ⚪ **AUDIT 9**: Serialization (Save/Load/IOProfile) - *Optional*
+### ⚪ Not Started (1/10)
 - ⚪ **AUDIT 10**: Event System (Firing/Subscription) - *Optional*
 
 ---
@@ -75,7 +75,7 @@
 | **#19** | System Mgr | TickScheduling.cs:221 | Unbounded cache growth | Memory leak |
 | **#26** | CommandBuffer | CommandBuffer.cs:158 | DestroyEntity() claims thread-safe but uses non-concurrent List | Data loss if called from multiple threads |
 
-### 🟡 MEDIUM (10 issues)
+### 🟡 MEDIUM (11 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -89,8 +89,9 @@
 | **#30** | CommandBuffer | CommandBuffer.cs:68 | ThreadCommand only stores entity.Index, not version | Operates on wrong entity |
 | **#31** | CommandBuffer | CommandBuffer.cs:180 | Boxing overhead for thread component operations | GC pressure |
 | **#33** | World Pipeline | World.cs:100 | System queue processing happens AFTER entity/component operations | Event loss during initialization |
+| **#38** | Serialization | ConfigFileReader.cs:62 | ReadBytes() swallows errors on exception | Silent data corruption |
 
-### 🟢 LOW (14 issues)
+### 🟢 LOW (19 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -108,6 +109,11 @@
 | **#35** | World Pipeline | World.cs:83 | Unused variable: printTickSchedule | Code bloat |
 | **#36** | World Pipeline | World.cs:40,54 | World.Current global state (root of Issue #5) | Hidden dependency |
 | **#37** | World Pipeline | World.cs:100,103 | No events after entity/component operations | Missing extensibility |
+| **#39** | Serialization | BinaryFileWriter.cs:27 | Null coalescing to "" could hide bugs | Silent null conversion |
+| **#40** | Serialization | ConfigFileWriter.cs:33 | Sequential key generation (_0, _1, _2) is fragile | Order-dependent reading |
+| **#41** | Serialization | World.Persistence.cs:98,200 | TODOs for Phase 5 manager extraction | Feature not implemented |
+| **#42** | Serialization | BinaryFileWriter.cs | No versioning in binary format | Can't detect incompatible saves |
+| **#43** | Serialization | BaseSystem.cs:262,267 | Confusing naming - two "Serialize" concepts | Developer confusion |
 
 ---
 
@@ -262,6 +268,48 @@
 
 ---
 
+### AUDIT 8: Query System - 8/10 ⭐⭐⭐⭐⭐⭐⭐⭐☆☆
+
+**Files**: Covered in Archetype audit (ArchetypeManager.cs:177-207, Archetype.cs:220-228, World.cs:232-243)
+**Status**: ✅ Complete
+**Dead Code**: 0%
+**Issues**: 0 critical, 0 high, 0 medium, 0 low
+
+**Key Findings**:
+- ✅ **PERFECT DESIGN**: Simple, clean API with lazy evaluation
+- ✅ Zero allocations (yield return)
+- ✅ Fast O(N × M) where N and M are both small
+- ✅ Thread-safe reads (archetypes are cached)
+- ✅ Zero new issues (implementation already audited in Archetype System)
+
+**Recommendation**: NO CHANGES NEEDED - perfect as-is
+
+**See**: [AUDIT_08_QUERY_SYSTEM.md](AUDIT_08_QUERY_SYSTEM.md)
+
+---
+
+### AUDIT 9: Serialization System - 8/10 ⭐⭐⭐⭐⭐⭐⭐⭐☆☆
+
+**Files**: 10 files (IIOProfile, IWriter, IReader, BinaryFileWriter/Reader, ConfigFileWriter/Reader, ConfigFile, World.Persistence)
+**Status**: ✅ Complete
+**Dead Code**: 2% (DefaultIOProfile deprecated)
+**Issues**: 0 critical, 0 high, 1 medium, 5 low
+
+**Key Findings**:
+- ✅ **EXCELLENT COMPOSITION-BASED DESIGN**: Format selection via interface, not enums
+- ✅ Clean separation: IOProfile (paths) vs Writer/Reader (format)
+- ✅ Engine-independent (no Godot dependencies)
+- ✅ Two formats: Binary (fast) + Config (human-readable)
+- ✅ Settings auto-save/load system
+- ⚠️ **MEDIUM #38**: ConfigFileReader.ReadBytes() swallows errors
+- ⚠️ 5 low-priority issues (null coalescing, TODOs, versioning, naming)
+
+**Recommendation**: MODIFY (1-2 hours) - fix error logging, clean up deprecated code
+
+**See**: [AUDIT_09_SERIALIZATION_SYSTEM.md](AUDIT_09_SERIALIZATION_SYSTEM.md)
+
+---
+
 ## Dead Code Summary
 
 | System | Total Lines | Dead Code Lines | Dead Code % |
@@ -273,7 +321,9 @@
 | System Manager | 1647 | 0 | 0% |
 | CommandBuffer | 477 | 1 | 0.2% |
 | World Pipeline | 672 | 2 | 0.3% |
-| **TOTAL** | **5477** | **128** | **2.3%** |
+| Query System | 52 | 0 | 0% |
+| Serialization | 955 | 20 (DefaultIOProfile) | 2% |
+| **TOTAL** | **6484** | **148** | **2.3%** |
 
 **Conclusion**: Only 2.3% dead code overall. Entity System is the outlier (25%), all others are clean.
 
@@ -322,6 +372,8 @@
 |------|--------|-------|--------------|----------------|-------|
 | 1 | Archetype | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best core design |
 | 1 | World Pipeline | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | Best phase design, zero critical bugs |
+| 1 | Query System | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | Perfect as-is, zero issues |
+| 1 | Serialization | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | Composition-based, excellent design |
 | 2 | System Mgr | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | Best architecture, critical bugs |
 | 2 | CommandBuffer | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best-in-class batching, 1 high bug |
 | 3 | Entity | 7/10 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 25% dead code |
