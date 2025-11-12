@@ -111,11 +111,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntitySignatureBench\\EntitySignatureBench.csproj",
+      "projectUniqueName": "D:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntitySignatureBench\\EntitySignatureBench.csproj",
       "projectName": "EntitySignatureBench",
-      "projectPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntitySignatureBench\\EntitySignatureBench.csproj",
+      "projectPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntitySignatureBench\\EntitySignatureBench.csproj",
       "packagesPath": "C:\\Users\\nbrow\\.nuget\\packages\\",
-      "outputPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntitySignatureBench\\obj\\",
+      "outputPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntitySignatureBench\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\nbrow\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -130,8 +130,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
-              "projectPath": "D:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj"
+            "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj": {
+              "projectPath": "d:\\MEGA\\Godot Projects\\godot-ecs\\GodotECS.csproj"
             }
           }
         }

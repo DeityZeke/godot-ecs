@@ -270,8 +270,8 @@ namespace UltraSim.ECS
                 if (cmd.Components.Count == 0)
                 {
                     // Empty entity
-                    var entity = world.CreateEntity();
-                    createdEntities.Add(entity);
+                    var emptyEntity = world.CreateEntity();
+                    createdEntities.Add(emptyEntity);
                     created++;
                     ReturnComponentList(cmd.Components);
                     continue;
