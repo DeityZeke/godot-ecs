@@ -284,6 +284,10 @@ namespace Client.ECS.Systems
 
             foreach (var entity in entitiesInChunk)
             {
+                // SAFETY: Validate entity before processing to prevent stale binding issues
+                if (!world.IsEntityValid(entity))
+                    continue;
+
                 if (!world.TryGetEntityLocation(entity, out var archetype, out var entitySlot))
                     continue;
 
@@ -429,9 +433,9 @@ namespace Client.ECS.Systems
             Mesh? mesh = prototype == RenderPrototypeKind.Cube ? (_cubeMesh != null ? (Mesh)_cubeMesh : _sphereMesh) : _sphereMesh;
             if (mesh != null && visual.Mesh != mesh)
             {
-                // Direct assignment is safe since this is called from Update() which runs on main thread
-                // The mesh_surface_set_material error only occurred when called from parallel threads
-                visual.Mesh = mesh;
+                // THREAD-SAFE: Use SetDeferred since this is called from parallel threads in ProcessChunksParallel
+                if (visual.IsInsideTree())
+                    visual.SetDeferred(MeshInstance3D.PropertyName.Mesh, mesh);
             }
         }
 
