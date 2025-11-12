@@ -369,13 +369,13 @@ namespace UltraSim.Server.ECS.Systems
 
             if (useParallel)
             {
-                Parallel.ForEach(batches, batch => ProcessMovementBatchImmediate(batch));
+                Parallel.ForEach(batches, batch => ProcessMovementBatchSmart(batch));
             }
             else
             {
                 foreach (var batch in batches)
                 {
-                    ProcessMovementBatchImmediate(batch);
+                    ProcessMovementBatchSmart(batch);
                 }
             }
 
