@@ -3,18 +3,18 @@
 **Date Started**: 2025-11-12
 **Purpose**: Comprehensive trace of all ECS systems to understand architecture, find dead code, identify optimization opportunities, and plan potential rebuild.
 
-**Audit Status**: 🟡 IN PROGRESS (6/10 complete)
+**Audit Status**: 🟡 IN PROGRESS (7/10 complete)
 
 ---
 
 ## Executive Summary
 
-**Audits Completed**: 6/10 (60%)
-**Total Issues Found**: 31
+**Audits Completed**: 7/10 (70%)
+**Total Issues Found**: 36
 - 🔴 Critical: 7
 - 🟠 High: 5
-- 🟡 Medium: 9
-- 🟢 Low: 10
+- 🟡 Medium: 10
+- 🟢 Low: 14
 
 **Key Findings**:
 - ✅ **Excellent Architecture** across all systems (especially Archetype & Chunk)
@@ -32,19 +32,19 @@
 
 ## Audit Scope
 
-### ✅ Completed (6/10)
+### ✅ Completed (7/10)
 - ✅ **AUDIT 1**: Entity System (Creation/Destruction) - **Score: 7/10**
 - ✅ **AUDIT 2**: Component System (Add/Remove/Storage) - **Score: 6/10**
 - ✅ **AUDIT 3**: Archetype System (Creation/Transitions/Caching) - **Score: 8/10**
 - ✅ **AUDIT 4**: Spatial Chunk System (Creation/Pooling/Assignment) - **Score: 5/10**
 - ✅ **AUDIT 5**: System Manager (Execution/Batching/Parallelism) - **Score: 7/10**
 - ✅ **AUDIT 6**: CommandBuffer (Queuing/Application/Threading) - **Score: 7/10**
+- ✅ **AUDIT 7**: World Tick Pipeline (Phase ordering/Timing) - **Score: 8/10**
 
 ### 🔄 In Progress (0/10)
 - None currently
 
-### ⚪ Not Started (4/10)
-- ⚪ **AUDIT 7**: World Tick Pipeline (Phase ordering/Timing)
+### ⚪ Not Started (3/10)
 - ⚪ **AUDIT 8**: Query System (Archetype queries/Filtering)
 - ⚪ **AUDIT 9**: Serialization (Save/Load/IOProfile) - *Optional*
 - ⚪ **AUDIT 10**: Event System (Firing/Subscription) - *Optional*
@@ -75,7 +75,7 @@
 | **#19** | System Mgr | TickScheduling.cs:221 | Unbounded cache growth | Memory leak |
 | **#26** | CommandBuffer | CommandBuffer.cs:158 | DestroyEntity() claims thread-safe but uses non-concurrent List | Data loss if called from multiple threads |
 
-### 🟡 MEDIUM (9 issues)
+### 🟡 MEDIUM (10 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -88,8 +88,9 @@
 | **#25** | CommandBuffer | CommandBuffer.cs:231 | Inconsistent apply behavior (immediate vs deferred) | Confusing API |
 | **#30** | CommandBuffer | CommandBuffer.cs:68 | ThreadCommand only stores entity.Index, not version | Operates on wrong entity |
 | **#31** | CommandBuffer | CommandBuffer.cs:180 | Boxing overhead for thread component operations | GC pressure |
+| **#33** | World Pipeline | World.cs:100 | System queue processing happens AFTER entity/component operations | Event loss during initialization |
 
-### 🟢 LOW (10 issues)
+### 🟢 LOW (14 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -103,6 +104,10 @@
 | **#28** | CommandBuffer | CommandBuffer.cs:338 | Thread-local buffers leak if Apply() never called | Memory leak (user error) |
 | **#29** | CommandBuffer | CommandBuffer.cs:231 | Fragile threading - assumes no concurrent writes during Apply() | Rare race condition |
 | **#32** | CommandBuffer | EntityBuilder.cs:55 | Dead code: GetComponents() never used | Code bloat |
+| **#34** | World Pipeline | World.cs:116 | Dead code: commented-out UpdateAutoSave() call | Code bloat |
+| **#35** | World Pipeline | World.cs:83 | Unused variable: printTickSchedule | Code bloat |
+| **#36** | World Pipeline | World.cs:40,54 | World.Current global state (root of Issue #5) | Hidden dependency |
+| **#37** | World Pipeline | World.cs:100,103 | No events after entity/component operations | Missing extensibility |
 
 ---
 
@@ -235,6 +240,28 @@
 
 ---
 
+### AUDIT 7: World Tick Pipeline - 8/10 ⭐⭐⭐⭐⭐⭐⭐⭐☆☆
+
+**Files**: World.cs (246 lines), World.Persistence.cs (290 lines), World.AutoSave.cs (136 lines)
+**Status**: ✅ Complete
+**Dead Code**: 0.4% (2 lines)
+**Issues**: 0 critical, 0 high, 1 medium, 4 low
+
+**Key Findings**:
+- ✅ **EXCELLENT PHASE DESIGN**: Clean pipeline with proper deferred operations
+- ✅ Engine-independent time tracking
+- ✅ Auto-save with rotating backups (3 saves)
+- ✅ Clean delegation to managers
+- ✅ Zero critical/high bugs!
+- ⚠️ **MEDIUM #33**: System queue processing happens AFTER entity/component operations
+- ⚠️ **LOW #36**: World.Current global state (root cause of Issue #5)
+
+**Recommendation**: MODIFY (1 hour) - best-designed system, minor phase ordering issue
+
+**See**: [AUDIT_07_WORLD_PIPELINE.md](AUDIT_07_WORLD_PIPELINE.md)
+
+---
+
 ## Dead Code Summary
 
 | System | Total Lines | Dead Code Lines | Dead Code % |
@@ -245,9 +272,10 @@
 | Chunk System | 1453 | 0 | 0% |
 | System Manager | 1647 | 0 | 0% |
 | CommandBuffer | 477 | 1 | 0.2% |
-| **TOTAL** | **4805** | **126** | **2.6%** |
+| World Pipeline | 672 | 2 | 0.3% |
+| **TOTAL** | **5477** | **128** | **2.3%** |
 
-**Conclusion**: Only 2.6% dead code overall. Entity System is the outlier (25%), all others are clean.
+**Conclusion**: Only 2.3% dead code overall. Entity System is the outlier (25%), all others are clean.
 
 ---
 
@@ -293,6 +321,7 @@
 | Rank | System | Score | Architecture | Implementation | Notes |
 |------|--------|-------|--------------|----------------|-------|
 | 1 | Archetype | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best core design |
+| 1 | World Pipeline | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | Best phase design, zero critical bugs |
 | 2 | System Mgr | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | Best architecture, critical bugs |
 | 2 | CommandBuffer | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best-in-class batching, 1 high bug |
 | 3 | Entity | 7/10 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 25% dead code |
@@ -373,9 +402,9 @@
 
 ## Next Steps
 
-1. ✅ Complete remaining 5 audits:
-   - ⚪ AUDIT 6: CommandBuffer
-   - ⚪ AUDIT 7: World Tick Pipeline
+1. ✅ Complete remaining audits:
+   - ✅ AUDIT 6: CommandBuffer → **COMPLETE**
+   - ✅ AUDIT 7: World Tick Pipeline → **COMPLETE**
    - ⚪ AUDIT 8: Query System
    - ⚪ AUDIT 9: Serialization (optional)
    - ⚪ AUDIT 10: Event System (optional)
@@ -391,11 +420,11 @@
 ## Progress Tracking
 
 - **Audit Started**: 2025-11-12
-- **Current Phase**: CommandBuffer Audit → **COMPLETE**
-- **Next Phase**: World Tick Pipeline Audit
-- **Completion**: 60% (6/10 audits)
-- **Time Invested**: ~7 hours
-- **Estimated Remaining**: ~5 hours (4 more audits)
+- **Current Phase**: World Tick Pipeline Audit → **COMPLETE**
+- **Next Phase**: Query System Audit
+- **Completion**: 70% (7/10 audits)
+- **Time Invested**: ~8 hours
+- **Estimated Remaining**: ~3 hours (3 more audits, 2 optional)
 
 ---
 
@@ -425,5 +454,5 @@
 
 ---
 
-*Last Updated: 2025-11-12 after completing CommandBuffer audit*
-*Next Update: After World Tick Pipeline audit*
+*Last Updated: 2025-11-12 after completing World Tick Pipeline audit*
+*Next Update: After Query System audit*
