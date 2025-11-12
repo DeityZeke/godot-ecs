@@ -3,18 +3,18 @@
 **Date Started**: 2025-11-12
 **Purpose**: Comprehensive trace of all ECS systems to understand architecture, find dead code, identify optimization opportunities, and plan potential rebuild.
 
-**Audit Status**: 🟡 IN PROGRESS (5/10 complete)
+**Audit Status**: 🟡 IN PROGRESS (6/10 complete)
 
 ---
 
 ## Executive Summary
 
-**Audits Completed**: 5/10 (50%)
-**Total Issues Found**: 24
+**Audits Completed**: 6/10 (60%)
+**Total Issues Found**: 31
 - 🔴 Critical: 7
-- 🟠 High: 4
-- 🟡 Medium: 6
-- 🟢 Low: 7
+- 🟠 High: 5
+- 🟡 Medium: 9
+- 🟢 Low: 10
 
 **Key Findings**:
 - ✅ **Excellent Architecture** across all systems (especially Archetype & Chunk)
@@ -32,18 +32,18 @@
 
 ## Audit Scope
 
-### ✅ Completed (5/10)
+### ✅ Completed (6/10)
 - ✅ **AUDIT 1**: Entity System (Creation/Destruction) - **Score: 7/10**
 - ✅ **AUDIT 2**: Component System (Add/Remove/Storage) - **Score: 6/10**
 - ✅ **AUDIT 3**: Archetype System (Creation/Transitions/Caching) - **Score: 8/10**
 - ✅ **AUDIT 4**: Spatial Chunk System (Creation/Pooling/Assignment) - **Score: 5/10**
 - ✅ **AUDIT 5**: System Manager (Execution/Batching/Parallelism) - **Score: 7/10**
+- ✅ **AUDIT 6**: CommandBuffer (Queuing/Application/Threading) - **Score: 7/10**
 
 ### 🔄 In Progress (0/10)
 - None currently
 
-### ⚪ Not Started (5/10)
-- ⚪ **AUDIT 6**: CommandBuffer (Queuing/Application/Threading)
+### ⚪ Not Started (4/10)
 - ⚪ **AUDIT 7**: World Tick Pipeline (Phase ordering/Timing)
 - ⚪ **AUDIT 8**: Query System (Archetype queries/Filtering)
 - ⚪ **AUDIT 9**: Serialization (Save/Load/IOProfile) - *Optional*
@@ -65,7 +65,7 @@
 | **#21** | System Mgr | ParallelScheduler.cs:59 | Sequential Task.Wait() instead of parallel | Performance degradation |
 | **#24** | System Mgr | SystemManager.cs:89 | Circular dependency causes stack overflow | Crash on registration |
 
-### 🟠 HIGH (4 issues)
+### 🟠 HIGH (5 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -73,8 +73,9 @@
 | **#9** | Chunk | ChunkSystem.cs | Non-compiling latent bug (pooling disabled) | Compilation failure |
 | **#10** | Chunk | ChunkSystem.cs | 48 settings (too many, overwhelming) | Poor UX |
 | **#19** | System Mgr | TickScheduling.cs:221 | Unbounded cache growth | Memory leak |
+| **#26** | CommandBuffer | CommandBuffer.cs:158 | DestroyEntity() claims thread-safe but uses non-concurrent List | Data loss if called from multiple threads |
 
-### 🟡 MEDIUM (6 issues)
+### 🟡 MEDIUM (9 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -84,8 +85,11 @@
 | **#14** | Chunk | ChunkSystem.cs | Complex event-driven architecture | Hard to debug |
 | **#16** | Archetype | ArchetypeManager.cs | 45 lines commented-out code | Code bloat |
 | **#20** | System Mgr | TickScheduling.cs:389 | Unnecessary allocation in cache rebuild | Minor perf hit |
+| **#25** | CommandBuffer | CommandBuffer.cs:231 | Inconsistent apply behavior (immediate vs deferred) | Confusing API |
+| **#30** | CommandBuffer | CommandBuffer.cs:68 | ThreadCommand only stores entity.Index, not version | Operates on wrong entity |
+| **#31** | CommandBuffer | CommandBuffer.cs:180 | Boxing overhead for thread component operations | GC pressure |
 
-### 🟢 LOW (7 issues)
+### 🟢 LOW (10 issues)
 
 | # | System | Location | Description | Impact |
 |---|--------|----------|-------------|--------|
@@ -96,6 +100,9 @@
 | **#17** | Chunk | ChunkSystem.cs | CollectStaleChunks() pagination not needed | Over-engineering |
 | **#22** | System Mgr | ParallelScheduler.cs:21 | Confusing ThreadStatic usage | Code clarity |
 | **#23** | System Mgr | SystemManager.cs:231 | Inconsistent retry logic | Minor |
+| **#28** | CommandBuffer | CommandBuffer.cs:338 | Thread-local buffers leak if Apply() never called | Memory leak (user error) |
+| **#29** | CommandBuffer | CommandBuffer.cs:231 | Fragile threading - assumes no concurrent writes during Apply() | Rare race condition |
+| **#32** | CommandBuffer | EntityBuilder.cs:55 | Dead code: GetComponents() never used | Code bloat |
 
 ---
 
@@ -205,6 +212,29 @@
 
 ---
 
+### AUDIT 6: CommandBuffer - 7/10 ⭐⭐⭐⭐⭐⭐⭐☆☆☆
+
+**Files**: CommandBuffer.cs (419 lines), EntityBuilder.cs (58 lines)
+**Status**: ✅ Complete
+**Dead Code**: 0.2% (1 line)
+**Issues**: 0 critical, 1 high, 3 medium, 3 low
+
+**Key Findings**:
+- ✅ **BEST-IN-CLASS BATCHING**: Builder pattern prevents archetype thrashing (5-10x speedup)
+- ✅ Zero-allocation after warmup (thread-local pooling)
+- ✅ Efficient bit packing (8 bytes vs 12+)
+- ✅ Span-based iteration (zero allocation)
+- ⚠️ **HIGH #26**: DestroyEntity() claims thread-safe but uses non-concurrent List
+- ⚠️ **MEDIUM #30**: ThreadCommand only stores entity.Index (same as Issue #1)
+- ⚠️ **MEDIUM #25**: Inconsistent apply behavior (immediate vs deferred)
+- ⚠️ **MEDIUM #31**: Boxing overhead (acceptable trade-off)
+
+**Recommendation**: MODIFY (3-4 hours to fix) - excellent design, minor issues
+
+**See**: [AUDIT_06_COMMAND_BUFFER.md](AUDIT_06_COMMAND_BUFFER.md)
+
+---
+
 ## Dead Code Summary
 
 | System | Total Lines | Dead Code Lines | Dead Code % |
@@ -214,9 +244,10 @@
 | Archetype System | 534 | 45 (commented) | 2% |
 | Chunk System | 1453 | 0 | 0% |
 | System Manager | 1647 | 0 | 0% |
-| **TOTAL** | **4328** | **125** | **2.9%** |
+| CommandBuffer | 477 | 1 | 0.2% |
+| **TOTAL** | **4805** | **126** | **2.6%** |
 
-**Conclusion**: Only 2.9% dead code overall. Entity System is the outlier (25%), all others are clean.
+**Conclusion**: Only 2.6% dead code overall. Entity System is the outlier (25%), all others are clean.
 
 ---
 
@@ -263,6 +294,7 @@
 |------|--------|-------|--------------|----------------|-------|
 | 1 | Archetype | 8/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best core design |
 | 2 | System Mgr | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | Best architecture, critical bugs |
+| 2 | CommandBuffer | 7/10 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Best-in-class batching, 1 high bug |
 | 3 | Entity | 7/10 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 25% dead code |
 | 4 | Component | 6/10 | ⭐⭐⭐⭐ | ⭐⭐⭐ | Critical version bug |
 | 5 | Chunk | 5/10 | ⭐⭐⭐⭐⭐ | ⭐⭐ | Best architecture, most bugs |
@@ -359,11 +391,11 @@
 ## Progress Tracking
 
 - **Audit Started**: 2025-11-12
-- **Current Phase**: System Manager Audit → **COMPLETE**
-- **Next Phase**: CommandBuffer Audit
-- **Completion**: 50% (5/10 audits)
-- **Time Invested**: ~6 hours
-- **Estimated Remaining**: ~6 hours (5 more audits)
+- **Current Phase**: CommandBuffer Audit → **COMPLETE**
+- **Next Phase**: World Tick Pipeline Audit
+- **Completion**: 60% (6/10 audits)
+- **Time Invested**: ~7 hours
+- **Estimated Remaining**: ~5 hours (4 more audits)
 
 ---
 
@@ -393,5 +425,5 @@
 
 ---
 
-*Last Updated: 2025-11-12 after completing System Manager audit*
-*Next Update: After CommandBuffer audit*
+*Last Updated: 2025-11-12 after completing CommandBuffer audit*
+*Next Update: After World Tick Pipeline audit*
