@@ -849,6 +849,14 @@ namespace UltraSim.Server.ECS.Systems
             _chunkEntityTracker.Clear(chunkEntity);
 
             _chunkManager.UnregisterChunk(chunkEntity);
+
+            // SAFETY: Remove UnregisteredChunkTag if present before pooling
+            // This prevents stale CommandBuffer operations on pooled/reused entities
+            if (archetype.HasComponent(UnregisteredChunkTagTypeId))
+            {
+                world.RemoveComponent<UnregisteredChunkTag>(chunkEntity);
+            }
+
             _chunkPool.Enqueue(chunkEntity);
         }
 
