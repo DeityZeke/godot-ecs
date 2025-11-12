@@ -107,7 +107,7 @@ namespace UltraSim.Server.ECS.Systems
                     tooltip: "Log chunk creation/destruction and assignment operations");
 
                 EnableDeferredBatchProcessing = RegisterBool("Deferred Batch Processing", true,
-                    tooltip: "Process event batches deferred in Update() instead of synchronously in event handlers");
+                    tooltip: "Defer entity CREATION batches to Update() for parallel processing. Movement uses immediate smart filtering.");
 
                 ParallelBatchProcessing = RegisterBool("Parallel Batch Processing", true,
                     tooltip: "Process multiple event batches in parallel when deferred processing is enabled");
@@ -213,22 +213,18 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Event handler for MovementSystem's EntityBatchProcessed event.
-        /// Either enqueues batch for deferred processing or processes immediately.
+        /// Always processes immediately with smart chunk boundary checking.
+        /// Only enqueues entities that actually crossed chunk boundaries.
         /// </summary>
         private void OnEntityBatchProcessed(EntityBatchProcessedEventArgs args)
         {
             if (_chunkManager == null || _world == null)
                 return;
 
-            // Deferred processing: O(1) - just enqueue the batch reference
-            if (SystemSettings.EnableDeferredBatchProcessing.Value)
-            {
-                _movementBatchQueue.Enqueue(args);
-                return;
-            }
-
-            // Synchronous processing (old behavior)
-            ProcessMovementBatchImmediate(args);
+            // ALWAYS process movement immediately with smart filtering
+            // Deferred batching is bad for continuous movement - it accumulates 6 frames of checks
+            // when most entities haven't crossed chunk boundaries yet.
+            ProcessMovementBatchSmart(args);
         }
 
         /// <summary>
@@ -259,9 +255,13 @@ namespace UltraSim.Server.ECS.Systems
         }
 
         /// <summary>
-        /// Process a movement batch immediately (synchronous).
+        /// Smart movement batch processing - only enqueues entities that crossed chunk boundaries.
+        /// This is much faster than deferred batching for continuous movement because:
+        /// 1. Most entities don't cross chunk boundaries every frame (chunks are 64x32x64 units)
+        /// 2. Processing immediately avoids accumulating 6+ frames of checks
+        /// 3. Early filtering reduces ChunkAssignmentQueue size dramatically
         /// </summary>
-        private void ProcessMovementBatchImmediate(EntityBatchProcessedEventArgs args)
+        private void ProcessMovementBatchSmart(EntityBatchProcessedEventArgs args)
         {
             var entitySpan = args.GetSpan();
 
@@ -272,33 +272,30 @@ namespace UltraSim.Server.ECS.Systems
                 if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
 
-                if (!archetype.HasComponent(PosTypeId))
+                // Need both Position and ChunkOwner to check boundaries
+                if (!archetype.HasComponent(PosTypeId) || !archetype.HasComponent(ChunkOwnerTypeId))
                     continue;
 
                 var positions = archetype.GetComponentSpan<Position>(PosTypeId);
-                if ((uint)slot >= (uint)positions.Length)
+                var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+
+                if ((uint)slot >= (uint)positions.Length || (uint)slot >= (uint)owners.Length)
                     continue;
 
                 var position = positions[slot];
+                var currentOwner = owners[slot];
+
+                // SMART CHECK: Only calculate chunk location if entity has an owner
+                // (Entities without owners will be caught by creation event or periodic scan)
+                if (!currentOwner.IsAssigned)
+                    continue;
+
+                // Calculate which chunk this position should be in
                 var targetChunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
 
-                bool hasOwner = archetype.HasComponent(ChunkOwnerTypeId);
-                bool needsReassignment = true;
-
-                if (hasOwner)
-                {
-                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                    if ((uint)slot < (uint)owners.Length)
-                    {
-                        var currentOwner = owners[slot];
-                        if (currentOwner.IsAssigned && currentOwner.Location.Equals(targetChunkLoc))
-                        {
-                            needsReassignment = false;
-                        }
-                    }
-                }
-
-                if (needsReassignment)
+                // CRITICAL OPTIMIZATION: Only enqueue if chunk actually changed
+                // Most entities stay in the same chunk for many frames (64x32x64 unit chunks)
+                if (!currentOwner.Location.Equals(targetChunkLoc))
                 {
                     ChunkAssignmentQueue.Enqueue(entity, targetChunkLoc);
                 }
@@ -348,7 +345,8 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Process all deferred movement batches from the queue.
-        /// Can process in parallel if multiple batches are available.
+        /// NOTE: This method is NOT currently used - movement events process immediately with smart filtering.
+        /// Kept for potential future use or testing scenarios.
         /// </summary>
         private void ProcessDeferredMovementBatches()
         {
@@ -449,12 +447,12 @@ namespace UltraSim.Server.ECS.Systems
             // Scan for chunk entities that aren't registered yet
             RegisterNewChunks(world);
 
-            // === PROCESS DEFERRED BATCHES ===
-            // Process entity creation and movement batches from events
+            // === PROCESS DEFERRED CREATION BATCHES ===
+            // Only creation events use deferred batching (works great for one-time operations)
+            // Movement events process immediately with smart filtering (see OnEntityBatchProcessed)
             if (SystemSettings.EnableDeferredBatchProcessing.Value)
             {
                 ProcessDeferredCreationBatches();
-                ProcessDeferredMovementBatches();
             }
 
             // === PROCESS ASSIGNMENT QUEUE ===
