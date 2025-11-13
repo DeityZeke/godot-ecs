@@ -120,7 +120,6 @@ namespace UltraSim.Server.ECS.Systems
 
         private ChunkManager? _chunkManager;
         private World? _world;
-        private CommandBuffer _buffer = new();
         private int _frameCounter = 0;
         private int _chunksQueuedThisFrame = 0;
         private int _chunksRegisteredThisFrame = 0;
@@ -130,7 +129,8 @@ namespace UltraSim.Server.ECS.Systems
         private readonly ConcurrentQueue<EntityBatchCreatedEventArgs> _creationBatchQueue = new();
 
         // Track chunks that are pending creation (to avoid duplicate creation requests)
-        private readonly HashSet<ChunkLocation> _pendingChunkCreations = new();
+        // Using ConcurrentDictionary for thread-safe access (value is unused, using as ConcurrentHashSet)
+        private readonly ConcurrentDictionary<ChunkLocation, byte> _pendingChunkCreations = new();
         private readonly Dictionary<ChunkLocation, Entity> _chunkEntityCache = new();
         private readonly List<ChunkAssignmentRequest> _assignmentBatch = new(capacity: 2048);
         private readonly List<ChunkLocation> _preallocationTargets = new();
@@ -439,9 +439,6 @@ namespace UltraSim.Server.ECS.Systems
 
             EvictStaleChunks(world);
 
-            // Apply all component changes
-            _buffer.Apply(world);
-
             // === STATISTICS ===
             if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 300 == 0)
             {
@@ -513,11 +510,11 @@ namespace UltraSim.Server.ECS.Systems
                     _chunkManager.RegisterChunk(entity, location);
 
                     // Remove from pending set now that chunk is registered
-                    _pendingChunkCreations.Remove(location);
+                    _pendingChunkCreations.TryRemove(location, out _);
 
                     // Remove UnregisteredChunkTag - chunk is now registered!
-                    // Using CommandBuffer to defer component removal (safe during Update)
-                    _buffer.RemoveComponent(entity, UnregisteredChunkTagTypeId);
+                    // Using deferred queue for component removal
+                    _world!.EnqueueComponentRemove(entity, UnregisteredChunkTagTypeId);
 
                     _chunksRegisteredThisFrame++;
                     _chunkManager.TouchChunk(entity);
@@ -701,7 +698,7 @@ namespace UltraSim.Server.ECS.Systems
             _chunkManager.UnregisterChunk(chunkEntity);
 
             // SAFETY: Remove UnregisteredChunkTag if present before pooling
-            // This prevents stale CommandBuffer operations on pooled/reused entities
+            // This prevents stale deferred operations on pooled/reused entities
             if (archetype.HasComponent(UnregisteredChunkTagTypeId))
             {
                 world.EnqueueComponentRemove(chunkEntity, UnregisteredChunkTagTypeId);
@@ -756,7 +753,7 @@ namespace UltraSim.Server.ECS.Systems
             _chunkEntityTracker.Add(chunkEntity, entity);
 
             // Mark chunk as dirty so client knows to rebuild visual cache
-            _buffer.AddComponent(chunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd(chunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         /// <summary>
@@ -771,8 +768,8 @@ namespace UltraSim.Server.ECS.Systems
             _chunkEntityTracker.Move(entity, oldChunkEntity, newChunkEntity);
 
             // Mark both chunks as dirty so client knows to rebuild visual caches
-            _buffer.AddComponent(oldChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
-            _buffer.AddComponent(newChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd(oldChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd(newChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         private void ProcessAssignment(World world, ChunkAssignmentRequest request)
@@ -845,7 +842,7 @@ namespace UltraSim.Server.ECS.Systems
             }
             else
             {
-                _buffer.AddComponent(request.Entity, ChunkOwnerTypeId, owner);
+                _world!.EnqueueComponentAdd(request.Entity, ChunkOwnerTypeId, owner);
             }
         }
 
@@ -873,11 +870,11 @@ namespace UltraSim.Server.ECS.Systems
             }
 
             // Check if chunk creation is already pending (FIX FOR INFINITE LOOP BUG)
-            if (_pendingChunkCreations.Contains(location))
+            if (_pendingChunkCreations.ContainsKey(location))
                 return Entity.Invalid; // Already queued, skip
 
             // Mark as pending to prevent duplicate creation requests
-            _pendingChunkCreations.Add(location);
+            _pendingChunkCreations.TryAdd(location, 0);
 
             // Create new chunk entity
             var bounds = _chunkManager.ChunkToWorldBounds(location);
@@ -886,14 +883,14 @@ namespace UltraSim.Server.ECS.Systems
                 IsGenerated = true
             };
 
-            _buffer.CreateEntity(builder =>
-            {
-                builder.Add(location);
-                builder.Add(bounds);
-                builder.Add(state);
-                builder.Add(new ChunkHash(0, 0)); // Will be computed when terrain/statics are added
-                builder.Add(new UnregisteredChunkTag()); // Mark as unregistered - removed when registered with ChunkManager
-            });
+            var entityBuilder = _world!.CreateEntityBuilder()
+                .Add(location)
+                .Add(bounds)
+                .Add(state)
+                .Add(new ChunkHash(0, 0)) // Will be computed when terrain/statics are added
+                .Add(new UnregisteredChunkTag()); // Mark as unregistered - removed when registered with ChunkManager
+
+            _world!.EnqueueCreateEntity(entityBuilder);
 
             _chunksQueuedThisFrame++;
             // Detailed per-chunk logging removed to avoid log spam; summary emitted at end of frame.
@@ -921,7 +918,7 @@ namespace UltraSim.Server.ECS.Systems
         /// </summary>
         public void ClearChunkDirty(Entity chunkEntity)
         {
-            _buffer.RemoveComponent(chunkEntity, DirtyChunkTagTypeId);
+            _world!.EnqueueComponentRemove(chunkEntity, DirtyChunkTagTypeId);
         }
 
         /// <summary>
@@ -953,8 +950,6 @@ namespace UltraSim.Server.ECS.Systems
             {
                 Logging.Log($"[ChunkSystem] Shutting down - Final stats:\n{_chunkManager?.GetStatistics()}");
             }
-
-            _buffer.Dispose();
         }
     }
 }
