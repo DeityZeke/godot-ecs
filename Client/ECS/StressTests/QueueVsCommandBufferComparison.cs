@@ -2,10 +2,12 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using Godot;
 using UltraSim;
 using UltraSim.ECS;
-using Server.ECS.Components;
+using UltraSim.ECS.Components;
+using UltraSim.WorldECS;
 
 namespace Client.ECS.StressTests
 {
@@ -38,7 +40,12 @@ namespace Client.ECS.StressTests
         {
             Logging.Log("[QueueVsCommandBufferComparison] Starting comparison test...");
 
-            _world = GetNode<Server.ECS.WorldECS>("/root/WorldECS").World;
+            // Find WorldHostBase in scene tree
+            var worldHost = GetTree().Root.GetNode<WorldHostBase>("Main");
+            if (worldHost != null)
+            {
+                _world = worldHost.GetType().GetProperty("ActiveWorld")?.GetValue(worldHost) as World;
+            }
 
             if (_world == null)
             {
@@ -107,9 +114,8 @@ namespace Client.ECS.StressTests
                 });
             }
 
-            // Process queues (this is where the work happens)
-            _world.Entities.ProcessQueues();
-            _world.Components.ProcessQueues();
+            // Process queues via Tick (this is where the work happens)
+            _world.Tick(0.016); // Minimal delta to process queues
 
             _sw.Stop();
             return _sw.Elapsed.TotalMilliseconds;

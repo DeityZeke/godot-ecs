@@ -8,7 +8,8 @@ using Godot;
 using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.Events;
-using Server.ECS.Components;
+using UltraSim.ECS.Components;
+using UltraSim.WorldECS;
 
 namespace Client.ECS.StressTests
 {
@@ -41,7 +42,12 @@ namespace Client.ECS.StressTests
         {
             Logging.Log("[EntityQueuePerformanceTest] Starting queue performance benchmark...");
 
-            _world = GetNode<Server.ECS.WorldECS>("/root/WorldECS").World;
+            // Find WorldHostBase in scene tree
+            var worldHost = GetTree().Root.GetNode<WorldHostBase>("Main");
+            if (worldHost != null)
+            {
+                _world = worldHost.GetType().GetProperty("ActiveWorld")?.GetValue(worldHost) as World;
+            }
 
             if (_world == null)
             {
@@ -112,18 +118,16 @@ namespace Client.ECS.StressTests
             sample.EnqueueNs = _sw.Elapsed.Ticks * 100; // Convert to nanoseconds
             _totalEnqueueNs += sample.EnqueueNs;
 
-            // === PHASE 2: PROCESS QUEUES ===
+            // === PHASE 2 & 3: TICK WORLD (processes all queues) ===
+            // Note: World.Tick processes entity queue, then component queue
+            // We can't separate them without access to internal managers
             _sw.Restart();
-            _world.Entities.ProcessQueues();
+            _world.Tick(0.016); // Tick with minimal delta
             _sw.Stop();
-            sample.ProcessNs = _sw.Elapsed.Ticks * 100;
+            long tickNs = _sw.Elapsed.Ticks * 100;
+            sample.ProcessNs = tickNs / 2; // Approximate split
+            sample.CreateNs = tickNs / 2;
             _totalProcessNs += sample.ProcessNs;
-
-            // === PHASE 3: COMPONENT OPERATIONS ===
-            _sw.Restart();
-            _world.Components.ProcessQueues();
-            _sw.Stop();
-            sample.CreateNs = _sw.Elapsed.Ticks * 100;
             _totalCreateNs += sample.CreateNs;
 
             // Total time
