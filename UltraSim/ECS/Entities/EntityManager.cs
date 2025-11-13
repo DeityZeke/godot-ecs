@@ -310,7 +310,8 @@ namespace UltraSim.ECS
                     int numChunks = (builderQueueSize + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
                     // Thread-local caches for created entities (if tracking)
-                    var threadLocalEntities = trackForEvent ? new System.Threading.ThreadLocal<List<Entity>>(() => new List<Entity>(CHUNK_SIZE)) : null;
+                    // trackAllValues: true enables .Values property for merging
+                    var threadLocalEntities = trackForEvent ? new System.Threading.ThreadLocal<List<Entity>>(() => new List<Entity>(CHUNK_SIZE), trackAllValues: true) : null;
 
                     Parallel.For(0, numChunks, chunkIndex =>
                     {
