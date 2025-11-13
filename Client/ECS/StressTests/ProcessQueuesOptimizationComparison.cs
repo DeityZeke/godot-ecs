@@ -14,11 +14,13 @@ using UltraSim.WorldECS;
 namespace Client.ECS.StressTests
 {
     /// <summary>
-    /// Compares 4 different ProcessQueues optimization strategies:
+    /// Compares 6 different ProcessQueues optimization strategies:
     /// V1: Simple list reuse (baseline optimization)
     /// V2: Adaptive threshold (small=immediate, large=batched)
     /// V3: Chunked processing with modulo
     /// V4: Dynamic threshold (user's suggested queue.count * 0.001)
+    /// V5: Parallel.For on builder invocation
+    /// V6: Parallel with chunked partitioning
     /// </summary>
     public partial class ProcessQueuesOptimizationComparison : Node, IHost
     {
@@ -42,10 +44,14 @@ namespace Client.ECS.StressTests
             public double V2_TimeMs;
             public double V3_TimeMs;
             public double V4_TimeMs;
+            public double V5_TimeMs;
+            public double V6_TimeMs;
             public double V1_PerEntityNs;
             public double V2_PerEntityNs;
             public double V3_PerEntityNs;
             public double V4_PerEntityNs;
+            public double V5_PerEntityNs;
+            public double V6_PerEntityNs;
             public string Winner;
         }
 
@@ -62,11 +68,13 @@ namespace Client.ECS.StressTests
             GD.Print("║     PROCESSQUEUES OPTIMIZATION COMPARISON TEST                ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print("Testing 4 optimization strategies:");
+            GD.Print("Testing 6 optimization strategies:");
             GD.Print("  V1: Simple list reuse (baseline)");
             GD.Print("  V2: Adaptive threshold (<500 immediate, >=500 batched)");
             GD.Print("  V3: Chunked processing (1000-entity chunks)");
             GD.Print("  V4: Dynamic threshold (queue.count * 0.001)");
+            GD.Print("  V5: Parallel.For on builder invocation");
+            GD.Print("  V6: Parallel with chunked partitioning");
             GD.Print("");
 
             RunNextTest();
@@ -86,7 +94,7 @@ namespace Client.ECS.StressTests
 
             ClearAllEntities();
 
-            // Test all 4 versions
+            // Test all 6 versions
             var v1Time = TestVersion(entityCount, ProcessQueuesV1);
             ClearAllEntities();
 
@@ -99,6 +107,12 @@ namespace Client.ECS.StressTests
             var v4Time = TestVersion(entityCount, ProcessQueuesV4);
             ClearAllEntities();
 
+            var v5Time = TestVersion(entityCount, ProcessQueuesV5);
+            ClearAllEntities();
+
+            var v6Time = TestVersion(entityCount, ProcessQueuesV6);
+            ClearAllEntities();
+
             // Record results
             var result = new TestResult
             {
@@ -107,19 +121,25 @@ namespace Client.ECS.StressTests
                 V2_TimeMs = v2Time,
                 V3_TimeMs = v3Time,
                 V4_TimeMs = v4Time,
+                V5_TimeMs = v5Time,
+                V6_TimeMs = v6Time,
                 V1_PerEntityNs = (v1Time * 1_000_000.0) / entityCount,
                 V2_PerEntityNs = (v2Time * 1_000_000.0) / entityCount,
                 V3_PerEntityNs = (v3Time * 1_000_000.0) / entityCount,
                 V4_PerEntityNs = (v4Time * 1_000_000.0) / entityCount,
+                V5_PerEntityNs = (v5Time * 1_000_000.0) / entityCount,
+                V6_PerEntityNs = (v6Time * 1_000_000.0) / entityCount,
             };
 
             // Determine winner
-            var times = new[] { v1Time, v2Time, v3Time, v4Time };
+            var times = new[] { v1Time, v2Time, v3Time, v4Time, v5Time, v6Time };
             var minTime = times.Min();
             if (Math.Abs(v1Time - minTime) < 0.001) result.Winner = "V1";
             else if (Math.Abs(v2Time - minTime) < 0.001) result.Winner = "V2";
             else if (Math.Abs(v3Time - minTime) < 0.001) result.Winner = "V3";
-            else result.Winner = "V4";
+            else if (Math.Abs(v4Time - minTime) < 0.001) result.Winner = "V4";
+            else if (Math.Abs(v5Time - minTime) < 0.001) result.Winner = "V5";
+            else result.Winner = "V6";
 
             _results.Add(result);
 
@@ -127,6 +147,8 @@ namespace Client.ECS.StressTests
             GD.Print($"  V2 (Adaptive):        {v2Time:F3} ms ({result.V2_PerEntityNs:F0} ns/entity)");
             GD.Print($"  V3 (Chunked):         {v3Time:F3} ms ({result.V3_PerEntityNs:F0} ns/entity)");
             GD.Print($"  V4 (Dynamic):         {v4Time:F3} ms ({result.V4_PerEntityNs:F0} ns/entity)");
+            GD.Print($"  V5 (Parallel.For):    {v5Time:F3} ms ({result.V5_PerEntityNs:F0} ns/entity)");
+            GD.Print($"  V6 (Parallel Chunked):{v6Time:F3} ms ({result.V6_PerEntityNs:F0} ns/entity)");
             GD.Print($"  Winner: {result.Winner}");
 
             _currentTestIndex++;
@@ -383,23 +405,23 @@ namespace Client.ECS.StressTests
             GD.Print("║     PROCESSQUEUES OPTIMIZATION - FINAL COMPARISON             ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print("Entity Count | V1: List Reuse | V2: Adaptive | V3: Chunked | V4: Dynamic | Winner");
-            GD.Print("-------------|----------------|--------------|-------------|-------------|--------");
+            GD.Print("Entity Count | V1: Reuse | V2: Adaptive | V3: Chunked | V4: Dynamic | V5: Parallel | V6: ParChunk | Winner");
+            GD.Print("-------------|-----------|--------------|-------------|-------------|--------------|-------------|--------");
 
             foreach (var result in _results)
             {
                 string winner = result.Winner;
-                GD.Print($"{result.EntityCount,12:N0} | {result.V1_TimeMs,13:F3}ms | {result.V2_TimeMs,11:F3}ms | {result.V3_TimeMs,10:F3}ms | {result.V4_TimeMs,10:F3}ms | {winner}");
+                GD.Print($"{result.EntityCount,12:N0} | {result.V1_TimeMs,8:F3}ms | {result.V2_TimeMs,11:F3}ms | {result.V3_TimeMs,10:F3}ms | {result.V4_TimeMs,10:F3}ms | {result.V5_TimeMs,11:F3}ms | {result.V6_TimeMs,10:F3}ms | {winner}");
             }
 
             GD.Print("\nPer-Entity Cost (nanoseconds):");
-            GD.Print("Entity Count | V1: List Reuse | V2: Adaptive | V3: Chunked | V4: Dynamic | Winner");
-            GD.Print("-------------|----------------|--------------|-------------|-------------|--------");
+            GD.Print("Entity Count | V1: Reuse | V2: Adaptive | V3: Chunked | V4: Dynamic | V5: Parallel | V6: ParChunk | Winner");
+            GD.Print("-------------|-----------|--------------|-------------|-------------|--------------|-------------|--------");
 
             foreach (var result in _results)
             {
                 string winner = result.Winner;
-                GD.Print($"{result.EntityCount,12:N0} | {result.V1_PerEntityNs,13:F0}ns | {result.V2_PerEntityNs,11:F0}ns | {result.V3_PerEntityNs,10:F0}ns | {result.V4_PerEntityNs,10:F0}ns | {winner}");
+                GD.Print($"{result.EntityCount,12:N0} | {result.V1_PerEntityNs,8:F0}ns | {result.V2_PerEntityNs,11:F0}ns | {result.V3_PerEntityNs,10:F0}ns | {result.V4_PerEntityNs,10:F0}ns | {result.V5_PerEntityNs,11:F0}ns | {result.V6_PerEntityNs,10:F0}ns | {winner}");
             }
 
             // Count wins for each version
@@ -408,17 +430,21 @@ namespace Client.ECS.StressTests
                 ["V1"] = _results.Count(r => r.Winner == "V1"),
                 ["V2"] = _results.Count(r => r.Winner == "V2"),
                 ["V3"] = _results.Count(r => r.Winner == "V3"),
-                ["V4"] = _results.Count(r => r.Winner == "V4")
+                ["V4"] = _results.Count(r => r.Winner == "V4"),
+                ["V5"] = _results.Count(r => r.Winner == "V5"),
+                ["V6"] = _results.Count(r => r.Winner == "V6")
             };
 
             GD.Print("\n╔════════════════════════════════════════════════════════════════╗");
             GD.Print("║                    OVERALL WINNER SUMMARY                     ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print($"V1 (List Reuse):      {wins["V1"]}/{_results.Count} wins");
-            GD.Print($"V2 (Adaptive):        {wins["V2"]}/{_results.Count} wins");
-            GD.Print($"V3 (Chunked):         {wins["V3"]}/{_results.Count} wins");
-            GD.Print($"V4 (Dynamic):         {wins["V4"]}/{_results.Count} wins");
+            GD.Print($"V1 (List Reuse):        {wins["V1"]}/{_results.Count} wins");
+            GD.Print($"V2 (Adaptive):          {wins["V2"]}/{_results.Count} wins");
+            GD.Print($"V3 (Chunked):           {wins["V3"]}/{_results.Count} wins");
+            GD.Print($"V4 (Dynamic):           {wins["V4"]}/{_results.Count} wins");
+            GD.Print($"V5 (Parallel.For):      {wins["V5"]}/{_results.Count} wins");
+            GD.Print($"V6 (Parallel Chunked):  {wins["V6"]}/{_results.Count} wins");
 
             var overallWinner = wins.OrderByDescending(kv => kv.Value).First();
 
@@ -446,14 +472,117 @@ namespace Client.ECS.StressTests
                 GD.Print("  → Best for very large batches (10k+ entities)");
                 GD.Print("  → Prevents memory spikes with chunked events");
             }
-            else
+            else if (overallWinner.Key == "V4")
             {
                 GD.Print("  → Use V4 (Dynamic Threshold)");
                 GD.Print("  → User's suggested approach performs best");
                 GD.Print("  → Threshold automatically scales with queue size");
             }
+            else if (overallWinner.Key == "V5")
+            {
+                GD.Print("  → Use V5 (Parallel.For)");
+                GD.Print("  → Parallel builder invocation wins");
+                GD.Print("  → Best for systems with multi-core CPUs");
+            }
+            else
+            {
+                GD.Print("  → Use V6 (Parallel Chunked)");
+                GD.Print("  → Parallel with chunked partitioning wins");
+                GD.Print("  → Best cache locality with parallelism");
+            }
 
             GD.Print("");
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // V5: PARALLEL.FOR (Parallel builder invocation)
+        // ═══════════════════════════════════════════════════════════════
+        private void ProcessQueuesV5(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            // Pre-allocate entities sequentially (EntityManager.Create is NOT thread-safe)
+            var builders = new Action<Entity>[queueSize];
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+
+            int index = 0;
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();  // Sequential allocation
+                createdEntities.Add(entity);
+                builders[index++] = builder;
+            }
+
+            // Parallel invoke builders (EnqueueComponentAdd uses ConcurrentQueue - thread-safe)
+            Parallel.For(0, createdEntities.Count, i =>
+            {
+                try
+                {
+                    builders[i]?.Invoke(createdEntities[i]);
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr($"[V5] Entity builder exception: {ex}");
+                }
+            });
+
+            // Fire event once
+            if (createdEntities.Count > 0)
+            {
+                _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // V6: PARALLEL WITH CHUNKED PARTITIONING (Cache-friendly)
+        // ═══════════════════════════════════════════════════════════════
+        private void ProcessQueuesV6(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            // Pre-allocate entities sequentially
+            var builders = new Action<Entity>[queueSize];
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+
+            int index = 0;
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                builders[index++] = builder;
+            }
+
+            // Parallel with chunked partitioning (better cache locality)
+            const int CHUNK_SIZE = 1000;
+            int chunkCount = (createdEntities.Count + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+            Parallel.For(0, chunkCount, chunkIdx =>
+            {
+                int start = chunkIdx * CHUNK_SIZE;
+                int end = Math.Min(start + CHUNK_SIZE, createdEntities.Count);
+
+                for (int i = start; i < end; i++)
+                {
+                    try
+                    {
+                        builders[i]?.Invoke(createdEntities[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        GD.PrintErr($"[V6] Entity builder exception: {ex}");
+                    }
+                }
+            });
+
+            // Fire event once
+            if (createdEntities.Count > 0)
+            {
+                _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
+            }
         }
     }
 }
