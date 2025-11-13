@@ -197,6 +197,31 @@ namespace UltraSim.ECS
             }
         }
 
+        /// <summary>
+        /// EXPERIMENTAL: Fires EntityBatchCreated using CollectionsMarshal.AsSpan path.
+        /// Tests if using Span as intermediate step provides any benefit.
+        /// </summary>
+        /// <remarks>
+        /// Still allocates via span.ToArray() due to EventArgs requiring Entity[].
+        /// This is essentially the same as the List overload above, but explicitly uses
+        /// CollectionsMarshal.AsSpan as an intermediate step to measure any potential
+        /// JIT optimization differences.
+        /// </remarks>
+        internal void FireEntityBatchCreatedSpanPath(List<Entity> entities)
+        {
+            if (EntityBatchCreated != null && entities.Count > 0)
+            {
+                // Use CollectionsMarshal.AsSpan to get direct access to List's internal buffer
+                var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(entities);
+
+                // Still need to convert to array for EventArgs (allocates)
+                // But measures if the Span intermediate step has any benefit
+                var array = span.ToArray();
+                var args = new EntityBatchCreatedEventArgs(array, 0, entities.Count);
+                EntityBatchCreated(args);
+            }
+        }
+
         #endregion
 
         #region Component Operations (Internal - called by ComponentManager)

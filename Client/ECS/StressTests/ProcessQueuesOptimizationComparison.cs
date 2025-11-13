@@ -15,9 +15,10 @@ using UltraSim.WorldECS;
 namespace Client.ECS.StressTests
 {
     /// <summary>
-    /// Compares 12 different ProcessQueues optimization strategies:
+    /// Compares 13 different ProcessQueues optimization strategies:
     /// V1-V6: Original implementations (call ToArray() at site)
     /// V7-V12: "Span" versions (use List overload, ToArray() in World)
+    /// V13: TRUE AsSpan version (CollectionsMarshal.AsSpan path)
     ///
     /// V1:  Simple list reuse (baseline)
     /// V2:  Adaptive threshold (<500 immediate, >=500 batched)
@@ -26,6 +27,7 @@ namespace Client.ECS.StressTests
     /// V5:  Parallel.For on builder invocation
     /// V6:  Parallel with chunked partitioning
     /// V7-V12: Same as V1-V6 but using List<Entity> overload
+    /// V13: V7 + explicit CollectionsMarshal.AsSpan intermediate step
     /// </summary>
     public partial class ProcessQueuesOptimizationComparison : Node, IHost
     {
@@ -45,10 +47,10 @@ namespace Client.ECS.StressTests
         private struct TestResult
         {
             public int EntityCount;
-            public double[] Times;    // 12 versions
-            public double[] PerEntityNs; // 12 versions
+            public double[] Times;    // 13 versions
+            public double[] PerEntityNs; // 13 versions
             public string Winner;
-            public string SpanWinner;  // Winner among V7-V12
+            public string SpanWinner;  // Winner among V7-V13
         }
 
         private readonly List<TestResult> _results = new();
@@ -65,7 +67,8 @@ namespace Client.ECS.StressTests
             "V9: SpanChunk",
             "V10: SpanDyn",
             "V11: SpanParal",
-            "V12: SpanParCh"
+            "V12: SpanParCh",
+            "V13: TrueAsSpan"
         };
 
         public override void _Ready()
@@ -76,10 +79,10 @@ namespace Client.ECS.StressTests
             _world = new World(this);
 
             GD.Print("╔════════════════════════════════════════════════════════════════╗");
-            GD.Print("║     PROCESSQUEUES OPTIMIZATION - FULL COMPARISON (12 VERS)    ║");
+            GD.Print("║     PROCESSQUEUES OPTIMIZATION - FULL COMPARISON (13 VERS)    ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print("Testing 12 optimization strategies:");
+            GD.Print("Testing 13 optimization strategies:");
             GD.Print("  V1:  Simple list reuse (ToArray at site)");
             GD.Print("  V2:  Adaptive threshold (ToArray at site)");
             GD.Print("  V3:  Chunked processing (ToArray at site)");
@@ -87,6 +90,7 @@ namespace Client.ECS.StressTests
             GD.Print("  V5:  Parallel.For (ToArray at site)");
             GD.Print("  V6:  Parallel chunked (ToArray at site)");
             GD.Print("  V7-V12: Same as V1-V6 but using List<Entity> overload");
+            GD.Print("  V13: TRUE AsSpan (CollectionsMarshal.AsSpan path)");
             GD.Print("");
 
             RunNextTest();
@@ -106,17 +110,18 @@ namespace Client.ECS.StressTests
 
             ClearAllEntities();
 
-            // Test all 12 versions
-            var times = new double[12];
+            // Test all 13 versions
+            var times = new double[13];
             Action<ConcurrentQueue<Action<Entity>>, List<Entity>>[] testFuncs = new[]
             {
                 ProcessQueuesV1, ProcessQueuesV2, ProcessQueuesV3,
                 ProcessQueuesV4, ProcessQueuesV5, ProcessQueuesV6,
                 ProcessQueuesV7, ProcessQueuesV8, ProcessQueuesV9,
-                ProcessQueuesV10, ProcessQueuesV11, ProcessQueuesV12
+                ProcessQueuesV10, ProcessQueuesV11, ProcessQueuesV12,
+                ProcessQueuesV13
             };
 
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 13; i++)
             {
                 times[i] = TestVersion(entityCount, testFuncs[i]);
                 ClearAllEntities();
@@ -129,7 +134,7 @@ namespace Client.ECS.StressTests
             var minTime = times.Min();
             int winnerIdx = Array.IndexOf(times, minTime);
 
-            // Determine span winner (V7-V12)
+            // Determine span winner (V7-V13)
             var spanTimes = times.Skip(6).ToArray();
             var spanMinTime = spanTimes.Min();
             int spanWinnerIdx = 6 + Array.IndexOf(spanTimes, spanMinTime);
@@ -146,7 +151,7 @@ namespace Client.ECS.StressTests
             _results.Add(result);
 
             // Print results
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 13; i++)
             {
                 string marker = (i == winnerIdx) ? " ⭐" : "";
                 GD.Print($"  {_versionNames[i],-15}: {times[i],7:F3} ms ({perEntityNs[i],6:F0} ns/ent){marker}");
@@ -544,6 +549,23 @@ namespace Client.ECS.StressTests
                 _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // V13: TRUE AsSpan version (CollectionsMarshal.AsSpan path)
+        // ═══════════════════════════════════════════════════════════════
+        private void ProcessQueuesV13(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            createdEntities.Clear();
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                try { builder?.Invoke(entity); }
+                catch (Exception ex) { GD.PrintErr($"[V13] {ex}"); }
+            }
+            if (createdEntities.Count > 0)
+                _world!.FireEntityBatchCreatedSpanPath(createdEntities);  // ← SpanPath overload!
+        }
+
         private void ClearAllEntities()
         {
             var buffer = new CommandBuffer();
@@ -568,17 +590,17 @@ namespace Client.ECS.StressTests
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
             GD.Print("Per-Entity Cost (nanoseconds) - Lower is Better:");
-            GD.Print("Count    | V1    | V2    | V3    | V4    | V5    | V6    | V7    | V8    | V9    | V10   | V11   | V12   | Winner");
-            GD.Print("---------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|--------");
+            GD.Print("Count    | V1    | V2    | V3    | V4    | V5    | V6    | V7    | V8    | V9    | V10   | V11   | V12   | V13   | Winner");
+            GD.Print("---------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|--------");
 
             foreach (var result in _results)
             {
                 var ns = result.PerEntityNs;
-                GD.Print($"{result.EntityCount,8:N0} | {ns[0],5:F0} | {ns[1],5:F0} | {ns[2],5:F0} | {ns[3],5:F0} | {ns[4],5:F0} | {ns[5],5:F0} | {ns[6],5:F0} | {ns[7],5:F0} | {ns[8],5:F0} | {ns[9],5:F0} | {ns[10],5:F0} | {ns[11],5:F0} | {result.Winner}");
+                GD.Print($"{result.EntityCount,8:N0} | {ns[0],5:F0} | {ns[1],5:F0} | {ns[2],5:F0} | {ns[3],5:F0} | {ns[4],5:F0} | {ns[5],5:F0} | {ns[6],5:F0} | {ns[7],5:F0} | {ns[8],5:F0} | {ns[9],5:F0} | {ns[10],5:F0} | {ns[11],5:F0} | {ns[12],5:F0} | {result.Winner}");
             }
 
             // Count wins
-            var wins = new int[12];
+            var wins = new int[13];
             foreach (var result in _results)
             {
                 int winnerIdx = int.Parse(result.Winner.Substring(1)) - 1;
@@ -589,7 +611,7 @@ namespace Client.ECS.StressTests
             GD.Print("║                    OVERALL WINNER SUMMARY                     ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 13; i++)
             {
                 GD.Print($"{_versionNames[i],-20}: {wins[i]}/{_results.Count} wins");
             }
@@ -599,12 +621,12 @@ namespace Client.ECS.StressTests
             GD.Print($"║  OVERALL WINNER: {_versionNames[overallWinnerIdx],-42} ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝");
 
-            // Compare V1-V6 vs V7-V12
+            // Compare V1-V6 vs V7-V13
             int origWins = wins.Take(6).Sum();
             int spanWins = wins.Skip(6).Sum();
 
-            GD.Print($"\nV1-V6 (ToArray at site):   {origWins}/{_results.Count} total wins");
-            GD.Print($"V7-V12 (List overload):    {spanWins}/{_results.Count} total wins");
+            GD.Print($"\nV1-V6 (ToArray at site):      {origWins}/{_results.Count} total wins");
+            GD.Print($"V7-V13 (List/Span overload):  {spanWins}/{_results.Count} total wins");
 
             if (spanWins > origWins)
                 GD.Print("\n✓ List<Entity> overload provides measurable benefit!");
@@ -612,6 +634,20 @@ namespace Client.ECS.StressTests
                 GD.Print("\n→ List<Entity> overload has no significant impact (same performance)");
             else
                 GD.Print("\n✗ List<Entity> overload is actually slower (cache locality issue?)");
+
+            // V7 vs V13 comparison
+            int v7Wins = wins[6];
+            int v13Wins = wins[12];
+
+            GD.Print($"\nV7 (List overload):           {v7Wins}/{_results.Count} wins");
+            GD.Print($"V13 (TRUE AsSpan path):       {v13Wins}/{_results.Count} wins");
+
+            if (v13Wins > v7Wins)
+                GD.Print("\n✓ CollectionsMarshal.AsSpan provides additional benefit!");
+            else if (v13Wins == v7Wins)
+                GD.Print("\n→ AsSpan path has same performance as List overload (no extra benefit)");
+            else
+                GD.Print("\n✗ AsSpan path is slower than simple List overload");
 
             GD.Print("");
         }
