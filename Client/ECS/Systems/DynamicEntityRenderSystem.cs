@@ -249,7 +249,8 @@ namespace Client.ECS.Systems
                 for (int i = 0; i < renderChunks.Length; i++)
                 {
                     ref var renderChunk = ref renderChunks[i];
-                    nearChunks.Add((renderChunk.Location, renderChunk.Visible));
+                    // Use ServerChunkLocation (absolute world position) to identify which server chunk entities to render
+                    nearChunks.Add((renderChunk.ServerChunkLocation, renderChunk.Visible));
                 }
             }
 
