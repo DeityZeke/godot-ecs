@@ -126,7 +126,6 @@ namespace UltraSim.ECS.Systems
             }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var buffer = new CommandBuffer();
 
             float radius = SystemSettings.SpawnRadius.Value;
             float minSpeed = SystemSettings.MinSpeed.Value;
@@ -147,57 +146,54 @@ namespace UltraSim.ECS.Systems
                 float phaseOffset = Utilities.RandomRange(0f, Utilities.TWO_PI);
 
                 // Create entity with ALL components at once (NO archetype thrashing!)
+                // Using EntityBuilder + queue ensures proper event firing and deferred processing
                 // ChunkSystem will automatically assign entities to chunks based on Position
-                buffer.CreateEntity(builder =>
+                var builder = _world.CreateEntityBuilder();
+
+                builder.Add(new Position
                 {
-                    builder.Add(new Position
-                    {
-                        X = randomPos.X,
-                        Y = randomPos.Y,
-                        Z = randomPos.Z
-                    });
-
-                    builder.Add(new Velocity
-                    {
-                        X = 0f,
-                        Y = 0f,
-                        Z = 0f
-                    });
-
-                    builder.Add(new PulseData
-                    {
-                        Speed = speed,
-                        Frequency = frequency,
-                        Phase = phaseOffset
-                    });
-
-                    builder.Add(new RenderTag { });
-                    builder.Add(new Visible { });
-
-                    bool spawnStatic = ShouldSpawnStatic(SystemSettings.SpawnVisuals.Value);
-                    if (spawnStatic)
-                    {
-                        builder.Add(new StaticRenderTag { });
-                        builder.Add(new RenderPrototype(RenderPrototypeKind.Cube));
-                    }
-                    else
-                    {
-                        builder.Add(new RenderPrototype(RenderPrototypeKind.Sphere));
-                    }
+                    X = randomPos.X,
+                    Y = randomPos.Y,
+                    Z = randomPos.Z
                 });
+
+                builder.Add(new Velocity
+                {
+                    X = 0f,
+                    Y = 0f,
+                    Z = 0f
+                });
+
+                builder.Add(new PulseData
+                {
+                    Speed = speed,
+                    Frequency = frequency,
+                    Phase = phaseOffset
+                });
+
+                builder.Add(new RenderTag { });
+                builder.Add(new Visible { });
+
+                bool spawnStatic = ShouldSpawnStatic(SystemSettings.SpawnVisuals.Value);
+                if (spawnStatic)
+                {
+                    builder.Add(new StaticRenderTag { });
+                    builder.Add(new RenderPrototype(RenderPrototypeKind.Cube));
+                }
+                else
+                {
+                    builder.Add(new RenderPrototype(RenderPrototypeKind.Sphere));
+                }
+
+                // Enqueue for deferred creation (will be processed in next World.Tick)
+                _world.EnqueueCreateEntity(builder);
             }
 
             sw.Stop();
-            double queueTime = sw.Elapsed.TotalMilliseconds;
+            double enqueueTime = sw.Elapsed.TotalMilliseconds;
 
-            // Apply the buffer
-            sw.Restart();
-            buffer.Apply(_world);
-            sw.Stop();
-            double applyTime = sw.Elapsed.TotalMilliseconds;
-
-            Logging.Log($"[{Name}] Spawned {count} entities - Queue: {queueTime:F3}ms, Apply: {applyTime:F3}ms, Total: {queueTime + applyTime:F3}ms");
-            Logging.Log($"[{Name}] ChunkSystem will assign entities to chunks on next assignment cycle");
+            Logging.Log($"[{Name}] Enqueued {count} entities in {enqueueTime:F3}ms");
+            Logging.Log($"[{Name}] Entities will be created on next World.Tick, then assigned to chunks by ChunkSystem");
         }
 
         private void ClearAllEntities()

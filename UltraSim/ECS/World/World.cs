@@ -121,6 +121,22 @@ namespace UltraSim.ECS
         public Entity CreateEntityWithSignature(ComponentSignature signature) =>
             _entities.CreateWithSignature(signature);
 
+        /// <summary>
+        /// Creates an EntityBuilder for fluent component definition.
+        /// Use this to define all components before enqueueing creation to avoid archetype thrashing.
+        /// </summary>
+        /// <example>
+        /// var builder = world.CreateEntityBuilder()
+        ///     .Add(new Position { X = 0, Y = 0, Z = 0 })
+        ///     .Add(new Velocity { X = 1, Y = 0, Z = 0 });
+        /// world.EnqueueCreateEntity(builder);
+        /// </example>
+        public EntityBuilder CreateEntityBuilder()
+        {
+            var componentList = _entities.GetComponentList();
+            return new EntityBuilder(componentList);
+        }
+
         public bool TryGetEntityLocation(Entity entity, out Archetype archetype, out int slot) =>
             _entities.TryGetLocation(entity, out archetype, out slot);
 
@@ -140,6 +156,20 @@ namespace UltraSim.ECS
         public void EnqueueDestroyEntity(uint entityIndex) => _entities.EnqueueDestroy(entityIndex);
 
         public void EnqueueCreateEntity(Action<Entity>? builder = null) =>
+            _entities.EnqueueCreate(builder);
+
+        /// <summary>
+        /// Enqueues an entity for creation with all components pre-defined in EntityBuilder.
+        /// This is the PREFERRED method for creating entities with multiple components.
+        /// Avoids archetype thrashing by creating the entity directly in the final archetype.
+        /// </summary>
+        /// <example>
+        /// var builder = CreateEntityBuilder()
+        ///     .Add(new Position { X = 0, Y = 0, Z = 0 })
+        ///     .Add(new Velocity { X = 1, Y = 0, Z = 0 });
+        /// world.EnqueueCreateEntity(builder);
+        /// </example>
+        public void EnqueueCreateEntity(EntityBuilder builder) =>
             _entities.EnqueueCreate(builder);
 
         // System enqueue APIs - delegate to SystemManager
