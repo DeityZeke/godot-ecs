@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using UltraSim.ECS.Components;
 
 namespace UltraSim.ECS.Chunk
 {

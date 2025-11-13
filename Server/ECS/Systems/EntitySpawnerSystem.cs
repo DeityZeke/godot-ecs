@@ -189,7 +189,7 @@ namespace UltraSim.ECS.Systems
 
                 // Add ChunkOwner component at creation time (NO archetype move later!)
                 var chunkLoc = WorldToChunk(randomPos.X, randomPos.Y, randomPos.Z);
-                builder.Add(new ChunkOwner(chunkLoc));
+                builder.Add(new ChunkOwner(Entity.Invalid, chunkLoc));
 
                 bool spawnStatic = ShouldSpawnStatic(SystemSettings.SpawnVisuals.Value);
                 if (spawnStatic)

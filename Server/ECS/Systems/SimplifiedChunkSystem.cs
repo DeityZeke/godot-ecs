@@ -135,14 +135,17 @@ namespace UltraSim.Server.ECS.Systems
                     continue;
 
                 // Entity should already have ChunkOwner (added during creation)
-                if (!_world.TryGetComponent<ChunkOwner>(entity, out var owner))
-                {
-                    // No ChunkOwner - skip (might be a chunk entity or other special entity)
+                if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
-                }
+
+                if (!archetype.HasComponent(ChunkOwnerTypeId))
+                    continue;
+
+                var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                var owner = owners[slot];
 
                 // Track entity in chunk
-                _chunkManager!.TrackEntity(entity.Packed, owner.ChunkLocation);
+                _chunkManager!.TrackEntity(entity.Packed, owner.Location);
                 processed++;
             }
 
@@ -164,24 +167,30 @@ namespace UltraSim.Server.ECS.Systems
                 if (!_world!.IsEntityValid(entity))
                     continue;
 
-                if (!_world.TryGetComponent<ChunkOwner>(entity, out var oldOwner))
+                if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
 
-                if (!_world.TryGetComponent<Position>(entity, out var position))
+                if (!archetype.HasComponent(ChunkOwnerTypeId) || !archetype.HasComponent(PosTypeId))
                     continue;
+
+                var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                var oldOwner = owners[slot];
+
+                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
+                var position = positions[slot];
 
                 // Calculate new chunk location
                 var newChunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
 
                 // Still in same chunk?
-                if (oldOwner.ChunkLocation.Equals(newChunkLoc))
+                if (oldOwner.Location.Equals(newChunkLoc))
                     continue;
 
                 // Move tracking
-                _chunkManager.MoveEntity(entity.Packed, oldOwner.ChunkLocation, newChunkLoc);
+                _chunkManager.MoveEntity(entity.Packed, oldOwner.Location, newChunkLoc);
 
-                // Update ChunkOwner component VALUE (no archetype move!)
-                _world.SetComponent(entity, new ChunkOwner(newChunkLoc));
+                // Update ChunkOwner component VALUE using deferred queue (thread-safe!)
+                _world!.EnqueueComponentAdd(entity, ChunkOwnerTypeId, new ChunkOwner(Entity.Invalid, newChunkLoc));
 
                 processed++;
             }
@@ -206,9 +215,12 @@ namespace UltraSim.Server.ECS.Systems
 
                 // Try to get last known chunk location
                 // NOTE: Component might not exist anymore, but try anyway
-                if (_world!.TryGetComponent<ChunkOwner>(entity, out var owner))
+                if (_world!.TryGetEntityLocation(entity, out var archetype, out var slot) &&
+                    archetype.HasComponent(ChunkOwnerTypeId))
                 {
-                    _chunkManager!.StopTracking(entity.Packed, owner.ChunkLocation);
+                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                    var owner = owners[slot];
+                    _chunkManager!.StopTracking(entity.Packed, owner.Location);
                     processed++;
                 }
             }

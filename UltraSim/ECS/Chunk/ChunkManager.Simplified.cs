@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 using UltraSim;
+using UltraSim.ECS.Components;
 
 namespace UltraSim.ECS.Chunk
 {
@@ -39,7 +40,7 @@ namespace UltraSim.ECS.Chunk
             }
         }
 
-        public SimplifiedChunkManager(int chunkSizeXZ = 64, chunkSizeY = 32)
+        public SimplifiedChunkManager(int chunkSizeXZ = 64, int chunkSizeY = 32)
         {
             ChunkSizeXZ = chunkSizeXZ;
             ChunkSizeY = chunkSizeY;
