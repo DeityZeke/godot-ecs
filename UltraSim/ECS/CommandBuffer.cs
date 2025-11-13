@@ -258,6 +258,9 @@ namespace UltraSim.ECS
             int created = 0;
             var createdEntities = new List<Entity>();
 
+            // Reusable stack-allocated buffer for TypeIds
+            Span<int> typeIdBuffer = stackalloc int[32];
+
             foreach (ref var cmd in CollectionsMarshal.AsSpan(_creates))
             {
                 if (cmd.Components.Count == 0)
@@ -270,13 +273,17 @@ namespace UltraSim.ECS
                     continue;
                 }
 
-                // Build signature from all components (typeId already computed in EntityBuilder)
-                var signature = new ComponentSignature();
-                foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
+                // Extract TypeIds into stack buffer (FAST PATH - no cloning!)
+                var componentSpan = CollectionsMarshal.AsSpan(cmd.Components);
+                int componentCount = Math.Min(componentSpan.Length, typeIdBuffer.Length);
+
+                for (int i = 0; i < componentCount; i++)
                 {
-                    // Use pre-computed typeId from EntityBuilder (OPTIMIZED)
-                    signature = signature.Add(component.TypeId);
+                    typeIdBuffer[i] = componentSpan[i].TypeId;
                 }
+
+                // Build signature from TypeIds in ONE operation (eliminates N array clones!)
+                var signature = ComponentSignature.FromTypeIds(typeIdBuffer.Slice(0, componentCount));
 
                 // Create entity directly in target archetype (ONE archetype move!)
                 var entity = world.CreateEntityWithSignature(signature);
