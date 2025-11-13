@@ -40,6 +40,9 @@ namespace UltraSim.ECS
         // Reusable list for batch entity destruction (V8 optimization, mirrors creation pattern)
         private readonly List<Entity> _destroyedEntitiesCache = new(1000);
 
+        // Reusable list for draining EntityBuilder queue (zero-allocation)
+        private readonly List<EntityBuilder> _builderBatchCache = new(1000);
+
         // Component list pooling for EntityBuilder reuse (zero-allocation)
         private readonly ConcurrentBag<List<ComponentInit>> _componentListPool = new();
 
@@ -275,6 +278,14 @@ namespace UltraSim.ECS
 
             if (builderQueueSize > 0)
             {
+                // Drain queue into reusable list for AsSpan iteration (CRITICAL for performance!)
+                _builderBatchCache.Clear();
+                _builderBatchCache.Capacity = Math.Max(_builderBatchCache.Capacity, builderQueueSize);
+                while (_createWithBuilderQueue.TryDequeue(out var builder))
+                {
+                    _builderBatchCache.Add(builder);
+                }
+
                 // Determine if we need event tracking
                 bool trackForEvent = builderQueueSize >= ADAPTIVE_THRESHOLD;
 
@@ -284,7 +295,8 @@ namespace UltraSim.ECS
                     _createdEntitiesCache.Capacity = Math.Max(_createdEntitiesCache.Capacity, builderQueueSize);
                 }
 
-                while (_createWithBuilderQueue.TryDequeue(out var builder))
+                // Process with AsSpan for zero-allocation iteration
+                foreach (ref readonly var builder in CollectionsMarshal.AsSpan(_builderBatchCache))
                 {
                     try
                     {
@@ -292,7 +304,7 @@ namespace UltraSim.ECS
 
                         // Build component signature
                         var signature = new ComponentSignature();
-                        foreach (var comp in components)
+                        foreach (ref readonly var comp in CollectionsMarshal.AsSpan(components))
                         {
                             signature = signature.Add(comp.TypeId);
                         }
@@ -300,10 +312,10 @@ namespace UltraSim.ECS
                         // Create entity directly in target archetype (NO thrashing!)
                         var entity = CreateWithSignature(signature);
 
-                        // Set all component values
+                        // Set all component values using AsSpan
                         if (TryGetLocation(entity, out var archetype, out var slot))
                         {
-                            foreach (var comp in components)
+                            foreach (ref readonly var comp in CollectionsMarshal.AsSpan(components))
                             {
                                 archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
                             }
