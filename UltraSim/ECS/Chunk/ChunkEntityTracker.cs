@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -41,8 +42,9 @@ public sealed class ChunkEntityTracker
             }
         }
 
-        private readonly Dictionary<Entity, ChunkData> _chunks = new();
-        private readonly Dictionary<Entity, EntitySlot> _entitySlots = new();
+        private readonly ConcurrentDictionary<Entity, ChunkData> _chunks = new();
+        private readonly ConcurrentDictionary<Entity, EntitySlot> _entitySlots = new();
+        private readonly object _lockObj = new();
 
         public ChunkEntityEnumerable GetEntities(Entity chunkEntity)
         {
@@ -61,51 +63,58 @@ public sealed class ChunkEntityTracker
 
         public void Add(Entity chunkEntity, Entity entity)
         {
-            ref var data = ref CollectionsMarshal.GetValueRefOrAddDefault(_chunks, chunkEntity, out _);
-            EnsureBlockStorage(ref data);
-
-            int blockIndex = FindBlockWithSpace(ref data);
-            if (blockIndex < 0)
+            lock (_lockObj)
             {
-                blockIndex = data.BlockCount;
-                EnsureBlockCapacity(ref data, blockIndex + 1);
-                data.BlockCount++;
+                var data = _chunks.GetOrAdd(chunkEntity, _ => new ChunkData());
+                EnsureBlockStorage(ref data);
+
+                int blockIndex = FindBlockWithSpace(ref data);
+                if (blockIndex < 0)
+                {
+                    blockIndex = data.BlockCount;
+                    EnsureBlockCapacity(ref data, blockIndex + 1);
+                    data.BlockCount++;
+                }
+
+                ref var block = ref data.Blocks![blockIndex];
+                if (block.Entries == null)
+                {
+                    block.Entries = new Entity[BlockCapacity];
+                }
+
+                int bitIndex = FindFreeBit(block.Occupancy);
+                block.Occupancy |= 1UL << bitIndex;
+                block.Entries[bitIndex] = entity;
+
+                data.Count++;
+                _chunks[chunkEntity] = data;
+                _entitySlots[entity] = new EntitySlot(chunkEntity, blockIndex, bitIndex);
             }
-
-            ref var block = ref data.Blocks![blockIndex];
-            if (block.Entries == null)
-            {
-                block.Entries = new Entity[BlockCapacity];
-            }
-
-            int bitIndex = FindFreeBit(block.Occupancy);
-            block.Occupancy |= 1UL << bitIndex;
-            block.Entries[bitIndex] = entity;
-
-            data.Count++;
-            _entitySlots[entity] = new EntitySlot(chunkEntity, blockIndex, bitIndex);
         }
 
         public void Remove(Entity chunkEntity, Entity entity)
         {
-            if (!_entitySlots.TryGetValue(entity, out var slot) || slot.Chunk != chunkEntity)
-                return;
-
-            if (!_chunks.TryGetValue(chunkEntity, out var data) || data.Blocks == null || slot.BlockIndex >= data.BlockCount)
-                return;
-
-            ref var block = ref data.Blocks[slot.BlockIndex];
-            block.Occupancy &= ~(1UL << slot.BitIndex);
-            block.Entries[slot.BitIndex] = Entity.Invalid;
-            data.Count--;
-            _entitySlots.Remove(entity);
-
-            if (block.Occupancy == 0 && slot.BlockIndex == data.BlockCount - 1)
+            lock (_lockObj)
             {
-                TrimTrailingBlocks(ref data);
-            }
+                if (!_entitySlots.TryGetValue(entity, out var slot) || slot.Chunk != chunkEntity)
+                    return;
 
-            _chunks[chunkEntity] = data;
+                if (!_chunks.TryGetValue(chunkEntity, out var data) || data.Blocks == null || slot.BlockIndex >= data.BlockCount)
+                    return;
+
+                ref var block = ref data.Blocks[slot.BlockIndex];
+                block.Occupancy &= ~(1UL << slot.BitIndex);
+                block.Entries[slot.BitIndex] = Entity.Invalid;
+                data.Count--;
+                _entitySlots.TryRemove(entity, out _);
+
+                if (block.Occupancy == 0 && slot.BlockIndex == data.BlockCount - 1)
+                {
+                    TrimTrailingBlocks(ref data);
+                }
+
+                _chunks[chunkEntity] = data;
+            }
         }
 
         public void Move(Entity entity, Entity oldChunk, Entity newChunk)
@@ -119,35 +128,38 @@ public sealed class ChunkEntityTracker
 
         public void Clear(Entity chunkEntity)
         {
-            if (!_chunks.TryGetValue(chunkEntity, out var data) || data.Blocks == null || data.Count == 0)
+            lock (_lockObj)
             {
-                _chunks.Remove(chunkEntity);
-                return;
-            }
-
-            for (int b = 0; b < data.BlockCount; b++)
-            {
-                var block = data.Blocks[b];
-                if (block.Occupancy == 0 || block.Entries == null)
-                    continue;
-
-                ulong mask = block.Occupancy;
-                while (mask != 0)
+                if (!_chunks.TryGetValue(chunkEntity, out var data) || data.Blocks == null || data.Count == 0)
                 {
-                    int bit = BitOperations.TrailingZeroCount(mask);
-                    var entity = block.Entries[bit];
-                    if (entity != Entity.Invalid)
-                        _entitySlots.Remove(entity);
-                    block.Entries[bit] = Entity.Invalid;
-                    mask &= mask - 1;
+                    _chunks.TryRemove(chunkEntity, out _);
+                    return;
                 }
 
-                data.Blocks[b].Occupancy = 0;
-            }
+                for (int b = 0; b < data.BlockCount; b++)
+                {
+                    var block = data.Blocks[b];
+                    if (block.Occupancy == 0 || block.Entries == null)
+                        continue;
 
-            data.Count = 0;
-            data.BlockCount = 0;
-            _chunks.Remove(chunkEntity);
+                    ulong mask = block.Occupancy;
+                    while (mask != 0)
+                    {
+                        int bit = BitOperations.TrailingZeroCount(mask);
+                        var entity = block.Entries[bit];
+                        if (entity != Entity.Invalid)
+                            _entitySlots.TryRemove(entity, out _);
+                        block.Entries[bit] = Entity.Invalid;
+                        mask &= mask - 1;
+                    }
+
+                    data.Blocks[b].Occupancy = 0;
+                }
+
+                data.Count = 0;
+                data.BlockCount = 0;
+                _chunks.TryRemove(chunkEntity, out _);
+            }
         }
 
         private static void EnsureBlockStorage(ref ChunkData data)
