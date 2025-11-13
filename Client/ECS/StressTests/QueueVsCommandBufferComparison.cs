@@ -105,7 +105,7 @@ namespace Client.ECS.StressTests
             {
                 _world!.EnqueueCreateEntity(entity =>
                 {
-                    _world!.EnqueueComponentAdd(entity.Index,
+                    _world!.EnqueueComponentAdd(entity,
                         ComponentManager.GetTypeId<Position>(),
                         new Position { X = i, Y = i, Z = i });
                 });

@@ -854,7 +854,7 @@ namespace UltraSim.Server.ECS.Systems
             // This prevents stale CommandBuffer operations on pooled/reused entities
             if (archetype.HasComponent(UnregisteredChunkTagTypeId))
             {
-                world.EnqueueComponentRemove(chunkEntity.Index, UnregisteredChunkTagTypeId);
+                world.EnqueueComponentRemove(chunkEntity, UnregisteredChunkTagTypeId);
             }
 
             _chunkPool.Enqueue(chunkEntity);

@@ -154,11 +154,19 @@ namespace UltraSim.ECS
         public void EnqueueSystemEnable<T>() where T : BaseSystem => _systems.EnqueueEnable<T>();
         public void EnqueueSystemDisable<T>() where T : BaseSystem => _systems.EnqueueDisable<T>();
 
-        public void EnqueueComponentRemove(uint entityIndex, int compId) =>
-            _components.EnqueueRemove(entityIndex, compId);
+        /// <summary>
+        /// Enqueues a component removal for deferred processing.
+        /// Stores full entity (index + version) for proper validation.
+        /// </summary>
+        public void EnqueueComponentRemove(Entity entity, int compId) =>
+            _components.EnqueueRemove(entity, compId);
 
-        public void EnqueueComponentAdd(uint entityIndex, int compId, object boxedValue) =>
-            _components.EnqueueAdd(entityIndex, compId, boxedValue);
+        /// <summary>
+        /// Enqueues a component addition for deferred processing.
+        /// Stores full entity (index + version) for proper validation.
+        /// </summary>
+        public void EnqueueComponentAdd(Entity entity, int compId, object boxedValue) =>
+            _components.EnqueueAdd(entity, compId, boxedValue);
 
         #endregion
 
@@ -210,13 +218,25 @@ namespace UltraSim.ECS
 
         #region Component Operations (Internal - called by ComponentManager)
 
-        internal void AddComponentToEntityInternal(uint entityIndex, int componentTypeId, object boxedValue)
+        /// <summary>
+        /// Adds a component to an entity (called during queue processing).
+        /// OPTION 2: Validates entity version before applying operation.
+        /// If entity was destroyed/recycled, operation is safely skipped.
+        /// </summary>
+        internal void AddComponentToEntityInternal(Entity entity, int componentTypeId, object boxedValue)
         {
-            // Get entity location
-            var tempEntity = new Entity(entityIndex, 1); // Use version 1 as placeholder since we only need index
-            if (!_entities.TryGetLocation(tempEntity, out var sourceArch, out var sourceSlot))
+            // OPTION 2: Proper version validation - uses entity.Version from queue
+            if (!_entities.IsAlive(entity))
             {
-                // Entity was destroyed before deferred component addition was processed (valid race condition)
+                // Entity was destroyed/recycled before queue processing - skip operation
+                // This is NOT an error - it's a valid race condition
+                return;
+            }
+
+            // Get entity location (we know it's alive, so this should succeed)
+            if (!_entities.TryGetLocation(entity, out var sourceArch, out var sourceSlot))
+            {
+                // This shouldn't happen if IsAlive returned true, but be defensive
                 return;
             }
 
@@ -228,16 +248,28 @@ namespace UltraSim.ECS
             _archetypes.MoveEntity(sourceArch, sourceSlot, targetArch, boxedValue);
 
             // Update entity lookup
-            _entities.UpdateLookup(entityIndex, targetArch, targetArch.Count - 1);
+            _entities.UpdateLookup(entity.Index, targetArch, targetArch.Count - 1);
         }
 
-        internal void RemoveComponentFromEntityInternal(uint entityIndex, int componentTypeId)
+        /// <summary>
+        /// Removes a component from an entity (called during queue processing).
+        /// OPTION 2: Validates entity version before applying operation.
+        /// If entity was destroyed/recycled, operation is safely skipped.
+        /// </summary>
+        internal void RemoveComponentFromEntityInternal(Entity entity, int componentTypeId)
         {
-            // Get entity location
-            var tempEntity = new Entity(entityIndex, 1); // Use version 1 as placeholder
-            if (!_entities.TryGetLocation(tempEntity, out var oldArch, out var slot))
+            // OPTION 2: Proper version validation - uses entity.Version from queue
+            if (!_entities.IsAlive(entity))
             {
-                // Entity was destroyed before deferred component removal was processed (valid race condition)
+                // Entity was destroyed/recycled before queue processing - skip operation
+                // This is NOT an error - it's a valid race condition
+                return;
+            }
+
+            // Get entity location (we know it's alive, so this should succeed)
+            if (!_entities.TryGetLocation(entity, out var oldArch, out var slot))
+            {
+                // This shouldn't happen if IsAlive returned true, but be defensive
                 return;
             }
 
@@ -252,7 +284,7 @@ namespace UltraSim.ECS
             _archetypes.MoveEntity(oldArch, slot, newArch);
 
             // Update entity lookup
-            _entities.UpdateLookup(entityIndex, newArch, newArch.Count - 1);
+            _entities.UpdateLookup(entity.Index, newArch, newArch.Count - 1);
         }
 
         #endregion

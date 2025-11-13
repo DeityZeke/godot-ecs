@@ -173,7 +173,7 @@ namespace Client.ECS.StressTests
                 int captured = i; // Capture for closure
                 queue.Enqueue(entity =>
                 {
-                    _world!.EnqueueComponentAdd(entity.Index,
+                    _world!.EnqueueComponentAdd(entity,
                         ComponentManager.GetTypeId<Position>(),
                         new Position { X = captured, Y = captured, Z = captured });
                 });
