@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Godot;
 using UltraSim;
 using UltraSim.ECS;
@@ -256,17 +257,17 @@ namespace Client.ECS.StressTests
                 GD.Print($"\n━━━ Batch Size: {batchSize:N0} entities ━━━\n");
 
                 // Find fastest method
-                TestResult? fastest = null;
-                foreach (var r in batchResults)
+                TestResult fastest = batchResults[0];
+                for (int i = 1; i < batchResults.Count; i++)
                 {
-                    if (fastest == null || r.TotalMs < fastest.TotalMs)
-                        fastest = r;
+                    if (batchResults[i].TotalMs < fastest.TotalMs)
+                        fastest = batchResults[i];
                 }
 
                 foreach (var r in batchResults)
                 {
-                    double speedup = fastest!.TotalMs / r.TotalMs;
-                    string marker = r == fastest ? "★ FASTEST" : $"{speedup:F2}x slower";
+                    double speedup = fastest.TotalMs / r.TotalMs;
+                    string marker = r.MethodName == fastest.MethodName ? "★ FASTEST" : $"{speedup:F2}x slower";
 
                     GD.Print($"{r.MethodName}:");
                     GD.Print($"  Total:    {r.TotalMs:F3}ms ({marker})");

@@ -305,7 +305,7 @@ namespace UltraSim.ECS
                         {
                             foreach (var comp in components)
                             {
-                                archetype.SetComponent(slot, comp.TypeId, comp.Value);
+                                archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
                             }
                         }
 
