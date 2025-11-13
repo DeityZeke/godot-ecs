@@ -575,7 +575,7 @@ namespace UltraSim.Server.ECS.Systems
 
                     // Remove UnregisteredChunkTag - chunk is now registered!
                     // Using CommandBuffer to defer component removal (safe during Update)
-                    _buffer.RemoveComponent(entity.Index, UnregisteredChunkTagTypeId);
+                    _buffer.RemoveComponent(entity, UnregisteredChunkTagTypeId);
 
                     _chunksRegisteredThisFrame++;
                     _chunkManager.TouchChunk(entity);
@@ -766,7 +766,7 @@ namespace UltraSim.Server.ECS.Systems
                 }
             }
 
-            _buffer.AddComponent(request.Entity.Index, ChunkOwnerTypeId, new ChunkOwner(chunkEntity, request.Location));
+            _buffer.AddComponent(request.Entity, ChunkOwnerTypeId, new ChunkOwner(chunkEntity, request.Location));
             return true;
         }
 
@@ -960,7 +960,7 @@ namespace UltraSim.Server.ECS.Systems
             }
             else
             {
-                _buffer.AddComponent(request.Entity.Index, ChunkOwnerTypeId, owner);
+                _buffer.AddComponent(request.Entity, ChunkOwnerTypeId, owner);
             }
         }
 
@@ -1035,7 +1035,7 @@ namespace UltraSim.Server.ECS.Systems
                     }
                     else
                     {
-                        _buffer.AddComponent(entity.Index, ChunkOwnerTypeId, owner);
+                        _buffer.AddComponent(entity, ChunkOwnerTypeId, owner);
                     }
 
                     assignedCount++;

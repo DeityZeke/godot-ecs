@@ -304,7 +304,7 @@ namespace Client.ECS.Systems
                     if (pooledEntities.Count + pooled < SystemSettings.PoolCapacity.Value)
                     {
                         // Add to pool via RenderChunkPoolTag
-                        _buffer.AddComponent(entity.Index, ComponentManager.GetTypeId<RenderChunkPoolTag>(), new RenderChunkPoolTag());
+                        _buffer.AddComponent(entity, ComponentManager.GetTypeId<RenderChunkPoolTag>(), new RenderChunkPoolTag());
                         pooled++;
                     }
                     else
@@ -333,12 +333,12 @@ namespace Client.ECS.Systems
                         var entity = pooledEntities[poolIndex++];
 
                         // Remove pool tag
-                        _buffer.RemoveComponent(entity.Index, ComponentManager.GetTypeId<RenderChunkPoolTag>());
+                        _buffer.RemoveComponent(entity, ComponentManager.GetTypeId<RenderChunkPoolTag>());
 
                         // Update RenderChunk component with new location/bounds
                         // NOTE: We don't add ChunkLocation as separate component to avoid conflicts with ChunkSystem
-                        _buffer.RemoveComponent(entity.Index, renderChunkTypeId);
-                        _buffer.AddComponent(entity.Index, renderChunkTypeId, new RenderChunk(location, bounds, visible: false));
+                        _buffer.RemoveComponent(entity, renderChunkTypeId);
+                        _buffer.AddComponent(entity, renderChunkTypeId, new RenderChunk(location, bounds, visible: false));
 
                         // Add zone tag to activate
                         AddZoneTag(_buffer, entity, zone);
