@@ -105,8 +105,8 @@ namespace UltraSim.ECS
             // Get empty archetype from ArchetypeManager
             var baseArch = _archetypes.GetEmptyArchetype();
 
-            baseArch.AddEntity(entity);
-            SetLookup(idx, 0, baseArch.Count - 1);
+            int slot = baseArch.AddEntity(entity);
+            SetLookup(idx, 0, slot);
             _liveEntityCount++;
 
             return entity;
@@ -145,12 +145,12 @@ namespace UltraSim.ECS
             // Get or create archetype from ArchetypeManager
             var archetype = _archetypes.GetOrCreate(signature);
 
-            // Add entity to archetype
-            archetype.AddEntity(entity);
+            // Add entity to archetype and get the actual slot (thread-safe)
+            int slot = archetype.AddEntity(entity);
 
             // Update lookup
             int archetypeIdx = _archetypes.GetArchetypeIndex(archetype);
-            SetLookup(idx, archetypeIdx, archetype.Count - 1);
+            SetLookup(idx, archetypeIdx, slot);
             _liveEntityCount++;
 
             return entity;
