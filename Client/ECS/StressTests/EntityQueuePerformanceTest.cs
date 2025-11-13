@@ -17,10 +17,16 @@ namespace Client.ECS.StressTests
     /// Benchmarks entity creation queue performance with random entity counts and intervals.
     /// Tests: Enqueue -> ProcessQueues -> Batch Create -> Event Fire
     /// </summary>
-    public partial class EntityQueuePerformanceTest : Node
+    public partial class EntityQueuePerformanceTest : Node, IHost
     {
         private World? _world;
         private readonly Random _random = new(12345); // Fixed seed for reproducibility
+
+        // IHost implementation
+        public RuntimeContext Runtime { get; private set; } = null!;
+        public EnvironmentType Environment => EnvironmentType.Hybrid;
+        public object? GetRootHandle() => this;
+        public void Log(LogEntry entry) => GD.Print($"[{entry.Severity}] {entry.Message}");
 
         // Timing data
         private readonly List<TimingSample> _samples = new();
@@ -40,32 +46,26 @@ namespace Client.ECS.StressTests
 
         public override void _Ready()
         {
-            Logging.Log("[EntityQueuePerformanceTest] Starting queue performance benchmark...");
+            // Create our own World for testing
+            Runtime = new RuntimeContext(HostEnvironment.Capture(), "EntityQueuePerformanceTest");
+            Logging.Host = this;
+            _world = new World(this);
 
-            // Find WorldHostBase in scene tree
-            var worldHost = GetTree().Root.GetNode<WorldHostBase>("Main");
-            if (worldHost != null)
-            {
-                _world = worldHost.GetType().GetProperty("ActiveWorld")?.GetValue(worldHost) as World;
-            }
-
-            if (_world == null)
-            {
-                Logging.Log("[EntityQueuePerformanceTest] ERROR: World not found!", LogSeverity.Error);
-                return;
-            }
-
-            Logging.Log("[EntityQueuePerformanceTest] Test configuration:");
-            Logging.Log($"  - Test duration: {MAX_TEST_FRAMES} frames (~2 seconds at 60 FPS)");
-            Logging.Log($"  - Batch size range: {MIN_ENTITIES_PER_BATCH}-{MAX_ENTITIES_PER_BATCH} entities");
-            Logging.Log($"  - Pattern: Random batch sizes at random intervals");
-            Logging.Log($"  - Measuring: Enqueue | Process | Create | Event | Total");
+            GD.Print("[EntityQueuePerformanceTest] Starting queue performance benchmark...");
+            GD.Print("[EntityQueuePerformanceTest] Test configuration:");
+            GD.Print($"  - Test duration: {MAX_TEST_FRAMES} frames (~2 seconds at 60 FPS)");
+            GD.Print($"  - Batch size range: {MIN_ENTITIES_PER_BATCH}-{MAX_ENTITIES_PER_BATCH} entities");
+            GD.Print($"  - Pattern: Random batch sizes at random intervals");
+            GD.Print($"  - Measuring: Enqueue | Process | Create | Event | Total");
         }
 
         public override void _Process(double delta)
         {
             if (_world == null || _testFrames >= MAX_TEST_FRAMES)
                 return;
+
+            // Tick the world to process queues and systems
+            _world!.Tick(delta);
 
             _testFrames++;
 
@@ -106,10 +106,10 @@ namespace Client.ECS.StressTests
             _sw.Restart();
             for (int i = 0; i < batchSize; i++)
             {
-                _world.EnqueueCreateEntity(entity =>
+                _world!.EnqueueCreateEntity(entity =>
                 {
                     // Simple entity with Position component
-                    _world.EnqueueComponentAdd(entity.Index,
+                    _world!.EnqueueComponentAdd(entity.Index,
                         ComponentManager.GetTypeId<Position>(),
                         new Position { X = 0, Y = 0, Z = 0 });
                 });
@@ -122,7 +122,7 @@ namespace Client.ECS.StressTests
             // Note: World.Tick processes entity queue, then component queue
             // We can't separate them without access to internal managers
             _sw.Restart();
-            _world.Tick(0.016); // Tick with minimal delta
+            _world!.Tick(0.016); // Tick with minimal delta
             _sw.Stop();
             long tickNs = _sw.Elapsed.Ticks * 100;
             sample.ProcessNs = tickNs / 2; // Approximate split
@@ -142,130 +142,130 @@ namespace Client.ECS.StressTests
             if (_samples.Count == 0)
                 return;
 
-            Logging.Log($"\n[Frame {_testFrames}] Intermediate Results:");
-            Logging.Log($"  Batches processed: {_samples.Count}");
-            Logging.Log($"  Entities created:  {_totalEntitiesCreated:N0}");
+            GD.Print($"\n[Frame {_testFrames}] Intermediate Results:");
+            GD.Print($"  Batches processed: {_samples.Count}");
+            GD.Print($"  Entities created:  {_totalEntitiesCreated:N0}");
 
             var avgEnqueue = _totalEnqueueNs / _samples.Count;
             var avgProcess = _totalProcessNs / _samples.Count;
             var avgCreate = _totalCreateNs / _samples.Count;
             var avgTotal = (_totalEnqueueNs + _totalProcessNs + _totalCreateNs) / _samples.Count;
 
-            Logging.Log($"  Avg Enqueue:  {avgEnqueue / 1000.0:F2} μs");
-            Logging.Log($"  Avg Process:  {avgProcess / 1000.0:F2} μs");
-            Logging.Log($"  Avg Create:   {avgCreate / 1000.0:F2} μs");
-            Logging.Log($"  Avg Total:    {avgTotal / 1000.0:F2} μs");
+            GD.Print($"  Avg Enqueue:  {avgEnqueue / 1000.0:F2} μs");
+            GD.Print($"  Avg Process:  {avgProcess / 1000.0:F2} μs");
+            GD.Print($"  Avg Create:   {avgCreate / 1000.0:F2} μs");
+            GD.Print($"  Avg Total:    {avgTotal / 1000.0:F2} μs");
         }
 
         private void PrintFinalResults()
         {
             if (_samples.Count == 0)
             {
-                Logging.Log("[EntityQueuePerformanceTest] No samples collected!");
+                GD.Print("[EntityQueuePerformanceTest] No samples collected!");
                 return;
             }
 
-            Logging.Log("\n╔════════════════════════════════════════════════════════════════╗");
-            Logging.Log("║       ENTITY QUEUE PERFORMANCE TEST - FINAL RESULTS           ║");
-            Logging.Log("╚════════════════════════════════════════════════════════════════╝\n");
+            GD.Print("\n╔════════════════════════════════════════════════════════════════╗");
+            GD.Print("║       ENTITY QUEUE PERFORMANCE TEST - FINAL RESULTS           ║");
+            GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
             // Overall statistics
-            Logging.Log($"Test Summary:");
-            Logging.Log($"  Frames:           {_testFrames}");
-            Logging.Log($"  Batches:          {_samples.Count}");
-            Logging.Log($"  Total entities:   {_totalEntitiesCreated:N0}");
-            Logging.Log($"  Avg batch size:   {_totalEntitiesCreated / (double)_samples.Count:F1}");
+            GD.Print($"Test Summary:");
+            GD.Print($"  Frames:           {_testFrames}");
+            GD.Print($"  Batches:          {_samples.Count}");
+            GD.Print($"  Total entities:   {_totalEntitiesCreated:N0}");
+            GD.Print($"  Avg batch size:   {_totalEntitiesCreated / (double)_samples.Count:F1}");
 
             // Phase breakdown (averages)
-            Logging.Log($"\nPhase Timing (Average per batch):");
+            GD.Print($"\nPhase Timing (Average per batch):");
             var avgEnqueue = _totalEnqueueNs / _samples.Count;
             var avgProcess = _totalProcessNs / _samples.Count;
             var avgCreate = _totalCreateNs / _samples.Count;
             var avgTotal = avgEnqueue + avgProcess + avgCreate;
 
-            Logging.Log($"  Enqueue:    {avgEnqueue / 1000.0:F2} μs ({avgEnqueue * 100.0 / avgTotal:F1}%)");
-            Logging.Log($"  Process:    {avgProcess / 1000.0:F2} μs ({avgProcess * 100.0 / avgTotal:F1}%)");
-            Logging.Log($"  Create:     {avgCreate / 1000.0:F2} μs ({avgCreate * 100.0 / avgTotal:F1}%)");
-            Logging.Log($"  TOTAL:      {avgTotal / 1000.0:F2} μs");
+            GD.Print($"  Enqueue:    {avgEnqueue / 1000.0:F2} μs ({avgEnqueue * 100.0 / avgTotal:F1}%)");
+            GD.Print($"  Process:    {avgProcess / 1000.0:F2} μs ({avgProcess * 100.0 / avgTotal:F1}%)");
+            GD.Print($"  Create:     {avgCreate / 1000.0:F2} μs ({avgCreate * 100.0 / avgTotal:F1}%)");
+            GD.Print($"  TOTAL:      {avgTotal / 1000.0:F2} μs");
 
             // Per-entity cost
-            Logging.Log($"\nPer-Entity Cost:");
+            GD.Print($"\nPer-Entity Cost:");
             var perEntityEnqueue = _totalEnqueueNs / (double)_totalEntitiesCreated;
             var perEntityProcess = _totalProcessNs / (double)_totalEntitiesCreated;
             var perEntityCreate = _totalCreateNs / (double)_totalEntitiesCreated;
             var perEntityTotal = (perEntityEnqueue + perEntityProcess + perEntityCreate);
 
-            Logging.Log($"  Enqueue:    {perEntityEnqueue:F0} ns");
-            Logging.Log($"  Process:    {perEntityProcess:F0} ns");
-            Logging.Log($"  Create:     {perEntityCreate:F0} ns");
-            Logging.Log($"  TOTAL:      {perEntityTotal:F0} ns ({1000000000.0 / perEntityTotal:F0} entities/sec)");
+            GD.Print($"  Enqueue:    {perEntityEnqueue:F0} ns");
+            GD.Print($"  Process:    {perEntityProcess:F0} ns");
+            GD.Print($"  Create:     {perEntityCreate:F0} ns");
+            GD.Print($"  TOTAL:      {perEntityTotal:F0} ns ({1000000000.0 / perEntityTotal:F0} entities/sec)");
 
             // Batch size analysis
             var smallBatches = _samples.Where(s => s.BatchSize < 100).ToList();
             var mediumBatches = _samples.Where(s => s.BatchSize >= 100 && s.BatchSize < 1000).ToList();
             var largeBatches = _samples.Where(s => s.BatchSize >= 1000).ToList();
 
-            Logging.Log($"\nBatch Size Analysis:");
+            GD.Print($"\nBatch Size Analysis:");
             if (smallBatches.Count > 0)
             {
                 var avgTime = smallBatches.Average(s => s.TotalNs) / 1000.0;
-                Logging.Log($"  Small (1-99):      {smallBatches.Count} batches, avg {avgTime:F2} μs");
+                GD.Print($"  Small (1-99):      {smallBatches.Count} batches, avg {avgTime:F2} μs");
             }
             if (mediumBatches.Count > 0)
             {
                 var avgTime = mediumBatches.Average(s => s.TotalNs) / 1000.0;
-                Logging.Log($"  Medium (100-999):  {mediumBatches.Count} batches, avg {avgTime:F2} μs");
+                GD.Print($"  Medium (100-999):  {mediumBatches.Count} batches, avg {avgTime:F2} μs");
             }
             if (largeBatches.Count > 0)
             {
                 var avgTime = largeBatches.Average(s => s.TotalNs) / 1000.0;
-                Logging.Log($"  Large (1000+):     {largeBatches.Count} batches, avg {avgTime:F2} μs");
+                GD.Print($"  Large (1000+):     {largeBatches.Count} batches, avg {avgTime:F2} μs");
             }
 
             // Worst cases
             var worstSample = _samples.OrderByDescending(s => s.TotalNs).First();
             var bestSample = _samples.OrderBy(s => s.TotalNs).First();
 
-            Logging.Log($"\nWorst case:");
-            Logging.Log($"  Batch size: {worstSample.BatchSize} entities");
-            Logging.Log($"  Total time: {worstSample.TotalNs / 1000000.0:F2} ms");
-            Logging.Log($"  Per entity: {worstSample.TotalNs / worstSample.BatchSize:F0} ns");
+            GD.Print($"\nWorst case:");
+            GD.Print($"  Batch size: {worstSample.BatchSize} entities");
+            GD.Print($"  Total time: {worstSample.TotalNs / 1000000.0:F2} ms");
+            GD.Print($"  Per entity: {worstSample.TotalNs / worstSample.BatchSize:F0} ns");
 
-            Logging.Log($"\nBest case:");
-            Logging.Log($"  Batch size: {bestSample.BatchSize} entities");
-            Logging.Log($"  Total time: {bestSample.TotalNs / 1000000.0:F2} ms");
-            Logging.Log($"  Per entity: {bestSample.TotalNs / bestSample.BatchSize:F0} ns");
+            GD.Print($"\nBest case:");
+            GD.Print($"  Batch size: {bestSample.BatchSize} entities");
+            GD.Print($"  Total time: {bestSample.TotalNs / 1000000.0:F2} ms");
+            GD.Print($"  Per entity: {bestSample.TotalNs / bestSample.BatchSize:F0} ns");
 
             // Frame budget analysis (60 FPS = 16.67ms per frame)
-            Logging.Log($"\nFrame Budget Analysis (60 FPS = 16.67ms):");
+            GD.Print($"\nFrame Budget Analysis (60 FPS = 16.67ms):");
             var maxEntitiesPerFrame = (16670000.0 / perEntityTotal); // 16.67ms in nanoseconds
-            Logging.Log($"  Max entities per frame: {maxEntitiesPerFrame:F0} (staying under 16.67ms)");
+            GD.Print($"  Max entities per frame: {maxEntitiesPerFrame:F0} (staying under 16.67ms)");
 
             var framesWithSpikes = _samples.Count(s => s.TotalNs > 16670000);
             if (framesWithSpikes > 0)
             {
-                Logging.Log($"  WARNING: {framesWithSpikes} batches exceeded 16.67ms!");
+                GD.Print($"  WARNING: {framesWithSpikes} batches exceeded 16.67ms!");
             }
 
             // Performance verdict
-            Logging.Log($"\n╔════════════════════════════════════════════════════════════════╗");
+            GD.Print($"\n╔════════════════════════════════════════════════════════════════╗");
             if (perEntityTotal < 500) // < 500ns per entity
             {
-                Logging.Log("║  VERDICT: ✓ EXCELLENT - Queue overhead is negligible          ║");
+                GD.Print("║  VERDICT: ✓ EXCELLENT - Queue overhead is negligible          ║");
             }
             else if (perEntityTotal < 2000) // < 2μs per entity
             {
-                Logging.Log("║  VERDICT: ✓ GOOD - Queue overhead is acceptable               ║");
+                GD.Print("║  VERDICT: ✓ GOOD - Queue overhead is acceptable               ║");
             }
             else if (perEntityTotal < 10000) // < 10μs per entity
             {
-                Logging.Log("║  VERDICT: ⚠ MODERATE - Queue adds measurable overhead         ║");
+                GD.Print("║  VERDICT: ⚠ MODERATE - Queue adds measurable overhead         ║");
             }
             else
             {
-                Logging.Log("║  VERDICT: ✗ POOR - Queue overhead is significant              ║");
+                GD.Print("║  VERDICT: ✗ POOR - Queue overhead is significant              ║");
             }
-            Logging.Log("╚════════════════════════════════════════════════════════════════╝\n");
+            GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
         }
 
         private struct TimingSample

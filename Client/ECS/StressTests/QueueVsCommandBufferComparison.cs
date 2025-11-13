@@ -15,10 +15,16 @@ namespace Client.ECS.StressTests
     /// Direct comparison: Queue-based creation vs CommandBuffer creation.
     /// Tests identical workloads to isolate queue overhead.
     /// </summary>
-    public partial class QueueVsCommandBufferComparison : Node
+    public partial class QueueVsCommandBufferComparison : Node, IHost
     {
         private World? _world;
         private readonly Stopwatch _sw = new();
+
+        // IHost implementation
+        public RuntimeContext Runtime { get; private set; } = null!;
+        public EnvironmentType Environment => EnvironmentType.Hybrid;
+        public object? GetRootHandle() => this;
+        public void Log(LogEntry entry) => GD.Print($"[{entry.Severity}] {entry.Message}");
 
         // Test configurations
         private readonly int[] _testSizes = { 10, 100, 1_000, 10_000, 100_000 };
@@ -38,21 +44,12 @@ namespace Client.ECS.StressTests
 
         public override void _Ready()
         {
-            Logging.Log("[QueueVsCommandBufferComparison] Starting comparison test...");
+            // Create our own World for testing
+            Runtime = new RuntimeContext(HostEnvironment.Capture(), "QueueVsCommandBufferComparison");
+            Logging.Host = this;
+            _world = new World(this);
 
-            // Find WorldHostBase in scene tree
-            var worldHost = GetTree().Root.GetNode<WorldHostBase>("Main");
-            if (worldHost != null)
-            {
-                _world = worldHost.GetType().GetProperty("ActiveWorld")?.GetValue(worldHost) as World;
-            }
-
-            if (_world == null)
-            {
-                Logging.Log("[QueueVsCommandBufferComparison] ERROR: World not found!", LogSeverity.Error);
-                return;
-            }
-
+            GD.Print("[QueueVsCommandBufferComparison] Starting comparison test...");
             RunNextTest();
         }
 
@@ -66,7 +63,7 @@ namespace Client.ECS.StressTests
             }
 
             int entityCount = _testSizes[_currentTestIndex];
-            Logging.Log($"\n[Test {_currentTestIndex + 1}/{_testSizes.Length}] Testing {entityCount:N0} entities...");
+            GD.Print($"\n[Test {_currentTestIndex + 1}/{_testSizes.Length}] Testing {entityCount:N0} entities...");
 
             // Clear any existing entities
             ClearAllEntities();
@@ -91,9 +88,9 @@ namespace Client.ECS.StressTests
 
             _results.Add(result);
 
-            Logging.Log($"  Queue:         {queueTime:F3} ms ({result.QueuePerEntityNs:F0} ns/entity)");
-            Logging.Log($"  CommandBuffer: {bufferTime:F3} ms ({result.BufferPerEntityNs:F0} ns/entity)");
-            Logging.Log($"  Slowdown:      {result.SlowdownFactor:F2}x");
+            GD.Print($"  Queue:         {queueTime:F3} ms ({result.QueuePerEntityNs:F0} ns/entity)");
+            GD.Print($"  CommandBuffer: {bufferTime:F3} ms ({result.BufferPerEntityNs:F0} ns/entity)");
+            GD.Print($"  Slowdown:      {result.SlowdownFactor:F2}x");
 
             _currentTestIndex++;
             CallDeferred(nameof(RunNextTest));
@@ -106,16 +103,16 @@ namespace Client.ECS.StressTests
             // Enqueue entities
             for (int i = 0; i < count; i++)
             {
-                _world.EnqueueCreateEntity(entity =>
+                _world!.EnqueueCreateEntity(entity =>
                 {
-                    _world.EnqueueComponentAdd(entity.Index,
+                    _world!.EnqueueComponentAdd(entity.Index,
                         ComponentManager.GetTypeId<Position>(),
                         new Position { X = i, Y = i, Z = i });
                 });
             }
 
             // Process queues via Tick (this is where the work happens)
-            _world.Tick(0.016); // Minimal delta to process queues
+            _world!.Tick(0.016); // Minimal delta to process queues
 
             _sw.Stop();
             return _sw.Elapsed.TotalMilliseconds;
@@ -134,7 +131,7 @@ namespace Client.ECS.StressTests
             }
 
             // Apply buffer (this is where the work happens)
-            buffer.Apply(_world);
+            buffer.Apply(_world!);
 
             _sw.Stop();
             return _sw.Elapsed.TotalMilliseconds;
@@ -143,7 +140,7 @@ namespace Client.ECS.StressTests
         private void ClearAllEntities()
         {
             var buffer = new CommandBuffer();
-            var archetypes = _world.QueryArchetypes(typeof(Position));
+            var archetypes = _world!.QueryArchetypes(typeof(Position));
 
             foreach (var archetype in archetypes)
             {
@@ -163,16 +160,16 @@ namespace Client.ECS.StressTests
 
         private void PrintFinalComparison()
         {
-            Logging.Log("\n╔════════════════════════════════════════════════════════════════╗");
-            Logging.Log("║         QUEUE vs COMMANDBUFFER - FINAL COMPARISON             ║");
-            Logging.Log("╚════════════════════════════════════════════════════════════════╝\n");
+            GD.Print("\n╔════════════════════════════════════════════════════════════════╗");
+            GD.Print("║         QUEUE vs COMMANDBUFFER - FINAL COMPARISON             ║");
+            GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            Logging.Log("Entity Count | Queue Time | Buffer Time | Queue/Entity | Buffer/Entity | Slowdown");
-            Logging.Log("-------------|------------|-------------|--------------|---------------|----------");
+            GD.Print("Entity Count | Queue Time | Buffer Time | Queue/Entity | Buffer/Entity | Slowdown");
+            GD.Print("-------------|------------|-------------|--------------|---------------|----------");
 
             foreach (var result in _results)
             {
-                Logging.Log($"{result.EntityCount,12:N0} | {result.QueueTimeMs,9:F2}ms | {result.BufferTimeMs,10:F2}ms | {result.QueuePerEntityNs,11:F0}ns | {result.BufferPerEntityNs,12:F0}ns | {result.SlowdownFactor,7:F2}x");
+                GD.Print($"{result.EntityCount,12:N0} | {result.QueueTimeMs,9:F2}ms | {result.BufferTimeMs,10:F2}ms | {result.QueuePerEntityNs,11:F0}ns | {result.BufferPerEntityNs,12:F0}ns | {result.SlowdownFactor,7:F2}x");
             }
 
             // Overall analysis
@@ -184,59 +181,59 @@ namespace Client.ECS.StressTests
                 ? _results.Max(r => r.SlowdownFactor)
                 : 0;
 
-            Logging.Log($"\nSummary:");
-            Logging.Log($"  Average slowdown: {avgSlowdown:F2}x");
-            Logging.Log($"  Worst slowdown:   {worstSlowdown:F2}x");
+            GD.Print($"\nSummary:");
+            GD.Print($"  Average slowdown: {avgSlowdown:F2}x");
+            GD.Print($"  Worst slowdown:   {worstSlowdown:F2}x");
 
             // Find the bottleneck
             var largeTest = _results.Find(r => r.EntityCount >= 10_000);
             if (largeTest.EntityCount > 0)
             {
-                Logging.Log($"\nBottleneck Analysis (10k+ entities):");
+                GD.Print($"\nBottleneck Analysis (10k+ entities):");
 
                 var queueOverheadMs = largeTest.QueueTimeMs - largeTest.BufferTimeMs;
                 var queueOverheadPercent = (queueOverheadMs / largeTest.QueueTimeMs) * 100;
 
-                Logging.Log($"  Queue overhead:   {queueOverheadMs:F2} ms ({queueOverheadPercent:F1}%)");
-                Logging.Log($"  Per-entity cost:  {(queueOverheadMs * 1_000_000.0) / largeTest.EntityCount:F0} ns");
+                GD.Print($"  Queue overhead:   {queueOverheadMs:F2} ms ({queueOverheadPercent:F1}%)");
+                GD.Print($"  Per-entity cost:  {(queueOverheadMs * 1_000_000.0) / largeTest.EntityCount:F0} ns");
 
                 if (queueOverheadPercent < 10)
                 {
-                    Logging.Log($"  ✓ Queue overhead is negligible (<10%)");
+                    GD.Print($"  ✓ Queue overhead is negligible (<10%)");
                 }
                 else if (queueOverheadPercent < 50)
                 {
-                    Logging.Log($"  ⚠ Queue overhead is moderate (10-50%)");
+                    GD.Print($"  ⚠ Queue overhead is moderate (10-50%)");
                 }
                 else
                 {
-                    Logging.Log($"  ✗ Queue overhead is significant (>50%)");
+                    GD.Print($"  ✗ Queue overhead is significant (>50%)");
                 }
             }
 
             // Verdict
-            Logging.Log($"\n╔════════════════════════════════════════════════════════════════╗");
+            GD.Print($"\n╔════════════════════════════════════════════════════════════════╗");
             if (avgSlowdown < 1.2)
             {
-                Logging.Log("║  VERDICT: Queue is COMPETITIVE with CommandBuffer             ║");
-                Logging.Log("║  Recommendation: Use queues for explicit ordering              ║");
+                GD.Print("║  VERDICT: Queue is COMPETITIVE with CommandBuffer             ║");
+                GD.Print("║  Recommendation: Use queues for explicit ordering              ║");
             }
             else if (avgSlowdown < 2.0)
             {
-                Logging.Log("║  VERDICT: Queue is SLOWER but ACCEPTABLE                       ║");
-                Logging.Log("║  Recommendation: Use queues unless perf-critical               ║");
+                GD.Print("║  VERDICT: Queue is SLOWER but ACCEPTABLE                       ║");
+                GD.Print("║  Recommendation: Use queues unless perf-critical               ║");
             }
             else if (avgSlowdown < 5.0)
             {
-                Logging.Log("║  VERDICT: Queue has MEASURABLE overhead                        ║");
-                Logging.Log("║  Recommendation: Investigate queue implementation              ║");
+                GD.Print("║  VERDICT: Queue has MEASURABLE overhead                        ║");
+                GD.Print("║  Recommendation: Investigate queue implementation              ║");
             }
             else
             {
-                Logging.Log("║  VERDICT: Queue has SEVERE overhead                            ║");
-                Logging.Log("║  Recommendation: Fix queue or use CommandBuffer                ║");
+                GD.Print("║  VERDICT: Queue has SEVERE overhead                            ║");
+                GD.Print("║  Recommendation: Fix queue or use CommandBuffer                ║");
             }
-            Logging.Log("╚════════════════════════════════════════════════════════════════╝\n");
+            GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
         }
     }
 }

@@ -80,7 +80,6 @@ namespace UltraSim.ECS
         #region Frame Pipeline
 
         public int tickCount { get; private set; } = 0;
-        bool printTickSchedule = true;
 
         /// <summary>
         /// Main frame tick - processes all deferred operations and runs systems.

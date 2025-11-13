@@ -554,7 +554,7 @@ namespace UltraSim.Server.ECS.Systems
 
                     // SAFETY: Verify entity is still valid before processing
                     // (Could have been destroyed/pooled during deferred processing)
-                    if (!_world.IsEntityValid(entity))
+                    if (!_world!.IsEntityValid(entity))
                         continue;
 
                     var location = locations[i];
@@ -854,7 +854,7 @@ namespace UltraSim.Server.ECS.Systems
             // This prevents stale CommandBuffer operations on pooled/reused entities
             if (archetype.HasComponent(UnregisteredChunkTagTypeId))
             {
-                world.RemoveComponent<UnregisteredChunkTag>(chunkEntity);
+                world.EnqueueComponentRemove(chunkEntity.Index, UnregisteredChunkTagTypeId);
             }
 
             _chunkPool.Enqueue(chunkEntity);

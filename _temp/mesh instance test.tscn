@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://b65sxxp3qsmgq"]
 
-[ext_resource type="Script" uid="uid://dfxp384piwink" path="res://_temp/MeshInstanceStress.cs" id="1_8vqph"]
+[ext_resource type="Script" uid="uid://dblxfmjt6ny4s" path="res://Client/ECS/StressTests/EntityQueuePerformanceTest.cs" id="1_8vqph"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_8vqph"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -15,9 +15,8 @@ sky = SubResource("Sky_jk74j")
 tonemap_mode = 2
 glow_enabled = true
 
-[node name="Node3D" type="Node3D"]
+[node name="Main" type="Node3D"]
 script = ExtResource("1_8vqph")
-BatchSize = 500
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_5ni1m")
