@@ -372,11 +372,13 @@ namespace UltraSim.ECS
                     }
                 }
 
-                // PHASE 2: Process each signature group in parallel
-                // KEY INSIGHT: Different signatures = different archetypes = no race conditions!
+                // PHASE 2: Process each signature group
+                // PARALLEL PROCESSING DISABLED: Lookup table corruption issues under investigation
+                // Root cause: Shared entity ID namespace + lookup tables across all threads
+                // Even with locks, concurrent access patterns causing slot mismatches
                 const int PARALLEL_GROUP_THRESHOLD = 1000; // Only parallelize if total entities >= 1K
 
-                if (builderQueueSize >= PARALLEL_GROUP_THRESHOLD && signatureGroups.Count > 1)
+                if (false && builderQueueSize >= PARALLEL_GROUP_THRESHOLD && signatureGroups.Count > 1)
                 {
                     // Parallel processing: Each thread handles a different archetype
                     var allCreatedEntities = trackForEvent ? new ConcurrentBag<Entity>() : null;
