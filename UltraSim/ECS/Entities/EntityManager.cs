@@ -27,6 +27,9 @@ namespace UltraSim.ECS
         // Dedicated thread pool for parallel entity creation (zero-allocation)
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
 
+        // Lock for thread-safe entity allocation (only entity ID allocation needs sync, archetype ops are already safe)
+        private readonly object _entityAllocationLock = new object();
+
         // Entity storage
         private const ulong VersionIncrement = 1UL << 32;
 
@@ -379,10 +382,15 @@ namespace UltraSim.ECS
                                 var components = builder.GetComponents();
                                 var componentSpan = CollectionsMarshal.AsSpan(components);
 
-                                // Create entity directly in target archetype (NO thrashing!)
-                                var entity = CreateWithSignature(signature);
+                                Entity entity;
+                                // CRITICAL: Lock entity allocation (modifies _packedVersions, _entityVersions, etc.)
+                                // Archetype operations are already thread-safe since each group targets different archetypes
+                                lock (_entityAllocationLock)
+                                {
+                                    entity = CreateWithSignature(signature);
+                                }
 
-                                // Set all component values using AsSpan
+                                // Set all component values using AsSpan (thread-safe: different archetypes)
                                 if (TryGetLocation(entity, out var archetype, out var slot))
                                 {
                                     foreach (ref readonly var comp in componentSpan)
