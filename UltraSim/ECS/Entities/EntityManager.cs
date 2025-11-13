@@ -395,19 +395,19 @@ namespace UltraSim.ECS
                                 var componentSpan = CollectionsMarshal.AsSpan(components);
 
                                 Entity entity;
-                                // CRITICAL: Lock entity allocation (modifies _packedVersions, _entityVersions, etc.)
-                                // Archetype operations are already thread-safe since each group targets different archetypes
+                                // CRITICAL: Lock ENTIRE entity creation + component setting
+                                // Entities in same group = same signature = same archetype (must serialize all operations)
                                 lock (_entityAllocationLock)
                                 {
                                     entity = CreateWithSignature(signature);
-                                }
 
-                                // Set all component values using AsSpan (thread-safe: different archetypes)
-                                if (TryGetLocation(entity, out var archetype, out var slot))
-                                {
-                                    foreach (ref readonly var comp in componentSpan)
+                                    // Set all component values INSIDE lock to prevent archetype corruption
+                                    if (TryGetLocation(entity, out var archetype, out var slot))
                                     {
-                                        archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
+                                        foreach (ref readonly var comp in componentSpan)
+                                        {
+                                            archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
+                                        }
                                     }
                                 }
 
