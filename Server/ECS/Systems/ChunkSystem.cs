@@ -1116,24 +1116,7 @@ namespace UltraSim.Server.ECS.Systems
             return Entity.Invalid; // Will be available next frame
         }
 
-        #region Public Query API (for Client RenderChunkManager)
-
-        /// <summary>
-        /// Get all entities currently in a server spatial chunk.
-        /// Used by client RenderChunkManager to query which entities to render.
-        /// </summary>
-        public ChunkEntityEnumerable GetEntitiesInChunk(Entity chunkEntity)
-        {
-            return _chunkEntityTracker.GetEntities(chunkEntity);
-        }
-
-        /// <summary>
-        /// Get count of entities in a chunk (fast, no enumeration).
-        /// </summary>
-        public int GetEntityCountInChunk(Entity chunkEntity)
-        {
-            return _chunkEntityTracker.GetEntityCount(chunkEntity);
-        }
+        #region Dirty Chunk Query API (for Client RenderChunkManager)
 
         /// <summary>
         /// Check if a server spatial chunk has been modified since last visual cache rebuild.
