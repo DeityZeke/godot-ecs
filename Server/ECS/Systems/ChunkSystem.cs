@@ -164,6 +164,10 @@ namespace UltraSim.Server.ECS.Systems
             UltraSim.EventSink.EntityBatchCreated += OnEntityBatchCreated;
             Logging.Log($"[ChunkSystem] Subscribed to World entity creation events");
 
+            // Subscribe to World's entity batch destroyed event for chunk UN-assignment
+            UltraSim.EventSink.EntityBatchDestroyed += OnEntityBatchDestroyed;
+            Logging.Log($"[ChunkSystem] Subscribed to World entity destruction events");
+
             Logging.Log($"[ChunkSystem] Initialized with ChunkManager (64x32x64)");
         }
 
@@ -187,6 +191,39 @@ namespace UltraSim.Server.ECS.Systems
 
             // Synchronous processing (old behavior)
             ProcessCreationBatchImmediate(args);
+        }
+
+        /// <summary>
+        /// Event handler for World's EntityBatchDestroyed event.
+        /// Enqueues destroyed entities for chunk UN-assignment.
+        /// </summary>
+        private void OnEntityBatchDestroyed(EntityBatchDestroyedEventArgs args)
+        {
+            if (_chunkManager == null || _world == null)
+                return;
+
+            var entitySpan = args.GetSpan();
+
+            // Enqueue each destroyed entity for UN-assignment
+            for (int i = 0; i < entitySpan.Length; i++)
+            {
+                var entity = entitySpan[i];
+
+                // Check if entity had a chunk assignment
+                if (TryGetOwner(entity, out var chunkEntity, out _))
+                {
+                    // Remove from chunk tracking
+                    _chunkEntityTracker.Remove(chunkEntity, entity);
+
+                    // Clear owner data
+                    ClearOwner(entity);
+                }
+            }
+
+            if (SystemSettings.EnableDebugLogs.Value && entitySpan.Length > 0)
+            {
+                Logging.Log($"[ChunkSystem] UN-assigned {entitySpan.Length} destroyed entities from chunks");
+            }
         }
 
         /// <summary>

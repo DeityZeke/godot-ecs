@@ -36,6 +36,9 @@ namespace UltraSim.ECS
         // Reusable list for batch entity creation (V8 optimization)
         private readonly List<Entity> _createdEntitiesCache = new(1000);
 
+        // Reusable list for batch entity destruction (V8 optimization, mirrors creation pattern)
+        private readonly List<Entity> _destroyedEntitiesCache = new(1000);
+
         public int EntityCount => _liveEntityCount;
 
         public EntityManager(World world, ArchetypeManager archetypes)
@@ -235,11 +238,20 @@ namespace UltraSim.ECS
         {
             const int ADAPTIVE_THRESHOLD = 500;
 
-            // Process destructions first
+            // Process destructions first - collect entities before destroying for event firing
+            _destroyedEntitiesCache.Clear();
+
             while (_destroyQueue.TryDequeue(out var idx))
             {
                 var entity = CreateEntityHandle(idx);
+                _destroyedEntitiesCache.Add(entity);
                 Destroy(entity);
+            }
+
+            // Fire EntityBatchDestroyed event if any entities were destroyed
+            if (_destroyedEntitiesCache.Count > 0)
+            {
+                _world.FireEntityBatchDestroyed(_destroyedEntitiesCache);
             }
 
             // Adaptive entity creation based on batch size

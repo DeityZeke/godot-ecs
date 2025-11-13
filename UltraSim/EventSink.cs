@@ -37,6 +37,12 @@ namespace UltraSim
         /// </summary>
         public static event EntityBatchCreatedHandler? EntityBatchCreated;
 
+        /// <summary>
+        /// Fired after a batch of entities has been destroyed.
+        /// Subscribers can perform cleanup/UN-assignment for destroyed entities.
+        /// </summary>
+        public static event EntityBatchDestroyedHandler? EntityBatchDestroyed;
+
         // --- System Lifecycle ---
         public static event Action<Type>? SystemRegistered;
         public static event Action<Type>? SystemUnregistered;
@@ -62,6 +68,7 @@ namespace UltraSim
         public static void InvokeWorldShutdown() => WorldShutdown?.Invoke();
 
         public static void InvokeEntityBatchCreated(EntityBatchCreatedEventArgs args) => EntityBatchCreated?.Invoke(args);
+        public static void InvokeEntityBatchDestroyed(EntityBatchDestroyedEventArgs args) => EntityBatchDestroyed?.Invoke(args);
 
         public static void InvokeSystemRegistered(Type t) => SystemRegistered?.Invoke(t);
         public static void InvokeSystemUnregistered(Type t) => SystemUnregistered?.Invoke(t);

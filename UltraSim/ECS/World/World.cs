@@ -208,6 +208,34 @@ namespace UltraSim.ECS
             FireEntityBatchCreated(entities);
         }
 
+        /// <summary>
+        /// Fires the EntityBatchDestroyed event with the specified entities.
+        /// Called by EntityManager after batch entity destruction.
+        /// </summary>
+        internal void FireEntityBatchDestroyed(Entity[] entities, int startIndex, int count)
+        {
+            if (count > 0)
+            {
+                var args = new EntityBatchDestroyedEventArgs(entities, startIndex, count);
+                EventSink.InvokeEntityBatchDestroyed(args);
+            }
+        }
+
+        /// <summary>
+        /// Fires the EntityBatchDestroyed event with the specified entities from a List.
+        /// ZERO ALLOCATION - Passes List directly to EventArgs without ToArray().
+        /// Mirrors FireEntityBatchCreated for consistency.
+        /// </summary>
+        internal void FireEntityBatchDestroyed(List<Entity> entities)
+        {
+            if (entities.Count > 0)
+            {
+                // TRUE zero-allocation: Pass List directly!
+                var args = new EntityBatchDestroyedEventArgs(entities);
+                EventSink.InvokeEntityBatchDestroyed(args);
+            }
+        }
+
         #endregion
 
         #region Component Operations (Internal - called by ComponentManager)
