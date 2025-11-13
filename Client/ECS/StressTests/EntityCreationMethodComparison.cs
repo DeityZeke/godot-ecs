@@ -35,7 +35,7 @@ namespace Client.ECS.StressTests
         public void Log(LogEntry entry) => GD.Print($"[{entry.Severity}] {entry.Message}");
 
         // Test configuration
-        private readonly int[] _batchSizes = { 100, 1000, 10000, 50000 };
+        private readonly int[] _batchSizes = { 100, 1000, 10000, 50000, 100000, 500000, 1000000 };
         private int _currentTestIndex = 0;
         private int _currentMethodIndex = 0;
         private readonly string[] _methodNames = { "EntityBuilder Queue", "CommandBuffer", "Action<Entity> Queue" };
@@ -48,6 +48,11 @@ namespace Client.ECS.StressTests
         private int _entitiesInEvent = 0;
 
         private readonly Stopwatch _sw = new();
+
+        // Warmup control
+        private int _frameCounter = 0;
+        private bool _warmupComplete = false;
+        private bool _testsStarted = false;
 
         public override void _Ready()
         {
@@ -65,14 +70,34 @@ namespace Client.ECS.StressTests
             GD.Print("  1. EntityBuilder Queue (NEW) - Archetype-thrashing-free + events");
             GD.Print("  2. CommandBuffer (OLD)       - Archetype-thrashing-free, NO events");
             GD.Print("  3. Action<Entity> Queue      - Baseline with archetype thrashing\n");
-            GD.Print($"Testing batch sizes: {string.Join(", ", _batchSizes)}\n");
+            GD.Print($"Testing batch sizes: {string.Join(", ", _batchSizes.Select(x => x >= 1000000 ? $"{x / 1000000}M" : x >= 1000 ? $"{x / 1000}K" : x.ToString()))}\n");
+            GD.Print("Warming up (60 frames)...\n");
         }
 
         public override void _Process(double delta)
         {
-            if (_world == null || _currentTestIndex >= _batchSizes.Length)
+            if (_world == null)
+                return;
+
+            // Warmup phase: Run for 60 frames before starting tests
+            if (!_warmupComplete)
             {
-                if (_currentTestIndex >= _batchSizes.Length && _results.Count > 0)
+                _frameCounter++;
+                if (_frameCounter >= 60)
+                {
+                    _warmupComplete = true;
+                    GD.Print("Warmup complete! Starting tests...\n");
+                }
+                return;
+            }
+
+            // Tests complete
+            if (_currentTestIndex >= _batchSizes.Length)
+            {
+                if (!_testsStarted)
+                    return;
+
+                if (_results.Count > 0)
                 {
                     PrintFinalResults();
                     _results.Clear();
@@ -81,10 +106,13 @@ namespace Client.ECS.StressTests
                 return;
             }
 
+            _testsStarted = true;
+
             int batchSize = _batchSizes[_currentTestIndex];
             string methodName = _methodNames[_currentMethodIndex];
 
-            GD.Print($"\n[Test {_currentTestIndex * 3 + _currentMethodIndex + 1}/{_batchSizes.Length * 3}] Running: {methodName} with {batchSize:N0} entities");
+            string batchSizeStr = batchSize >= 1000000 ? $"{batchSize / 1000000}M" : batchSize >= 1000 ? $"{batchSize / 1000}K" : batchSize.ToString();
+            GD.Print($"\n[Test {_currentTestIndex * 3 + _currentMethodIndex + 1}/{_batchSizes.Length * 3}] Running: {methodName} with {batchSizeStr} entities");
 
             // Reset event tracking
             _eventsFired = 0;
@@ -254,7 +282,8 @@ namespace Client.ECS.StressTests
                 var batchResults = _results.FindAll(r => r.BatchSize == batchSize);
                 if (batchResults.Count == 0) continue;
 
-                GD.Print($"\n━━━ Batch Size: {batchSize:N0} entities ━━━\n");
+                string batchSizeStr = batchSize >= 1000000 ? $"{batchSize / 1000000}M" : batchSize >= 1000 ? $"{batchSize / 1000}K" : batchSize.ToString();
+                GD.Print($"\n━━━ Batch Size: {batchSizeStr} entities ({batchSize:N0}) ━━━\n");
 
                 // Find fastest method
                 TestResult fastest = batchResults[0];
@@ -328,6 +357,19 @@ namespace Client.ECS.StressTests
             GD.Print($"  EntityBuilder Queue:  ✓ Events SHOULD fire (queue-based)");
             GD.Print($"  CommandBuffer:        ✓ Events should NOT fire (bypasses queue)");
             GD.Print($"  Action<Entity> Queue: ✓ Events SHOULD fire (queue-based)");
+
+            // Total statistics
+            int totalEntities = _batchSizes.Sum();
+            double totalBuilderMs = builderResults.Sum(r => r.TotalMs);
+            double totalCommandMs = commandResults.Sum(r => r.TotalMs);
+            double totalActionMs = actionResults.Sum(r => r.TotalMs);
+
+            GD.Print("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            GD.Print($"TOTAL ENTITIES CREATED (per method): {totalEntities:N0}");
+            GD.Print($"  EntityBuilder Queue:  {totalBuilderMs:F0}ms ({totalEntities / totalBuilderMs * 1000:F0} entities/sec)");
+            GD.Print($"  CommandBuffer:        {totalCommandMs:F0}ms ({totalEntities / totalCommandMs * 1000:F0} entities/sec)");
+            GD.Print($"  Action<Entity> Queue: {totalActionMs:F0}ms ({totalEntities / totalActionMs * 1000:F0} entities/sec)");
+            GD.Print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
             GD.Print("\n╔════════════════════════════════════════════════════════════════╗");
             GD.Print("║  VERDICT: EntityBuilder Queue is the PREFERRED method         ║");
