@@ -141,11 +141,11 @@ namespace UltraSim.ECS.Systems
 
                         ref readonly var pos = ref posSpan[i];
 
-                        // Fast boundary check using cached bounds
-                        if (!owner.CachedBounds.Contains(pos.X, pos.Y, pos.Z))
+                        // Check if entity crossed chunk boundary
+                        var newChunkLoc = _chunkManager.WorldToChunk(pos.X, pos.Y, pos.Z);
+                        if (!newChunkLoc.Equals(owner.Location))
                         {
                             // Entity crossed chunk boundary - enqueue for reassignment
-                            var newChunkLoc = _chunkManager.WorldToChunk(pos.X, pos.Y, pos.Z);
                             ChunkAssignmentQueue.Enqueue(entities[i], newChunkLoc);
                         }
                     }

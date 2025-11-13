@@ -318,6 +318,9 @@ namespace UltraSim.Server.ECS.Systems
             if (batches.Count == 0)
                 return;
 
+            // TODO: Implement ProcessMovementBatchSmart method
+            // This method was referenced but not implemented
+            /*
             // Decide parallel vs sequential
             bool useParallel = SystemSettings.ParallelBatchProcessing.Value &&
                                batches.Count >= SystemSettings.ParallelBatchThreshold.Value;
@@ -338,6 +341,7 @@ namespace UltraSim.Server.ECS.Systems
             {
                 Logging.Log($"[ChunkSystem] Processed {batches.Count} deferred movement batches ({(useParallel ? "parallel" : "sequential")})");
             }
+            */
         }
 
         /// <summary>

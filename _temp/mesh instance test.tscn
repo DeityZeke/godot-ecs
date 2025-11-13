@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://b65sxxp3qsmgq"]
 
-[ext_resource type="Script" uid="uid://bc3ypm6t21nlf" path="res://Client/ECS/StressTests/ProcessQueuesOptimizationComparison.cs" id="1_8vqph"]
+[ext_resource type="Script" uid="uid://tlshc21achuc" path="res://Client/ECS/StressTests/EntityCreationMethodComparison.cs" id="1_8vqph"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_8vqph"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
