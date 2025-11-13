@@ -413,13 +413,13 @@ namespace Client.ECS.Systems
             switch (zone)
             {
                 case ZoneType.Near:
-                    buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<NearZoneTag>());
+                    buffer.RemoveComponent(chunkEntity, ComponentManager.GetTypeId<NearZoneTag>());
                     break;
                 case ZoneType.Mid:
-                    buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<MidZoneTag>());
+                    buffer.RemoveComponent(chunkEntity, ComponentManager.GetTypeId<MidZoneTag>());
                     break;
                 case ZoneType.Far:
-                    buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<FarZoneTag>());
+                    buffer.RemoveComponent(chunkEntity, ComponentManager.GetTypeId<FarZoneTag>());
                     break;
             }
         }
@@ -429,13 +429,13 @@ namespace Client.ECS.Systems
             switch (zone)
             {
                 case ZoneType.Near:
-                    buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<NearZoneTag>(), new NearZoneTag());
+                    buffer.AddComponent(chunkEntity, ComponentManager.GetTypeId<NearZoneTag>(), new NearZoneTag());
                     break;
                 case ZoneType.Mid:
-                    buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<MidZoneTag>(), new MidZoneTag());
+                    buffer.AddComponent(chunkEntity, ComponentManager.GetTypeId<MidZoneTag>(), new MidZoneTag());
                     break;
                 case ZoneType.Far:
-                    buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<FarZoneTag>(), new FarZoneTag());
+                    buffer.AddComponent(chunkEntity, ComponentManager.GetTypeId<FarZoneTag>(), new FarZoneTag());
                     break;
             }
         }
