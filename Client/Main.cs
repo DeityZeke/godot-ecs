@@ -62,8 +62,9 @@ namespace Client
             var world = ActiveWorld;
 
             // Server-side systems
-            world.EnqueueSystemCreate<ChunkSystem>();
-            world.EnqueueSystemEnable<ChunkSystem>();
+            // NEW: Simplified chunk system (pure entity tracking, no component manipulation)
+            world.EnqueueSystemCreate<SimplifiedChunkSystem>();
+            world.EnqueueSystemEnable<SimplifiedChunkSystem>();
 
             world.EnqueueSystemCreate<EntitySpawnerSystem>();
             world.EnqueueSystemEnable<EntitySpawnerSystem>();
@@ -108,11 +109,11 @@ namespace Client
         private void ConnectHybridRenderSystems()
         {
             var world = ActiveWorld;
-            var chunkSystemBase = world.Systems.GetSystem<ChunkSystem>();
+            var chunkSystemBase = world.Systems.GetSystem<SimplifiedChunkSystem>();
 
-            if (chunkSystemBase is not ChunkSystem chunkSystem)
+            if (chunkSystemBase is not SimplifiedChunkSystem chunkSystem)
             {
-                GD.PushWarning("[ClientHost] ChunkSystem not found - hybrid rendering disabled!");
+                GD.PushWarning("[ClientHost] SimplifiedChunkSystem not found - hybrid rendering disabled!");
                 return;
             }
 

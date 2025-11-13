@@ -96,6 +96,10 @@ namespace UltraSim.ECS.Systems
 
         private World? _world;
 
+        // Chunk configuration (must match ChunkManager settings)
+        private const int CHUNK_SIZE_XZ = 64;
+        private const int CHUNK_SIZE_Y = 32;
+
         public override void OnInitialize(World world)
         {
             _world = world;
@@ -115,6 +119,15 @@ namespace UltraSim.ECS.Systems
         public override void Update(World world, double delta)
         {
             // This system doesn't run on regular ticks - it's manual/event-driven
+        }
+
+        private ChunkLocation WorldToChunk(float worldX, float worldY, float worldZ)
+        {
+            int chunkX = (int)Math.Floor(worldX / CHUNK_SIZE_XZ);
+            int chunkZ = (int)Math.Floor(worldZ / CHUNK_SIZE_XZ);
+            int chunkY = (int)Math.Floor(worldY / CHUNK_SIZE_Y);
+
+            return new ChunkLocation(chunkX, chunkZ, chunkY);
         }
 
         private void SpawnEntities(int count)
@@ -173,6 +186,10 @@ namespace UltraSim.ECS.Systems
 
                 builder.Add(new RenderTag { });
                 builder.Add(new Visible { });
+
+                // Add ChunkOwner component at creation time (NO archetype move later!)
+                var chunkLoc = WorldToChunk(randomPos.X, randomPos.Y, randomPos.Z);
+                builder.Add(new ChunkOwner(chunkLoc));
 
                 bool spawnStatic = ShouldSpawnStatic(SystemSettings.SpawnVisuals.Value);
                 if (spawnStatic)

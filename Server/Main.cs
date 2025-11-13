@@ -42,8 +42,9 @@ namespace Server
         {
             var world = ActiveWorld;
 
-            world.EnqueueSystemCreate<ChunkSystem>();
-            world.EnqueueSystemEnable<ChunkSystem>();
+            // NEW: Simplified chunk system (pure entity tracking, no component manipulation)
+            world.EnqueueSystemCreate<SimplifiedChunkSystem>();
+            world.EnqueueSystemEnable<SimplifiedChunkSystem>();
 
             world.EnqueueSystemCreate<EntitySpawnerSystem>();
             world.EnqueueSystemEnable<EntitySpawnerSystem>();
