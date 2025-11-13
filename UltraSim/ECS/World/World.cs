@@ -42,12 +42,6 @@ namespace UltraSim.ECS
         public SystemManager Systems => _systems;
         private bool _settingsInitialized = false;
 
-        /// <summary>
-        /// Event fired after a batch of entities has been created.
-        /// Subscribers can perform initial setup/assignment on newly created entities.
-        /// </summary>
-        public event EntityBatchCreatedHandler? EntityBatchCreated;
-
         public World(IHost host)
         {
             Host = host ?? throw new ArgumentNullException(nameof(host));
@@ -80,7 +74,6 @@ namespace UltraSim.ECS
         #region Frame Pipeline
 
         public int tickCount { get; private set; } = 0;
-        bool printTickSchedule = true;
 
         /// <summary>
         /// Main frame tick - processes all deferred operations and runs systems.
@@ -128,6 +121,22 @@ namespace UltraSim.ECS
         public Entity CreateEntityWithSignature(ComponentSignature signature) =>
             _entities.CreateWithSignature(signature);
 
+        /// <summary>
+        /// Creates an EntityBuilder for fluent component definition.
+        /// Use this to define all components before enqueueing creation to avoid archetype thrashing.
+        /// </summary>
+        /// <example>
+        /// var builder = world.CreateEntityBuilder()
+        ///     .Add(new Position { X = 0, Y = 0, Z = 0 })
+        ///     .Add(new Velocity { X = 1, Y = 0, Z = 0 });
+        /// world.EnqueueCreateEntity(builder);
+        /// </example>
+        public EntityBuilder CreateEntityBuilder()
+        {
+            var componentList = _entities.GetComponentList();
+            return new EntityBuilder(componentList);
+        }
+
         public bool TryGetEntityLocation(Entity entity, out Archetype archetype, out int slot) =>
             _entities.TryGetLocation(entity, out archetype, out slot);
 
@@ -149,17 +158,39 @@ namespace UltraSim.ECS
         public void EnqueueCreateEntity(Action<Entity>? builder = null) =>
             _entities.EnqueueCreate(builder);
 
+        /// <summary>
+        /// Enqueues an entity for creation with all components pre-defined in EntityBuilder.
+        /// This is the PREFERRED method for creating entities with multiple components.
+        /// Avoids archetype thrashing by creating the entity directly in the final archetype.
+        /// </summary>
+        /// <example>
+        /// var builder = CreateEntityBuilder()
+        ///     .Add(new Position { X = 0, Y = 0, Z = 0 })
+        ///     .Add(new Velocity { X = 1, Y = 0, Z = 0 });
+        /// world.EnqueueCreateEntity(builder);
+        /// </example>
+        public void EnqueueCreateEntity(EntityBuilder builder) =>
+            _entities.EnqueueCreate(builder);
+
         // System enqueue APIs - delegate to SystemManager
         public void EnqueueSystemCreate<T>() where T : BaseSystem => _systems.EnqueueRegister<T>();
         public void EnqueueSystemDestroy<T>() where T : BaseSystem => _systems.EnqueueUnregister<T>();
         public void EnqueueSystemEnable<T>() where T : BaseSystem => _systems.EnqueueEnable<T>();
         public void EnqueueSystemDisable<T>() where T : BaseSystem => _systems.EnqueueDisable<T>();
 
-        public void EnqueueComponentRemove(uint entityIndex, int compId) =>
-            _components.EnqueueRemove(entityIndex, compId);
+        /// <summary>
+        /// Enqueues a component removal for deferred processing.
+        /// Stores full entity (index + version) for proper validation.
+        /// </summary>
+        public void EnqueueComponentRemove(Entity entity, int compId) =>
+            _components.EnqueueRemove(entity, compId);
 
-        public void EnqueueComponentAdd(uint entityIndex, int compId, object boxedValue) =>
-            _components.EnqueueAdd(entityIndex, compId, boxedValue);
+        /// <summary>
+        /// Enqueues a component addition for deferred processing.
+        /// Stores full entity (index + version) for proper validation.
+        /// </summary>
+        public void EnqueueComponentAdd(Entity entity, int compId, object boxedValue) =>
+            _components.EnqueueAdd(entity, compId, boxedValue);
 
         #endregion
 
@@ -171,10 +202,67 @@ namespace UltraSim.ECS
         /// </summary>
         internal void FireEntityBatchCreated(Entity[] entities, int startIndex, int count)
         {
-            if (EntityBatchCreated != null && count > 0)
+            if (count > 0)
             {
                 var args = new EntityBatchCreatedEventArgs(entities, startIndex, count);
-                EntityBatchCreated(args);
+                EventSink.InvokeEntityBatchCreated(args);
+            }
+        }
+
+        /// <summary>
+        /// Fires the EntityBatchCreated event with the specified entities from a List.
+        /// ZERO ALLOCATION - Passes List directly to EventArgs without ToArray().
+        /// </summary>
+        /// <remarks>
+        /// EventArgs now stores the List internally and uses CollectionsMarshal.AsSpan
+        /// for zero-allocation iteration via GetSpan().
+        /// Subscribers should use args.GetSpan() for best performance.
+        /// </remarks>
+        internal void FireEntityBatchCreated(List<Entity> entities)
+        {
+            if (entities.Count > 0)
+            {
+                // TRUE zero-allocation: Pass List directly!
+                var args = new EntityBatchCreatedEventArgs(entities);
+                EventSink.InvokeEntityBatchCreated(args);
+            }
+        }
+
+        /// <summary>
+        /// DEPRECATED: Use FireEntityBatchCreated(List&lt;Entity&gt;) instead.
+        /// This overload is kept for testing purposes only.
+        /// </summary>
+        internal void FireEntityBatchCreatedSpanPath(List<Entity> entities)
+        {
+            // Just call the main overload - no difference anymore
+            FireEntityBatchCreated(entities);
+        }
+
+        /// <summary>
+        /// Fires the EntityBatchDestroyed event with the specified entities.
+        /// Called by EntityManager after batch entity destruction.
+        /// </summary>
+        internal void FireEntityBatchDestroyed(Entity[] entities, int startIndex, int count)
+        {
+            if (count > 0)
+            {
+                var args = new EntityBatchDestroyedEventArgs(entities, startIndex, count);
+                EventSink.InvokeEntityBatchDestroyed(args);
+            }
+        }
+
+        /// <summary>
+        /// Fires the EntityBatchDestroyed event with the specified entities from a List.
+        /// ZERO ALLOCATION - Passes List directly to EventArgs without ToArray().
+        /// Mirrors FireEntityBatchCreated for consistency.
+        /// </summary>
+        internal void FireEntityBatchDestroyed(List<Entity> entities)
+        {
+            if (entities.Count > 0)
+            {
+                // TRUE zero-allocation: Pass List directly!
+                var args = new EntityBatchDestroyedEventArgs(entities);
+                EventSink.InvokeEntityBatchDestroyed(args);
             }
         }
 
@@ -182,13 +270,25 @@ namespace UltraSim.ECS
 
         #region Component Operations (Internal - called by ComponentManager)
 
-        internal void AddComponentToEntityInternal(uint entityIndex, int componentTypeId, object boxedValue)
+        /// <summary>
+        /// Adds a component to an entity (called during queue processing).
+        /// OPTION 2: Validates entity version before applying operation.
+        /// If entity was destroyed/recycled, operation is safely skipped.
+        /// </summary>
+        internal void AddComponentToEntityInternal(Entity entity, int componentTypeId, object boxedValue)
         {
-            // Get entity location
-            var tempEntity = new Entity(entityIndex, 1); // Use version 1 as placeholder since we only need index
-            if (!_entities.TryGetLocation(tempEntity, out var sourceArch, out var sourceSlot))
+            // OPTION 2: Proper version validation - uses entity.Version from queue
+            if (!_entities.IsAlive(entity))
             {
-                // Entity was destroyed before deferred component addition was processed (valid race condition)
+                // Entity was destroyed/recycled before queue processing - skip operation
+                // This is NOT an error - it's a valid race condition
+                return;
+            }
+
+            // Get entity location (we know it's alive, so this should succeed)
+            if (!_entities.TryGetLocation(entity, out var sourceArch, out var sourceSlot))
+            {
+                // This shouldn't happen if IsAlive returned true, but be defensive
                 return;
             }
 
@@ -200,16 +300,28 @@ namespace UltraSim.ECS
             _archetypes.MoveEntity(sourceArch, sourceSlot, targetArch, boxedValue);
 
             // Update entity lookup
-            _entities.UpdateLookup(entityIndex, targetArch, targetArch.Count - 1);
+            _entities.UpdateLookup(entity.Index, targetArch, targetArch.Count - 1);
         }
 
-        internal void RemoveComponentFromEntityInternal(uint entityIndex, int componentTypeId)
+        /// <summary>
+        /// Removes a component from an entity (called during queue processing).
+        /// OPTION 2: Validates entity version before applying operation.
+        /// If entity was destroyed/recycled, operation is safely skipped.
+        /// </summary>
+        internal void RemoveComponentFromEntityInternal(Entity entity, int componentTypeId)
         {
-            // Get entity location
-            var tempEntity = new Entity(entityIndex, 1); // Use version 1 as placeholder
-            if (!_entities.TryGetLocation(tempEntity, out var oldArch, out var slot))
+            // OPTION 2: Proper version validation - uses entity.Version from queue
+            if (!_entities.IsAlive(entity))
             {
-                // Entity was destroyed before deferred component removal was processed (valid race condition)
+                // Entity was destroyed/recycled before queue processing - skip operation
+                // This is NOT an error - it's a valid race condition
+                return;
+            }
+
+            // Get entity location (we know it's alive, so this should succeed)
+            if (!_entities.TryGetLocation(entity, out var oldArch, out var slot))
+            {
+                // This shouldn't happen if IsAlive returned true, but be defensive
                 return;
             }
 
@@ -224,7 +336,7 @@ namespace UltraSim.ECS
             _archetypes.MoveEntity(oldArch, slot, newArch);
 
             // Update entity lookup
-            _entities.UpdateLookup(entityIndex, newArch, newArch.Count - 1);
+            _entities.UpdateLookup(entity.Index, newArch, newArch.Count - 1);
         }
 
         #endregion

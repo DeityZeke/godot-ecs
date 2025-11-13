@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.Runtime;
@@ -17,7 +19,7 @@ public partial class WorldBenchmark : Node, IHost
     [Export] public bool GCCollectBefore = true;
     [Export] public bool RunChunkBenchmark = true;
 
-    private World _world;
+    private World _world = null!;
     private Stopwatch _watch = new Stopwatch();
     public RuntimeContext Runtime { get; private set; } = null!;
 

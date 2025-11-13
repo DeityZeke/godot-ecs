@@ -138,6 +138,9 @@ namespace Client.ECS.Systems
             }
         }
 
+        // Track previous visibility per chunk for change detection
+        private readonly Dictionary<ChunkLocation, bool> _previousVisibility = new();
+
         private List<(ChunkLocation Location, bool Visible)> GetFarChunks(World world)
         {
             var farChunks = new List<(ChunkLocation, bool)>();
@@ -156,7 +159,22 @@ namespace Client.ECS.Systems
                 for (int i = 0; i < renderChunks.Length; i++)
                 {
                     ref var renderChunk = ref renderChunks[i];
-                    farChunks.Add((renderChunk.Location, renderChunk.Visible));
+                    var serverChunkLoc = renderChunk.ServerChunkLocation;
+                    var visible = renderChunk.Visible;
+
+                    // PHASE 3 OPTIMIZATION: Only process chunks if:
+                    // 1. Server chunk is dirty (entity list changed), OR
+                    // 2. Visibility changed (frustum culling update)
+                    // Note: ChunkSystem and ChunkManager references will be needed when this system is fully implemented
+                    // bool isDirty = _chunkSystem!.IsChunkDirty(world, _chunkManager!.GetChunk(serverChunkLoc));
+                    // bool visibilityChanged = !_previousVisibility.TryGetValue(serverChunkLoc, out var prevVis) || prevVis != visible;
+
+                    // if (isDirty || visibilityChanged)
+                    // {
+                        // Use ServerChunkLocation (absolute world position) to identify which server chunk entities to render
+                        farChunks.Add((serverChunkLoc, visible));
+                        _previousVisibility[serverChunkLoc] = visible;
+                    // }
                 }
             }
 

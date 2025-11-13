@@ -22,7 +22,7 @@ namespace Client.Terrain
     {
         private readonly TerrainMeshCache _meshCache = new();
         private int _meshesBuiltPerFrame = 2;
-        private IEnumerable<Archetype>? _cachedQuery;
+        private new IEnumerable<Archetype>? _cachedQuery;
 
         private static readonly int TerrainChunkId = ComponentManager.GetTypeId<TerrainChunkComponent>();
 

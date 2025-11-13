@@ -72,6 +72,11 @@ namespace UltraSim.ECS.Systems
 
             var sysInstance = (BaseSystem)Activator.CreateInstance(type)!;
 
+            // CRITICAL: Add to map BEFORE dependency resolution to prevent infinite recursion on circular dependencies
+            // If SystemA requires SystemB and SystemB requires SystemA, this prevents stack overflow
+            _systems.Add(sysInstance);
+            _systemMap[type] = sysInstance;
+
             // DEPENDENCY RESOLUTION via RequireSystemAttribute
             var requires = type.GetCustomAttributes(typeof(RequireSystemAttribute), inherit: true);
             foreach (RequireSystemAttribute req in requires)
@@ -86,6 +91,7 @@ namespace UltraSim.ECS.Systems
                 if (!_systemMap.TryGetValue(depType, out var dep))
                 {
                     // Recursively register dependency first
+                    // If dependency also requires this system, it will see it in _systemMap and return early
                     Logging.Log($"[SystemManager] Auto-registering dependency: {depType.Name} (required by {type.Name})");
                     Register(depType);
                     dep = _systemMap[depType];
@@ -93,9 +99,6 @@ namespace UltraSim.ECS.Systems
 
                 EventSink.InvokeDependencyResolved(sysInstance, dep);
             }
-
-            _systems.Add(sysInstance);
-            _systemMap[type] = sysInstance;
 
             RegisterSystemTickScheduling(sysInstance);
             LoadSystemSettings(sysInstance);

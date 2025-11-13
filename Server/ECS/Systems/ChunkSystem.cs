@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Components;
@@ -27,10 +28,7 @@ namespace UltraSim.Server.ECS.Systems
 
         public sealed class Settings : SettingsManager
         {
-            public BoolSetting EnableAutoAssignment { get; private set; }
-            public IntSetting AssignmentFrequency { get; private set; }
             public BoolSetting UseDirtyAssignmentQueue { get; private set; }
-            public BoolSetting FallbackToFullScan { get; private set; }
             public BoolSetting EnableParallelAssignments { get; private set; }
             public IntSetting ParallelThreshold { get; private set; }
             public IntSetting ParallelBatchSize { get; private set; }
@@ -49,18 +47,8 @@ namespace UltraSim.Server.ECS.Systems
 
             public Settings()
             {
-                EnableAutoAssignment = RegisterBool("Auto-Assign Entities", true,
-                    tooltip: "Automatically assign entities to chunks based on Position");
-
-                AssignmentFrequency = RegisterInt("Assignment Frequency", 60,
-                    min: 1, max: 600, step: 1,
-                    tooltip: "Update entity assignments every N frames (60 = ~1 per second at 60fps)");
-
                 UseDirtyAssignmentQueue = RegisterBool("Use Dirty Assignment Queue", true,
-                    tooltip: "Process chunk assignments from the dirty queue before running full scans.");
-
-                FallbackToFullScan = RegisterBool("Fallback To Full Scan", true,
-                    tooltip: "Run a full assignment scan even if the dirty queue processed assignments this frame.");
+                    tooltip: "Process chunk assignments from the dirty queue.");
 
                 EnableParallelAssignments = RegisterBool("Parallel Dirty Queue", true,
                     tooltip: "Process dirty chunk assignments in parallel when the queue is large.");
@@ -107,7 +95,7 @@ namespace UltraSim.Server.ECS.Systems
                     tooltip: "Log chunk creation/destruction and assignment operations");
 
                 EnableDeferredBatchProcessing = RegisterBool("Deferred Batch Processing", true,
-                    tooltip: "Process event batches deferred in Update() instead of synchronously in event handlers");
+                    tooltip: "Defer entity CREATION batches to Update() for parallel processing. Movement uses immediate smart filtering.");
 
                 ParallelBatchProcessing = RegisterBool("Parallel Batch Processing", true,
                     tooltip: "Process multiple event batches in parallel when deferred processing is enabled");
@@ -132,7 +120,6 @@ namespace UltraSim.Server.ECS.Systems
 
         private ChunkManager? _chunkManager;
         private World? _world;
-        private CommandBuffer _buffer = new();
         private int _frameCounter = 0;
         private int _chunksQueuedThisFrame = 0;
         private int _chunksRegisteredThisFrame = 0;
@@ -142,12 +129,10 @@ namespace UltraSim.Server.ECS.Systems
         private readonly ConcurrentQueue<EntityBatchCreatedEventArgs> _creationBatchQueue = new();
 
         // Track chunks that are pending creation (to avoid duplicate creation requests)
-        private readonly HashSet<ChunkLocation> _pendingChunkCreations = new();
+        // Using ConcurrentDictionary for thread-safe access (value is unused, using as ConcurrentHashSet)
+        private readonly ConcurrentDictionary<ChunkLocation, byte> _pendingChunkCreations = new();
         private readonly Dictionary<ChunkLocation, Entity> _chunkEntityCache = new();
         private readonly List<ChunkAssignmentRequest> _assignmentBatch = new(capacity: 2048);
-        private readonly List<ChunkAssignmentRequest> _parallelFallback = new();
-        private readonly object _fallbackLock = new();
-        private static readonly ThreadLocal<WorkerCache> _workerCache = new(() => new WorkerCache());
         private readonly List<ChunkLocation> _preallocationTargets = new();
         private int _preallocationCursor = 0;
         private bool _preallocationInitialized;
@@ -167,6 +152,7 @@ namespace UltraSim.Server.ECS.Systems
         private static readonly int ChunkStateTypeId = ComponentManager.GetTypeId<ChunkState>();
         private static readonly int ChunkHashTypeId = ComponentManager.GetTypeId<ChunkHash>();
         private static readonly int UnregisteredChunkTagTypeId = ComponentManager.GetTypeId<UnregisteredChunkTag>();
+        private static readonly int DirtyChunkTagTypeId = ComponentManager.GetTypeId<DirtyChunkTag>();
 
         public override void OnInitialize(World world)
         {
@@ -175,16 +161,12 @@ namespace UltraSim.Server.ECS.Systems
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
 
             // Subscribe to World's entity batch created event for initial chunk assignment
-            world.EntityBatchCreated += OnEntityBatchCreated;
+            UltraSim.EventSink.EntityBatchCreated += OnEntityBatchCreated;
             Logging.Log($"[ChunkSystem] Subscribed to World entity creation events");
 
-            // Subscribe to MovementSystem's entity batch processed event
-            var movementSystem = world.Systems.GetSystem<OptimizedMovementSystem>() as OptimizedMovementSystem;
-            if (movementSystem != null)
-            {
-                movementSystem.EntityBatchProcessed += OnEntityBatchProcessed;
-                Logging.Log($"[ChunkSystem] Subscribed to MovementSystem batch events");
-            }
+            // Subscribe to World's entity batch destroyed event for chunk UN-assignment
+            UltraSim.EventSink.EntityBatchDestroyed += OnEntityBatchDestroyed;
+            Logging.Log($"[ChunkSystem] Subscribed to World entity destruction events");
 
             Logging.Log($"[ChunkSystem] Initialized with ChunkManager (64x32x64)");
         }
@@ -212,23 +194,36 @@ namespace UltraSim.Server.ECS.Systems
         }
 
         /// <summary>
-        /// Event handler for MovementSystem's EntityBatchProcessed event.
-        /// Either enqueues batch for deferred processing or processes immediately.
+        /// Event handler for World's EntityBatchDestroyed event.
+        /// Enqueues destroyed entities for chunk UN-assignment.
         /// </summary>
-        private void OnEntityBatchProcessed(EntityBatchProcessedEventArgs args)
+        private void OnEntityBatchDestroyed(EntityBatchDestroyedEventArgs args)
         {
             if (_chunkManager == null || _world == null)
                 return;
 
-            // Deferred processing: O(1) - just enqueue the batch reference
-            if (SystemSettings.EnableDeferredBatchProcessing.Value)
+            var entitySpan = args.GetSpan();
+
+            // Enqueue each destroyed entity for UN-assignment
+            for (int i = 0; i < entitySpan.Length; i++)
             {
-                _movementBatchQueue.Enqueue(args);
-                return;
+                var entity = entitySpan[i];
+
+                // Check if entity had a chunk assignment
+                if (TryGetOwner(entity, out var chunkEntity, out _))
+                {
+                    // Remove from chunk tracking
+                    _chunkEntityTracker.Remove(chunkEntity, entity);
+
+                    // Clear owner data
+                    ClearOwner(entity);
+                }
             }
 
-            // Synchronous processing (old behavior)
-            ProcessMovementBatchImmediate(args);
+            if (SystemSettings.EnableDebugLogs.Value && entitySpan.Length > 0)
+            {
+                Logging.Log($"[ChunkSystem] UN-assigned {entitySpan.Length} destroyed entities from chunks");
+            }
         }
 
         /// <summary>
@@ -241,6 +236,10 @@ namespace UltraSim.Server.ECS.Systems
             for (int i = 0; i < entitySpan.Length; i++)
             {
                 var entity = entitySpan[i];
+
+                // SAFETY: Skip entities that were destroyed before deferred processing
+                if (!_world!.IsEntityValid(entity))
+                    continue;
 
                 if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
                     continue;
@@ -255,53 +254,6 @@ namespace UltraSim.Server.ECS.Systems
                 var position = positions[slot];
                 var chunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
                 ChunkAssignmentQueue.Enqueue(entity, chunkLoc);
-            }
-        }
-
-        /// <summary>
-        /// Process a movement batch immediately (synchronous).
-        /// </summary>
-        private void ProcessMovementBatchImmediate(EntityBatchProcessedEventArgs args)
-        {
-            var entitySpan = args.GetSpan();
-
-            for (int i = 0; i < entitySpan.Length; i++)
-            {
-                var entity = entitySpan[i];
-
-                if (!_world!.TryGetEntityLocation(entity, out var archetype, out var slot))
-                    continue;
-
-                if (!archetype.HasComponent(PosTypeId))
-                    continue;
-
-                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
-                if ((uint)slot >= (uint)positions.Length)
-                    continue;
-
-                var position = positions[slot];
-                var targetChunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
-
-                bool hasOwner = archetype.HasComponent(ChunkOwnerTypeId);
-                bool needsReassignment = true;
-
-                if (hasOwner)
-                {
-                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                    if ((uint)slot < (uint)owners.Length)
-                    {
-                        var currentOwner = owners[slot];
-                        if (currentOwner.IsAssigned && currentOwner.Location.Equals(targetChunkLoc))
-                        {
-                            needsReassignment = false;
-                        }
-                    }
-                }
-
-                if (needsReassignment)
-                {
-                    ChunkAssignmentQueue.Enqueue(entity, targetChunkLoc);
-                }
             }
         }
 
@@ -348,7 +300,8 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Process all deferred movement batches from the queue.
-        /// Can process in parallel if multiple batches are available.
+        /// NOTE: This method is NOT currently used - movement events process immediately with smart filtering.
+        /// Kept for potential future use or testing scenarios.
         /// </summary>
         private void ProcessDeferredMovementBatches()
         {
@@ -365,19 +318,22 @@ namespace UltraSim.Server.ECS.Systems
             if (batches.Count == 0)
                 return;
 
+            // TODO: Implement ProcessMovementBatchSmart method
+            // This method was referenced but not implemented
+            /*
             // Decide parallel vs sequential
             bool useParallel = SystemSettings.ParallelBatchProcessing.Value &&
                                batches.Count >= SystemSettings.ParallelBatchThreshold.Value;
 
             if (useParallel)
             {
-                Parallel.ForEach(batches, batch => ProcessMovementBatchImmediate(batch));
+                Parallel.ForEach(batches, batch => ProcessMovementBatchSmart(batch));
             }
             else
             {
                 foreach (var batch in batches)
                 {
-                    ProcessMovementBatchImmediate(batch);
+                    ProcessMovementBatchSmart(batch);
                 }
             }
 
@@ -385,6 +341,7 @@ namespace UltraSim.Server.ECS.Systems
             {
                 Logging.Log($"[ChunkSystem] Processed {batches.Count} deferred movement batches ({(useParallel ? "parallel" : "sequential")})");
             }
+            */
         }
 
         /// <summary>
@@ -434,6 +391,17 @@ namespace UltraSim.Server.ECS.Systems
             _ownerAssigned[entity.Index] = true;
         }
 
+        private void ClearOwner(Entity entity)
+        {
+            uint index = entity.Index;
+            if (index < _ownerAssigned.Length && _ownerAssigned[index])
+            {
+                _ownerChunkEntities[index] = Entity.Invalid;
+                _ownerLocations[index] = default;
+                _ownerAssigned[index] = false;
+            }
+        }
+
         public override void Update(World world, double delta)
         {
             if (_chunkManager == null)
@@ -449,12 +417,12 @@ namespace UltraSim.Server.ECS.Systems
             // Scan for chunk entities that aren't registered yet
             RegisterNewChunks(world);
 
-            // === PROCESS DEFERRED BATCHES ===
-            // Process entity creation and movement batches from events
+            // === PROCESS DEFERRED CREATION BATCHES ===
+            // Only creation events use deferred batching (works great for one-time operations)
+            // Movement events process immediately with smart filtering (see OnEntityBatchProcessed)
             if (SystemSettings.EnableDeferredBatchProcessing.Value)
             {
                 ProcessDeferredCreationBatches();
-                ProcessDeferredMovementBatches();
             }
 
             // === PROCESS ASSIGNMENT QUEUE ===
@@ -469,30 +437,7 @@ namespace UltraSim.Server.ECS.Systems
                 }
             }
 
-            // === AUTO-ASSIGNMENT ===
-            if (SystemSettings.EnableAutoAssignment.Value)
-            {
-                int frequency = SystemSettings.AssignmentFrequency.Value;
-                bool runFullScan = _frameCounter % frequency == 0 &&
-                    (!SystemSettings.UseDirtyAssignmentQueue.Value ||
-                     !queueProcessed ||
-                     SystemSettings.FallbackToFullScan.Value);
-
-                if (runFullScan)
-                {
-                    int reassignedCount = AssignEntitiesToChunks(world);
-
-                    if (SystemSettings.EnableDebugLogs.Value && reassignedCount > 0)
-                    {
-                        Logging.Log($"[ChunkSystem] Reassigned {reassignedCount} entities to chunks");
-                    }
-                }
-            }
-
             EvictStaleChunks(world);
-
-            // Apply all component changes
-            _buffer.Apply(world);
 
             // === STATISTICS ===
             if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 300 == 0)
@@ -545,6 +490,12 @@ namespace UltraSim.Server.ECS.Systems
                 for (int i = 0; i < entities.Length; i++)
                 {
                     var entity = entities[i];
+
+                    // SAFETY: Verify entity is still valid before processing
+                    // (Could have been destroyed/pooled during deferred processing)
+                    if (!_world!.IsEntityValid(entity))
+                        continue;
+
                     var location = locations[i];
                     if (!states.IsEmpty)
                     {
@@ -559,11 +510,11 @@ namespace UltraSim.Server.ECS.Systems
                     _chunkManager.RegisterChunk(entity, location);
 
                     // Remove from pending set now that chunk is registered
-                    _pendingChunkCreations.Remove(location);
+                    _pendingChunkCreations.TryRemove(location, out _);
 
                     // Remove UnregisteredChunkTag - chunk is now registered!
-                    // Using CommandBuffer to defer component removal (safe during Update)
-                    _buffer.RemoveComponent(entity.Index, UnregisteredChunkTagTypeId);
+                    // Using deferred queue for component removal
+                    _world!.EnqueueComponentRemove(entity, UnregisteredChunkTagTypeId);
 
                     _chunksRegisteredThisFrame++;
                     _chunkManager.TouchChunk(entity);
@@ -675,102 +626,14 @@ namespace UltraSim.Server.ECS.Systems
 
         private int ProcessAssignmentsParallel(World world, List<ChunkAssignmentRequest> requests)
         {
-            if (_chunkManager == null)
-                return 0;
-
-            _parallelFallback.Clear();
-            int processed = 0;
-            int batchSize = Math.Max(64, SystemSettings.ParallelBatchSize.Value);
-
-            int count = requests.Count;
-            Parallel.ForEach(Partitioner.Create(0, count, batchSize), range =>
+            // SIMPLIFIED: Use same pattern as creation batch processing
+            // No partitioner, no worker cache, no fallback - just simple parallel foreach
+            Parallel.ForEach(requests, request =>
             {
-                var cache = _workerCache.Value!;
-                cache.Reset();
-
-                for (int i = range.Item1; i < range.Item2; i++)
-                {
-                    var request = requests[i];
-                    if (TryProcessAssignmentFast(world, request, cache))
-                    {
-                        Interlocked.Increment(ref processed);
-                    }
-                    else
-                    {
-                        lock (_fallbackLock)
-                        {
-                            _parallelFallback.Add(request);
-                        }
-                    }
-                }
+                ProcessAssignment(world, request);
             });
 
-            if (_parallelFallback.Count > 0)
-            {
-                processed += ProcessAssignmentsSequential(world, _parallelFallback);
-                _parallelFallback.Clear();
-            }
-
-            return processed;
-        }
-
-        private bool TryProcessAssignmentFast(World world, ChunkAssignmentRequest request, WorkerCache cache)
-        {
-            if (_chunkManager == null)
-                return false;
-
-            // Skip invalid entities (can happen during mass spawning/destruction)
-            if (request.Entity == Entity.Invalid || request.Entity.Index == 0)
-                return true;
-
-            var chunkEntity = cache.GetChunk(_chunkManager, request.Location);
-            if (chunkEntity == Entity.Invalid)
-                return false;
-
-            _chunkManager.TouchChunk(chunkEntity);
-
-            if (!world.TryGetEntityLocation(request.Entity, out var archetype, out var slot))
-                return true;
-
-            if (archetype.HasComponent(ChunkOwnerTypeId))
-            {
-                var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                if ((uint)slot < (uint)owners.Length)
-                {
-                    ref var owner = ref owners[slot];
-                    if (owner.IsAssigned &&
-                        owner.ChunkEntity == chunkEntity &&
-                        owner.Location.Equals(request.Location))
-                    {
-                        return true;
-                    }
-
-                    owner = new ChunkOwner(chunkEntity, request.Location);
-                    return true;
-                }
-            }
-
-            _buffer.AddComponent(request.Entity.Index, ChunkOwnerTypeId, new ChunkOwner(chunkEntity, request.Location));
-            return true;
-        }
-
-        private sealed class WorkerCache
-        {
-            private readonly Dictionary<ChunkLocation, Entity> _chunkLookup = new(128);
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Reset() => _chunkLookup.Clear();
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Entity GetChunk(ChunkManager manager, ChunkLocation location)
-            {
-                if (_chunkLookup.TryGetValue(location, out var entity))
-                    return entity;
-
-                entity = manager.GetChunk(location);
-                _chunkLookup[location] = entity;
-                return entity;
-            }
+            return requests.Count;
         }
 
         private Entity TryReuseChunkFromPool(World world, ChunkLocation location)
@@ -833,6 +696,14 @@ namespace UltraSim.Server.ECS.Systems
             _chunkEntityTracker.Clear(chunkEntity);
 
             _chunkManager.UnregisterChunk(chunkEntity);
+
+            // SAFETY: Remove UnregisteredChunkTag if present before pooling
+            // This prevents stale deferred operations on pooled/reused entities
+            if (archetype.HasComponent(UnregisteredChunkTagTypeId))
+            {
+                world.EnqueueComponentRemove(chunkEntity, UnregisteredChunkTagTypeId);
+            }
+
             _chunkPool.Enqueue(chunkEntity);
         }
 
@@ -875,14 +746,19 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Add entity to chunk's entity list for efficient render queries.
+        /// Marks chunk as dirty for client visual cache rebuild.
         /// </summary>
         private void TrackEntityInChunk(Entity entity, Entity chunkEntity)
         {
             _chunkEntityTracker.Add(chunkEntity, entity);
+
+            // Mark chunk as dirty so client knows to rebuild visual cache
+            _world!.EnqueueComponentAdd(chunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         /// <summary>
         /// Move entity from old chunk to new chunk in tracking.
+        /// Marks both chunks as dirty for client visual cache rebuild.
         /// </summary>
         private void MoveEntityBetweenChunks(Entity entity, Entity oldChunkEntity, Entity newChunkEntity)
         {
@@ -890,6 +766,10 @@ namespace UltraSim.Server.ECS.Systems
                 return;
 
             _chunkEntityTracker.Move(entity, oldChunkEntity, newChunkEntity);
+
+            // Mark both chunks as dirty so client knows to rebuild visual caches
+            _world!.EnqueueComponentAdd(oldChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd(newChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         private void ProcessAssignment(World world, ChunkAssignmentRequest request)
@@ -901,6 +781,18 @@ namespace UltraSim.Server.ECS.Systems
             if (request.Entity == Entity.Invalid || request.Entity.Index == 0)
                 return;
 
+            // SAFETY: Check entity validity before processing
+            if (!world.IsEntityValid(request.Entity))
+            {
+                // CLEANUP: Entity was destroyed - remove from tracking
+                if (TryGetOwner(request.Entity, out var destroyedChunk, out _))
+                {
+                    _chunkEntityTracker.Remove(destroyedChunk, request.Entity);
+                    ClearOwner(request.Entity);
+                }
+                return;
+            }
+
             var chunkEntity = GetOrCreateChunk(world, request.Location);
             if (chunkEntity == Entity.Invalid)
                 return;
@@ -909,10 +801,28 @@ namespace UltraSim.Server.ECS.Systems
 
             var owner = new ChunkOwner(chunkEntity, request.Location);
 
-            var hadOwner = TryGetOwner(request.Entity, out var previousChunk, out _);
+            var hadOwner = TryGetOwner(request.Entity, out var previousChunk, out var previousLocation);
 
             if (hadOwner)
             {
+                // SANITY CHECK: Verify entity is still outside previous chunk bounds
+                // Handles case where entity crossed boundary, got queued, then crossed back before processing
+                if (world.TryGetEntityLocation(request.Entity, out var entityArch, out var entitySlot) &&
+                    entityArch.HasComponent(PosTypeId))
+                {
+                    var positions = entityArch.GetComponentSpan<Position>(PosTypeId);
+                    if ((uint)entitySlot < (uint)positions.Length)
+                    {
+                        var currentPos = positions[entitySlot];
+                        var previousBounds = _chunkManager.ChunkToWorldBounds(previousLocation);
+                        if (previousBounds.Contains(currentPos.X, currentPos.Y, currentPos.Z))
+                        {
+                            // Entity moved back into bounds, no reassignment needed
+                            return;
+                        }
+                    }
+                }
+
                 if (previousChunk != chunkEntity)
                 {
                     MoveEntityBetweenChunks(request.Entity, previousChunk, chunkEntity);
@@ -932,89 +842,8 @@ namespace UltraSim.Server.ECS.Systems
             }
             else
             {
-                _buffer.AddComponent(request.Entity.Index, ChunkOwnerTypeId, owner);
+                _world!.EnqueueComponentAdd(request.Entity, ChunkOwnerTypeId, owner);
             }
-        }
-
-        /// <summary>
-        /// Assign entities with Position components to their appropriate chunks.
-        /// Creates chunks on-demand if they don't exist.
-        /// </summary>
-        private int AssignEntitiesToChunks(World world)
-        {
-            if (_chunkManager == null)
-                return 0;
-
-            int assignedCount = 0;
-            _chunkEntityCache.Clear();
-            var archetypes = world.QueryArchetypes(typeof(Position));
-
-            foreach (var arch in archetypes)
-            {
-                if (arch.Count == 0) continue;
-
-                // Skip chunk entities themselves (they have ChunkLocation)
-                if (arch.HasComponent(ChunkLocationTypeId))
-                    continue;
-
-                var positions = arch.GetComponentSpan<Position>(PosTypeId);
-                var entities = arch.GetEntityArray();
-
-                bool hasChunkOwnerComponent = arch.HasComponent(ChunkOwnerTypeId);
-
-                for (int i = 0; i < entities.Length; i++)
-                {
-                    var entity = entities[i];
-                    var pos = positions[i];
-
-                    // Calculate chunk location for this position
-                    var chunkLoc = _chunkManager.WorldToChunk(pos.X, pos.Y, pos.Z);
-
-                    if (!_chunkEntityCache.TryGetValue(chunkLoc, out var chunkEntity) || chunkEntity == Entity.Invalid)
-                    {
-                        chunkEntity = GetOrCreateChunk(world, chunkLoc);
-                        if (chunkEntity == Entity.Invalid)
-                            continue;
-
-                        _chunkEntityCache[chunkLoc] = chunkEntity;
-                    }
-
-                    _chunkManager.TouchChunk(chunkEntity);
-
-                    var hasOwner = TryGetOwner(entity, out var previousChunk, out var previousLocation);
-                    if (hasOwner && previousChunk == chunkEntity && previousLocation.Equals(chunkLoc))
-                        continue;
-
-                    var owner = new ChunkOwner(chunkEntity, chunkLoc);
-
-                    if (hasOwner)
-                    {
-                        if (previousChunk != chunkEntity && previousChunk != Entity.Invalid)
-                        {
-                            MoveEntityBetweenChunks(entity, previousChunk, chunkEntity);
-                        }
-                    }
-                    else
-                    {
-                        TrackEntityInChunk(entity, chunkEntity);
-                    }
-
-                    SetOwner(entity, chunkEntity, chunkLoc);
-
-                    if (hasChunkOwnerComponent)
-                    {
-                        arch.SetComponentValue(ChunkOwnerTypeId, i, owner);
-                    }
-                    else
-                    {
-                        _buffer.AddComponent(entity.Index, ChunkOwnerTypeId, owner);
-                    }
-
-                    assignedCount++;
-                }
-            }
-
-            return assignedCount;
         }
 
         /// <summary>
@@ -1041,11 +870,11 @@ namespace UltraSim.Server.ECS.Systems
             }
 
             // Check if chunk creation is already pending (FIX FOR INFINITE LOOP BUG)
-            if (_pendingChunkCreations.Contains(location))
+            if (_pendingChunkCreations.ContainsKey(location))
                 return Entity.Invalid; // Already queued, skip
 
             // Mark as pending to prevent duplicate creation requests
-            _pendingChunkCreations.Add(location);
+            _pendingChunkCreations.TryAdd(location, 0);
 
             // Create new chunk entity
             var bounds = _chunkManager.ChunkToWorldBounds(location);
@@ -1054,14 +883,14 @@ namespace UltraSim.Server.ECS.Systems
                 IsGenerated = true
             };
 
-            _buffer.CreateEntity(builder =>
-            {
-                builder.Add(location);
-                builder.Add(bounds);
-                builder.Add(state);
-                builder.Add(new ChunkHash(0, 0)); // Will be computed when terrain/statics are added
-                builder.Add(new UnregisteredChunkTag()); // Mark as unregistered - removed when registered with ChunkManager
-            });
+            var entityBuilder = _world!.CreateEntityBuilder()
+                .Add(location)
+                .Add(bounds)
+                .Add(state)
+                .Add(new ChunkHash(0, 0)) // Will be computed when terrain/statics are added
+                .Add(new UnregisteredChunkTag()); // Mark as unregistered - removed when registered with ChunkManager
+
+            _world!.EnqueueCreateEntity(entityBuilder);
 
             _chunksQueuedThisFrame++;
             // Detailed per-chunk logging removed to avoid log spam; summary emitted at end of frame.
@@ -1069,14 +898,58 @@ namespace UltraSim.Server.ECS.Systems
             return Entity.Invalid; // Will be available next frame
         }
 
+        #region Dirty Chunk Query API (for Client RenderChunkManager)
+
+        /// <summary>
+        /// Check if a server spatial chunk has been modified since last visual cache rebuild.
+        /// </summary>
+        public bool IsChunkDirty(World world, Entity chunkEntity)
+        {
+            if (world.TryGetEntityLocation(chunkEntity, out var archetype, out _))
+            {
+                return archetype.HasComponent(DirtyChunkTagTypeId);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Clear dirty flag after client rebuilds visual cache.
+        /// Called by RenderChunkManager after processing chunk.
+        /// </summary>
+        public void ClearChunkDirty(Entity chunkEntity)
+        {
+            _world!.EnqueueComponentRemove(chunkEntity, DirtyChunkTagTypeId);
+        }
+
+        /// <summary>
+        /// Get all dirty chunks (for client to enumerate and rebuild).
+        /// Returns list of chunk entities that need visual cache updates.
+        /// </summary>
+        public List<Entity> GetDirtyChunks(World world)
+        {
+            var result = new List<Entity>();
+            var archetypes = world.QueryArchetypes(typeof(DirtyChunkTag));
+
+            foreach (var archetype in archetypes)
+            {
+                if (archetype.Count == 0)
+                    continue;
+
+                var entities = archetype.GetEntityArray();
+                result.AddRange(entities);
+            }
+
+            return result;
+        }
+
+        #endregion
+
         public override void OnShutdown(World world)
         {
             if (SystemSettings.EnableDebugLogs.Value)
             {
                 Logging.Log($"[ChunkSystem] Shutting down - Final stats:\n{_chunkManager?.GetStatistics()}");
             }
-
-            _buffer.Dispose();
         }
     }
 }

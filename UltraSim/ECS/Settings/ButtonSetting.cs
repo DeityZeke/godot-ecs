@@ -21,7 +21,9 @@ namespace UltraSim.ECS.Settings
         public event Action? Clicked;
 
         // Not used for buttons, but required by ISetting
+#pragma warning disable CS0067 // Event is never used
         public event Action<object>? ValueChanged;
+#pragma warning restore CS0067
 
         object ISetting.Value
         {

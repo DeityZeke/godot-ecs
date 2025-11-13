@@ -41,52 +41,42 @@ namespace UltraSim.ECS
             public List<ComponentInit> Components;
         }
 
+        /// <summary>
+        /// Thread-safe command that stores full Entity (index + version) for proper validation.
+        /// Memory: 24 bytes (8 for entity, 4 for componentId, 1 for type, 3 padding, 8 for reference)
+        /// Previously: 16 bytes (8 for packed header, 8 for reference)
+        /// Tradeoff: +50% memory for correctness (prevents operations on recycled entities)
+        /// </summary>
         private readonly struct ThreadCommand
         {
             public enum Type : byte { AddComponent = 0, RemoveComponent = 1, DestroyEntity = 2 }
 
-            private const int EntityBits = 32;
-            private const int ComponentBits = 24;
-            private const int TypeBits = 8;
-
-            private const int ComponentShift = EntityBits;
-            private const int TypeShift = ComponentShift + ComponentBits;
-
-            private const ulong EntityMask = (1UL << EntityBits) - 1;
-            private const uint ComponentMask = (1u << ComponentBits) - 1;
-
-            private readonly ulong _header;
+            private readonly ulong _entityPacked;  // Full entity (index + version)
+            private readonly int _componentTypeId;
+            private readonly Type _commandType;
             public readonly object? BoxedValue;
 
-            private ThreadCommand(ulong header, object? boxedValue)
+            private ThreadCommand(ulong entityPacked, int componentTypeId, Type commandType, object? boxedValue)
             {
-                _header = header;
+                _entityPacked = entityPacked;
+                _componentTypeId = componentTypeId;
+                _commandType = commandType;
                 BoxedValue = boxedValue;
             }
 
-            public Type CommandType => (Type)((_header >> TypeShift) & ((1UL << TypeBits) - 1));
-            public uint EntityIndex => (uint)(_header & EntityMask);
-            public int ComponentTypeId => (int)((_header >> ComponentShift) & ComponentMask);
+            public Type CommandType => _commandType;
+            public Entity Entity => new(_entityPacked);
+            public uint EntityIndex => Entity.Index;  // For backward compatibility
+            public int ComponentTypeId => _componentTypeId;
 
-            public static ThreadCommand CreateAdd(uint entityIndex, int componentTypeId, object boxedValue) =>
-                new(Pack(Type.AddComponent, entityIndex, componentTypeId), boxedValue);
+            public static ThreadCommand CreateAdd(Entity entity, int componentTypeId, object boxedValue) =>
+                new(entity.Packed, componentTypeId, Type.AddComponent, boxedValue);
 
-            public static ThreadCommand CreateRemove(uint entityIndex, int componentTypeId) =>
-                new(Pack(Type.RemoveComponent, entityIndex, componentTypeId), null);
+            public static ThreadCommand CreateRemove(Entity entity, int componentTypeId) =>
+                new(entity.Packed, componentTypeId, Type.RemoveComponent, null);
 
-            public static ThreadCommand CreateDestroy(uint entityIndex) =>
-                new(Pack(Type.DestroyEntity, entityIndex, 0), null);
-
-            private static ulong Pack(Type type, uint entityIndex, int componentTypeId)
-            {
-#if DEBUG
-                if (componentTypeId < 0 || (uint)componentTypeId > ComponentMask)
-                    throw new ArgumentOutOfRangeException(nameof(componentTypeId), $"ComponentTypeId exceeds {ComponentMask}");
-#endif
-                return ((ulong)type << TypeShift) |
-                       (((ulong)componentTypeId & ComponentMask) << ComponentShift) |
-                       entityIndex;
-            }
+            public static ThreadCommand CreateDestroy(Entity entity) =>
+                new(entity.Packed, 0, Type.DestroyEntity, null);
         }
 
         #endregion
@@ -163,10 +153,12 @@ namespace UltraSim.ECS
         /// <summary>
         /// Queues an entity for destruction by index.
         /// Thread-safe: Can be called from parallel systems.
+        /// Note: Prefer DestroyEntity(Entity) when possible for proper version tracking.
         /// </summary>
         public void DestroyEntity(uint entityIndex)
         {
-            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateDestroy(entityIndex));
+            // Create entity with version 0 (will be validated at destruction time)
+            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateDestroy(new Entity(entityIndex, 0)));
         }
 
         #endregion
@@ -175,20 +167,20 @@ namespace UltraSim.ECS
 
         /// <summary>
         /// Thread-safe: Queue component addition from any thread.
-        /// Used primarily in parallel systems.
+        /// Stores full entity (index + version) for proper validation.
         /// </summary>
-        public void AddComponent(uint entityIndex, int componentTypeId, object boxedValue)
+        public void AddComponent(Entity entity, int componentTypeId, object boxedValue)
         {
-            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateAdd(entityIndex, componentTypeId, boxedValue));
+            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateAdd(entity, componentTypeId, boxedValue));
         }
 
         /// <summary>
         /// Thread-safe: Queue component removal from any thread.
-        /// Used primarily in parallel systems.
+        /// Stores full entity (index + version) for proper validation.
         /// </summary>
-        public void RemoveComponent(uint entityIndex, int componentTypeId)
+        public void RemoveComponent(Entity entity, int componentTypeId)
         {
-            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateRemove(entityIndex, componentTypeId));
+            _threadLocalBuffers.Value!.Add(ThreadCommand.CreateRemove(entity, componentTypeId));
         }
 
         #endregion
@@ -236,20 +228,21 @@ namespace UltraSim.ECS
                     continue;
 
                 // Merge commands into World's existing queue system
+                // Commands now store full Entity (index + version) for proper validation
                 foreach (var cmd in buffer)
                 {
                     switch (cmd.CommandType)
                     {
                         case ThreadCommand.Type.AddComponent:
-                            world.EnqueueComponentAdd(cmd.EntityIndex, cmd.ComponentTypeId, cmd.BoxedValue!);
+                            world.EnqueueComponentAdd(cmd.Entity, cmd.ComponentTypeId, cmd.BoxedValue!);
                             break;
 
                         case ThreadCommand.Type.RemoveComponent:
-                            world.EnqueueComponentRemove(cmd.EntityIndex, cmd.ComponentTypeId);
+                            world.EnqueueComponentRemove(cmd.Entity, cmd.ComponentTypeId);
                             break;
 
                         case ThreadCommand.Type.DestroyEntity:
-                            world.EnqueueDestroyEntity(cmd.EntityIndex);
+                            world.EnqueueDestroyEntity(cmd.Entity);
                             break;
                     }
                 }
@@ -265,6 +258,9 @@ namespace UltraSim.ECS
             int created = 0;
             var createdEntities = new List<Entity>();
 
+            // Reusable stack-allocated buffer for TypeIds
+            Span<int> typeIdBuffer = stackalloc int[32];
+
             foreach (ref var cmd in CollectionsMarshal.AsSpan(_creates))
             {
                 if (cmd.Components.Count == 0)
@@ -277,13 +273,17 @@ namespace UltraSim.ECS
                     continue;
                 }
 
-                // Build signature from all components (typeId already computed in EntityBuilder)
-                var signature = new ComponentSignature();
-                foreach (ref readonly var component in CollectionsMarshal.AsSpan(cmd.Components))
+                // Extract TypeIds into stack buffer (FAST PATH - no cloning!)
+                var componentSpan = CollectionsMarshal.AsSpan(cmd.Components);
+                int componentCount = Math.Min(componentSpan.Length, typeIdBuffer.Length);
+
+                for (int i = 0; i < componentCount; i++)
                 {
-                    // Use pre-computed typeId from EntityBuilder (OPTIMIZED)
-                    signature = signature.Add(component.TypeId);
+                    typeIdBuffer[i] = componentSpan[i].TypeId;
                 }
+
+                // Build signature from TypeIds in ONE operation (eliminates N array clones!)
+                var signature = ComponentSignature.FromTypeIds(typeIdBuffer.Slice(0, componentCount));
 
                 // Create entity directly in target archetype (ONE archetype move!)
                 var entity = world.CreateEntityWithSignature(signature);

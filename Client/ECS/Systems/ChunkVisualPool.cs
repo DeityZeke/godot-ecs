@@ -19,11 +19,27 @@ namespace Client.ECS.Systems
         private readonly Func<ChunkLocation, TVisual?> _factory;
         private readonly Action<TVisual>? _onAcquire;
         private readonly Action<TVisual>? _onRelease;
+        private readonly object _lock = new(); // Thread safety for parallel access
 
         public ChunkLocation Location { get; private set; }
 
-        public int ActiveCount => _leased.Count;
-        public int AvailableCount => _available.Count;
+        public int ActiveCount
+        {
+            get
+            {
+                lock (_lock)
+                    return _leased.Count;
+            }
+        }
+
+        public int AvailableCount
+        {
+            get
+            {
+                lock (_lock)
+                    return _available.Count;
+            }
+        }
 
         public ChunkVisualPool(
             ChunkLocation location,
@@ -46,23 +62,29 @@ namespace Client.ECS.Systems
 
         public TVisual? Acquire()
         {
-            TVisual? visual = _available.Count > 0 ? _available.Pop() : _factory(Location);
-            if (visual == null)
-                return null;
+            lock (_lock)
+            {
+                TVisual? visual = _available.Count > 0 ? _available.Pop() : _factory(Location);
+                if (visual == null)
+                    return null;
 
-            _leased.Add(visual);
-            _onAcquire?.Invoke(visual);
-            return visual;
+                _leased.Add(visual);
+                _onAcquire?.Invoke(visual);
+                return visual;
+            }
         }
 
         public bool Release(TVisual visual)
         {
-            if (!_leased.Remove(visual))
-                return false;
+            lock (_lock)
+            {
+                if (!_leased.Remove(visual))
+                    return false;
 
-            _onRelease?.Invoke(visual);
-            _available.Push(visual);
-            return true;
+                _onRelease?.Invoke(visual);
+                _available.Push(visual);
+                return true;
+            }
         }
     }
 }

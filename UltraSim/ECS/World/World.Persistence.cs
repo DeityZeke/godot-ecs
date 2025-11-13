@@ -123,7 +123,7 @@ namespace UltraSim.ECS
             catch (Exception ex)
             {
                 Logging.Log($"[World] âŒ Save failed with exception: {ex.Message}", LogSeverity.Error);
-                Logging.Log(ex.StackTrace, LogSeverity.Error);
+                Logging.Log(ex.StackTrace ?? "(no stack trace)", LogSeverity.Error);
             }
         }
 
@@ -216,7 +216,7 @@ namespace UltraSim.ECS
             catch (Exception ex)
             {
                 Logging.Log($"[World] âŒ Load failed with exception: {ex.Message}", LogSeverity.Error);
-                Logging.Log(ex.StackTrace, LogSeverity.Error);
+                Logging.Log(ex.StackTrace ?? "(no stack trace)", LogSeverity.Error);
             }
         }
 

@@ -258,6 +258,16 @@ namespace Client.ECS.Systems
             // Upload dirty chunks to GPU
             UpdateChunkMultiMeshes();
 
+            // PHASE 3: Clear dirty flags after processing chunks
+            foreach (var chunkInfo in staticChunks)
+            {
+                var chunkEntity = _chunkManager!.GetChunk(chunkInfo.Location);
+                if (chunkEntity != Entity.Invalid)
+                {
+                    _chunkSystem!.ClearChunkDirty(chunkEntity);
+                }
+            }
+
             // Remove chunks that are no longer in Near/Mid zones
             RemoveInactiveChunks();
 
@@ -267,9 +277,16 @@ namespace Client.ECS.Systems
                 foreach (var chunkData in _chunkMultiMeshes.Values)
                     totalEntities += chunkData.Count;
 
-                Logging.Log($"[{Name}] Active chunks: {_chunkMultiMeshes.Count}, Total entities: {totalEntities}, Pool: {_pooledChunkMeshes.Count}");
+                int totalRenderChunks = _chunkMultiMeshes.Count;
+                int processedThisFrame = staticChunks.Count;
+                float skipPercentage = totalRenderChunks > 0 ? (1.0f - (float)processedThisFrame / totalRenderChunks) * 100.0f : 0;
+
+                Logging.Log($"[{Name}] Active: {totalRenderChunks} chunks, Entities: {totalEntities}, Pool: {_pooledChunkMeshes.Count} | Processed: {processedThisFrame} ({skipPercentage:F1}% skipped via dirty tracking)");
             }
         }
+
+        // Track previous visibility per chunk for change detection
+        private readonly Dictionary<ChunkLocation, bool> _previousVisibility = new();
 
         private List<(ChunkLocation Location, bool Visible)> GetStaticRenderChunks(World world)
         {
@@ -293,7 +310,21 @@ namespace Client.ECS.Systems
                     for (int i = 0; i < renderChunks.Length; i++)
                     {
                         ref var renderChunk = ref renderChunks[i];
-                        staticChunks.Add((renderChunk.Location, renderChunk.Visible));
+                        var serverChunkLoc = renderChunk.ServerChunkLocation;
+                        var visible = renderChunk.Visible;
+
+                        // PHASE 3 OPTIMIZATION: Only process chunks if:
+                        // 1. Server chunk is dirty (entity list changed), OR
+                        // 2. Visibility changed (frustum culling update)
+                        bool isDirty = _chunkSystem!.IsChunkDirty(world, _chunkManager!.GetChunk(serverChunkLoc));
+                        bool visibilityChanged = !_previousVisibility.TryGetValue(serverChunkLoc, out var prevVis) || prevVis != visible;
+
+                        if (isDirty || visibilityChanged)
+                        {
+                            // Use ServerChunkLocation (absolute world position) to identify which server chunk entities to render
+                            staticChunks.Add((serverChunkLoc, visible));
+                            _previousVisibility[serverChunkLoc] = visible;
+                        }
                     }
                 }
             }

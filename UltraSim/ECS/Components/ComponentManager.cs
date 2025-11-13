@@ -103,6 +103,16 @@ namespace UltraSim.ECS
         }
 
         /// <summary>
+        /// Gets the highest component type ID currently registered.
+        /// Returns -1 if no components are registered.
+        /// Used for dynamic ComponentSignature sizing.
+        /// </summary>
+        public static int GetHighestTypeId()
+        {
+            lock (_typeLock) return _idToType.Count - 1;
+        }
+
+        /// <summary>
         /// Clears the registry (testing only).
         /// </summary>
         public static void ClearRegistry()
@@ -140,23 +150,26 @@ namespace UltraSim.ECS
 
         /// <summary>
         /// Enqueues a component addition for the next frame.
+        /// Stores full entity (index + version) for proper validation.
         /// </summary>
-        public void EnqueueAdd(uint entityIndex, int componentTypeId, object boxedValue)
+        public void EnqueueAdd(Entity entity, int componentTypeId, object boxedValue)
         {
-            _addQueue.Enqueue(ComponentAddOp.Create(entityIndex, componentTypeId, boxedValue));
+            _addQueue.Enqueue(ComponentAddOp.Create(entity, componentTypeId, boxedValue));
         }
 
         /// <summary>
         /// Enqueues a component removal for the next frame.
+        /// Stores full entity (index + version) for proper validation.
         /// </summary>
-        public void EnqueueRemove(uint entityIndex, int componentTypeId)
+        public void EnqueueRemove(Entity entity, int componentTypeId)
         {
-            _removeQueue.Enqueue(ComponentRemoveOp.Create(entityIndex, componentTypeId));
+            _removeQueue.Enqueue(ComponentRemoveOp.Create(entity, componentTypeId));
         }
 
         /// <summary>
         /// Processes all queued component operations.
         /// Called during World.Tick() pipeline.
+        /// Version validation happens in World.AddComponentToEntityInternal/RemoveComponentFromEntityInternal.
         /// </summary>
         public void ProcessQueues()
         {
@@ -165,7 +178,7 @@ namespace UltraSim.ECS
             {
                 try
                 {
-                    _world.RemoveComponentFromEntityInternal(op.EntityIndex, op.ComponentTypeId);
+                    _world.RemoveComponentFromEntityInternal(op.Entity, op.ComponentTypeId);
                 }
                 catch (Exception ex)
                 {
@@ -178,7 +191,7 @@ namespace UltraSim.ECS
             {
                 try
                 {
-                    _world.AddComponentToEntityInternal(op.EntityIndex, op.ComponentTypeId, op.BoxedValue);
+                    _world.AddComponentToEntityInternal(op.Entity, op.ComponentTypeId, op.BoxedValue);
                 }
                 catch (Exception ex)
                 {
@@ -210,45 +223,49 @@ namespace UltraSim.ECS
 
         #region Packed Ops
 
+        /// <summary>
+        /// Component remove operation that stores full Entity (index + version).
+        /// Memory layout: 8 bytes for entity.Packed + 4 bytes for componentTypeId = 12 bytes total
+        /// </summary>
         private readonly struct ComponentRemoveOp
         {
-            private const int EntityBits = 32;
-            private const int ComponentBits = 32; // allow large component ids
-            private const int ComponentShift = EntityBits;
-            private const ulong EntityMask = (1UL << EntityBits) - 1;
+            private readonly ulong _entityPacked;  // Full entity (index + version)
+            public readonly int ComponentTypeId;
 
-            private readonly ulong _header;
+            private ComponentRemoveOp(ulong entityPacked, int componentTypeId)
+            {
+                _entityPacked = entityPacked;
+                ComponentTypeId = componentTypeId;
+            }
 
-            private ComponentRemoveOp(ulong header) => _header = header;
+            public Entity Entity => new(_entityPacked);
 
-            public uint EntityIndex => (uint)(_header & EntityMask);
-            public int ComponentTypeId => (int)(_header >> ComponentShift);
-
-            public static ComponentRemoveOp Create(uint entityIndex, int componentTypeId) =>
-                new(((ulong)componentTypeId << ComponentShift) | entityIndex);
+            public static ComponentRemoveOp Create(Entity entity, int componentTypeId) =>
+                new(entity.Packed, componentTypeId);
         }
 
+        /// <summary>
+        /// Component add operation that stores full Entity (index + version).
+        /// Memory layout: 8 bytes for entity.Packed + 4 bytes for componentTypeId + 8 bytes for object reference = 20 bytes
+        /// Slightly larger than before (was 16 bytes) but ensures correct version validation.
+        /// </summary>
         private readonly struct ComponentAddOp
         {
-            private const int EntityBits = 32;
-            private const int ComponentBits = 32;
-            private const int ComponentShift = EntityBits;
-            private const ulong EntityMask = (1UL << EntityBits) - 1;
-
-            private readonly ulong _header;
+            private readonly ulong _entityPacked;  // Full entity (index + version)
+            public readonly int ComponentTypeId;
             public readonly object BoxedValue;
 
-            private ComponentAddOp(ulong header, object boxedValue)
+            private ComponentAddOp(ulong entityPacked, int componentTypeId, object boxedValue)
             {
-                _header = header;
+                _entityPacked = entityPacked;
+                ComponentTypeId = componentTypeId;
                 BoxedValue = boxedValue;
             }
 
-            public uint EntityIndex => (uint)(_header & EntityMask);
-            public int ComponentTypeId => (int)(_header >> ComponentShift);
+            public Entity Entity => new(_entityPacked);
 
-            public static ComponentAddOp Create(uint entityIndex, int componentTypeId, object boxedValue) =>
-                new(((ulong)componentTypeId << ComponentShift) | entityIndex, boxedValue);
+            public static ComponentAddOp Create(Entity entity, int componentTypeId, object boxedValue) =>
+                new(entity.Packed, componentTypeId, boxedValue);
         }
 
         #endregion

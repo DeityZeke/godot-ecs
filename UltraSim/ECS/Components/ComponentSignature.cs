@@ -11,12 +11,13 @@ namespace UltraSim.ECS
     /// Immutable, bit-packed component signature (archetype key).
     /// Optimized for ECS lookup speed and zero allocations.
     /// Uses ulong[] bitmap - each ulong covers 64 component IDs.
-    /// Supports up to 2048 component types (32 ulongs * 64 bits).
+    /// Dynamic sizing: Allocates only what's needed based on registered component types.
     ///
     /// Performance benefits over HashSet:
     /// - 60x memory reduction (8 bytes per signature vs ~480 bytes)
     /// - Faster Contains() check (bitwise AND vs hash table lookup)
     /// - Cache-friendly contiguous array
+    /// - Memory efficient: 26 component types = 8 bytes (1 ulong) vs old 256 bytes (32 ulongs)
     /// </summary>
     public sealed class ComponentSignature : IEquatable<ComponentSignature>
     {
@@ -25,9 +26,34 @@ namespace UltraSim.ECS
 
         public int Count { get; }
 
-        public ComponentSignature(int maxComponentCount = 2048)
+        /// <summary>
+        /// Creates a component signature with dynamic sizing.
+        /// If maxComponentCount is not specified (-1), sizes based on actual registered components.
+        /// </summary>
+        public ComponentSignature(int maxComponentCount = -1)
         {
-            _bits = new ulong[(maxComponentCount + 63) / 64];
+            // Dynamic sizing: Use actual registered component count
+            if (maxComponentCount < 0)
+            {
+                int highestId = ComponentManager.GetHighestTypeId();
+                if (highestId >= 0)
+                {
+                    // Size based on actual registered components
+                    // Example: 26 components (ID 0-25) needs 1 ulong (covers 0-63)
+                    int neededUlongs = (highestId / 64) + 1;
+                    _bits = new ulong[neededUlongs];
+                }
+                else
+                {
+                    // No components registered yet - use minimal size (1 ulong = 64 component IDs)
+                    _bits = new ulong[1];
+                }
+            }
+            else
+            {
+                // Explicit size specified (for testing or special cases)
+                _bits = new ulong[(maxComponentCount + 63) / 64];
+            }
             Count = 0;
         }
 
@@ -35,6 +61,37 @@ namespace UltraSim.ECS
         {
             _bits = bits;
             Count = count;
+        }
+
+        /// <summary>
+        /// Fast-path constructor: Creates signature from array of TypeIds in ONE operation.
+        /// Avoids iterative Add() calls that clone the array N times.
+        /// CRITICAL for EntityBuilder queue performance (50K entities = 150K saved allocations).
+        /// </summary>
+        internal static ComponentSignature FromTypeIds(ReadOnlySpan<int> typeIds)
+        {
+            if (typeIds.Length == 0)
+                return new ComponentSignature();
+
+            // Find highest typeId to determine array size
+            int maxId = 0;
+            foreach (var id in typeIds)
+            {
+                if (id > maxId) maxId = id;
+            }
+
+            int neededUlongs = (maxId / 64) + 1;
+            var bits = new ulong[neededUlongs];
+
+            // Set all bits in ONE pass (no cloning!)
+            foreach (var id in typeIds)
+            {
+                int word = id >> 6;
+                ulong mask = 1UL << (id & 63);
+                bits[word] |= mask;
+            }
+
+            return new ComponentSignature(bits, typeIds.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

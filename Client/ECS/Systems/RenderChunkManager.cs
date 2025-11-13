@@ -210,7 +210,11 @@ namespace Client.ECS.Systems
                 {
                     for (int dy = -yRadius; dy <= yRadius; dy++)
                     {
-                        var chunkLoc = new ChunkLocation(
+                        // Relative render offset (camera-relative coordinates)
+                        var renderOffset = new ChunkLocation(dx, dz, dy);
+
+                        // Absolute server chunk location (world coordinates)
+                        var serverChunkLoc = new ChunkLocation(
                             playerChunk.X + dx,
                             playerChunk.Z + dz,
                             playerChunk.Y + dy);
@@ -231,8 +235,9 @@ namespace Client.ECS.Systems
 
                         if (zone != ZoneType.None)
                         {
-                            windowLocations.Add(chunkLoc);
-                            windowZones[chunkLoc] = zone;
+                            // Store server chunk location for existing chunk lookups
+                            windowLocations.Add(serverChunkLoc);
+                            windowZones[serverChunkLoc] = zone;
                         }
                     }
                 }
@@ -256,7 +261,8 @@ namespace Client.ECS.Systems
 
                     for (int i = 0; i < renderChunks.Length; i++)
                     {
-                        existingChunks[renderChunks[i].Location] = entities[i];
+                        // Key by ServerChunkLocation (absolute world position) for window comparison
+                        existingChunks[renderChunks[i].ServerChunkLocation] = entities[i];
                     }
                 }
             }
@@ -304,7 +310,7 @@ namespace Client.ECS.Systems
                     if (pooledEntities.Count + pooled < SystemSettings.PoolCapacity.Value)
                     {
                         // Add to pool via RenderChunkPoolTag
-                        _buffer.AddComponent(entity.Index, ComponentManager.GetTypeId<RenderChunkPoolTag>(), new RenderChunkPoolTag());
+                        _buffer.AddComponent(entity, ComponentManager.GetTypeId<RenderChunkPoolTag>(), new RenderChunkPoolTag());
                         pooled++;
                     }
                     else
@@ -320,12 +326,18 @@ namespace Client.ECS.Systems
             int reused = 0;
             int poolIndex = 0;
 
-            foreach (var location in windowLocations)
+            foreach (var serverChunkLoc in windowLocations)
             {
-                if (!existingChunks.ContainsKey(location))
+                if (!existingChunks.ContainsKey(serverChunkLoc))
                 {
-                    var bounds = _chunkManager.ChunkToWorldBounds(location);
-                    var zone = windowZones[location];
+                    // Calculate relative render offset (camera-relative coordinates)
+                    var renderOffset = new ChunkLocation(
+                        serverChunkLoc.X - playerChunk.X,
+                        serverChunkLoc.Z - playerChunk.Z,
+                        serverChunkLoc.Y - playerChunk.Y);
+
+                    var bounds = _chunkManager.ChunkToWorldBounds(serverChunkLoc);
+                    var zone = windowZones[serverChunkLoc];
 
                     // Try to reuse pooled entity first
                     if (poolIndex < pooledEntities.Count)
@@ -333,12 +345,12 @@ namespace Client.ECS.Systems
                         var entity = pooledEntities[poolIndex++];
 
                         // Remove pool tag
-                        _buffer.RemoveComponent(entity.Index, ComponentManager.GetTypeId<RenderChunkPoolTag>());
+                        _buffer.RemoveComponent(entity, ComponentManager.GetTypeId<RenderChunkPoolTag>());
 
                         // Update RenderChunk component with new location/bounds
                         // NOTE: We don't add ChunkLocation as separate component to avoid conflicts with ChunkSystem
-                        _buffer.RemoveComponent(entity.Index, renderChunkTypeId);
-                        _buffer.AddComponent(entity.Index, renderChunkTypeId, new RenderChunk(location, bounds, visible: false));
+                        _buffer.RemoveComponent(entity, renderChunkTypeId);
+                        _buffer.AddComponent(entity, renderChunkTypeId, new RenderChunk(renderOffset, serverChunkLoc, bounds, visible: false));
 
                         // Add zone tag to activate
                         AddZoneTag(_buffer, entity, zone);
@@ -352,7 +364,7 @@ namespace Client.ECS.Systems
                         // This prevents conflicts with ChunkSystem's spatial chunks
                         _buffer.CreateEntity(builder =>
                         {
-                            builder.Add(new RenderChunk(location, bounds, visible: false));
+                            builder.Add(new RenderChunk(renderOffset, serverChunkLoc, bounds, visible: false));
 
                             // Add zone tag immediately
                             switch (zone)
@@ -413,13 +425,13 @@ namespace Client.ECS.Systems
             switch (zone)
             {
                 case ZoneType.Near:
-                    buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<NearZoneTag>());
+                    buffer.RemoveComponent(chunkEntity, ComponentManager.GetTypeId<NearZoneTag>());
                     break;
                 case ZoneType.Mid:
-                    buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<MidZoneTag>());
+                    buffer.RemoveComponent(chunkEntity, ComponentManager.GetTypeId<MidZoneTag>());
                     break;
                 case ZoneType.Far:
-                    buffer.RemoveComponent(chunkEntity.Index, ComponentManager.GetTypeId<FarZoneTag>());
+                    buffer.RemoveComponent(chunkEntity, ComponentManager.GetTypeId<FarZoneTag>());
                     break;
             }
         }
@@ -429,13 +441,13 @@ namespace Client.ECS.Systems
             switch (zone)
             {
                 case ZoneType.Near:
-                    buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<NearZoneTag>(), new NearZoneTag());
+                    buffer.AddComponent(chunkEntity, ComponentManager.GetTypeId<NearZoneTag>(), new NearZoneTag());
                     break;
                 case ZoneType.Mid:
-                    buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<MidZoneTag>(), new MidZoneTag());
+                    buffer.AddComponent(chunkEntity, ComponentManager.GetTypeId<MidZoneTag>(), new MidZoneTag());
                     break;
                 case ZoneType.Far:
-                    buffer.AddComponent(chunkEntity.Index, ComponentManager.GetTypeId<FarZoneTag>(), new FarZoneTag());
+                    buffer.AddComponent(chunkEntity, ComponentManager.GetTypeId<FarZoneTag>(), new FarZoneTag());
                     break;
             }
         }

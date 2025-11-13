@@ -108,40 +108,40 @@ namespace Client.ECS.StressTests
                 switch (operation)
                 {
                     case 0: // Add Temperature
-                        world.EnqueueComponentAdd(entity.Index,
+                        world.EnqueueComponentAdd(entity,
                             ComponentManager.GetTypeId<Temperature>(),
                             new Temperature { Value = (float)(random.NextDouble() * 100) });
                         totalComponentAdds++;
                         break;
 
                     case 1: // Remove Temperature
-                        world.EnqueueComponentRemove(entity.Index,
+                        world.EnqueueComponentRemove(entity,
                             ComponentManager.GetTypeId<Temperature>());
                         totalComponentRemoves++;
                         break;
 
                     case 2: // Add Health
-                        world.EnqueueComponentAdd(entity.Index,
+                        world.EnqueueComponentAdd(entity,
                             ComponentManager.GetTypeId<Health>(),
                             new Health { Value = random.Next(1, 100) });
                         totalComponentAdds++;
                         break;
 
                     case 3: // Remove Health
-                        world.EnqueueComponentRemove(entity.Index,
+                        world.EnqueueComponentRemove(entity,
                             ComponentManager.GetTypeId<Health>());
                         totalComponentRemoves++;
                         break;
 
                     case 4: // Add Lifetime
-                        world.EnqueueComponentAdd(entity.Index,
+                        world.EnqueueComponentAdd(entity,
                             ComponentManager.GetTypeId<Lifetime>(),
                             new Lifetime { RemainingSeconds = (float)(random.NextDouble() * 10) });
                         totalComponentAdds++;
                         break;
 
                     case 5: // Remove Lifetime
-                        world.EnqueueComponentRemove(entity.Index,
+                        world.EnqueueComponentRemove(entity,
                             ComponentManager.GetTypeId<Lifetime>());
                         totalComponentRemoves++;
                         break;
