@@ -347,7 +347,26 @@ namespace Client.ECS.StressTests
 
         private void CleanupEntities()
         {
-            _world!.DestroyAllEntities();
+            // Query all possible component types used in tests and destroy entities
+            var componentTypes = new[]
+            {
+                typeof(RenderTag), typeof(EnemyTag), typeof(ProjectileTag),
+                typeof(PickupTag), typeof(BuildingTag), typeof(ParticleTag), typeof(NPCTag)
+            };
+
+            foreach (var componentType in componentTypes)
+            {
+                var archetypes = _world!.QueryArchetypes(componentType);
+                foreach (var archetype in archetypes)
+                {
+                    var entities = archetype.GetEntityArray();
+                    foreach (var entity in entities)
+                    {
+                        _world.EnqueueDestroyEntity(entity);
+                    }
+                }
+            }
+
             _world!.Tick(0.016); // Process destruction queue
         }
 
@@ -373,12 +392,13 @@ namespace Client.ECS.StressTests
                 GD.Print($"\n━━━ Batch Size: {batchSizeStr} entities ({batchSize:N0}) ━━━\n");
 
                 // Find homogeneous baseline
-                var homogeneous = batchResults.Find(r => r.MethodName.Contains("Homogeneous"));
-                var diverse3 = batchResults.Find(r => r.MethodName.Contains("3 types"));
-                var diverse6 = batchResults.Find(r => r.MethodName.Contains("6 types"));
+                var homogeneousResults = batchResults.FindAll(r => r.MethodName.Contains("Homogeneous"));
+                var diverse3Results = batchResults.FindAll(r => r.MethodName.Contains("3 types"));
+                var diverse6Results = batchResults.FindAll(r => r.MethodName.Contains("6 types"));
 
-                if (homogeneous != null)
+                if (homogeneousResults.Count > 0)
                 {
+                    var homogeneous = homogeneousResults[0];
                     GD.Print($"Homogeneous (1 type) - BASELINE:");
                     GD.Print($"  Total:    {homogeneous.TotalMs:F3}ms");
                     GD.Print($"  Enqueue:  {homogeneous.EnqueueMs:F3}ms");
@@ -387,8 +407,10 @@ namespace Client.ECS.StressTests
                     GD.Print($"  Path:     Sequential (1 signature group)");
                 }
 
-                if (diverse3 != null && homogeneous != null)
+                if (diverse3Results.Count > 0 && homogeneousResults.Count > 0)
                 {
+                    var homogeneous = homogeneousResults[0];
+                    var diverse3 = diverse3Results[0];
                     double speedup = homogeneous.TotalMs / diverse3.TotalMs;
                     string marker = speedup >= 1.0 ? $"{speedup:F2}x FASTER" : $"{1.0 / speedup:F2}x slower";
 
@@ -401,8 +423,10 @@ namespace Client.ECS.StressTests
                     GD.Print($"  Speedup:  {speedup:F2}x vs homogeneous");
                 }
 
-                if (diverse6 != null && homogeneous != null)
+                if (diverse6Results.Count > 0 && homogeneousResults.Count > 0)
                 {
+                    var homogeneous = homogeneousResults[0];
+                    var diverse6 = diverse6Results[0];
                     double speedup = homogeneous.TotalMs / diverse6.TotalMs;
                     string marker = speedup >= 1.0 ? $"{speedup:F2}x FASTER" : $"{1.0 / speedup:F2}x slower";
 
