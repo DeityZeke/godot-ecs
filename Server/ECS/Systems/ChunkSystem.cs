@@ -139,6 +139,7 @@ namespace UltraSim.Server.ECS.Systems
         private bool _preallocationLogged;
         private readonly Queue<Entity> _chunkPool = new();
         private readonly ChunkEntityTracker _chunkEntityTracker = new();
+        private readonly object _ownerLock = new();
         private Entity[] _ownerChunkEntities = new Entity[1024];
         private ChunkLocation[] _ownerLocations = new ChunkLocation[1024];
         private bool[] _ownerAssigned = new bool[1024];
@@ -362,43 +363,59 @@ namespace UltraSim.Server.ECS.Systems
             if (idx < _ownerChunkEntities.Length)
                 return;
 
-            int newSize = Math.Max(_ownerChunkEntities.Length * 2, idx + 1);
-            Array.Resize(ref _ownerChunkEntities, newSize);
-            Array.Resize(ref _ownerLocations, newSize);
-            Array.Resize(ref _ownerAssigned, newSize);
+            lock (_ownerLock)
+            {
+                // Double-check after acquiring lock
+                if (idx < _ownerChunkEntities.Length)
+                    return;
+
+                int newSize = Math.Max(_ownerChunkEntities.Length * 2, idx + 1);
+                Array.Resize(ref _ownerChunkEntities, newSize);
+                Array.Resize(ref _ownerLocations, newSize);
+                Array.Resize(ref _ownerAssigned, newSize);
+            }
         }
 
         private bool TryGetOwner(Entity entity, out Entity chunkEntity, out ChunkLocation location)
         {
             uint index = entity.Index;
-            if (index < _ownerAssigned.Length && _ownerAssigned[index])
+            lock (_ownerLock)
             {
-                chunkEntity = _ownerChunkEntities[index];
-                location = _ownerLocations[index];
-                return true;
-            }
+                if (index < _ownerAssigned.Length && _ownerAssigned[index])
+                {
+                    chunkEntity = _ownerChunkEntities[index];
+                    location = _ownerLocations[index];
+                    return true;
+                }
 
-            chunkEntity = Entity.Invalid;
-            location = default;
-            return false;
+                chunkEntity = Entity.Invalid;
+                location = default;
+                return false;
+            }
         }
 
         private void SetOwner(Entity entity, Entity chunkEntity, ChunkLocation location)
         {
             EnsureOwnerCapacity(entity.Index);
-            _ownerChunkEntities[entity.Index] = chunkEntity;
-            _ownerLocations[entity.Index] = location;
-            _ownerAssigned[entity.Index] = true;
+            lock (_ownerLock)
+            {
+                _ownerChunkEntities[entity.Index] = chunkEntity;
+                _ownerLocations[entity.Index] = location;
+                _ownerAssigned[entity.Index] = true;
+            }
         }
 
         private void ClearOwner(Entity entity)
         {
             uint index = entity.Index;
-            if (index < _ownerAssigned.Length && _ownerAssigned[index])
+            lock (_ownerLock)
             {
-                _ownerChunkEntities[index] = Entity.Invalid;
-                _ownerLocations[index] = default;
-                _ownerAssigned[index] = false;
+                if (index < _ownerAssigned.Length && _ownerAssigned[index])
+                {
+                    _ownerChunkEntities[index] = Entity.Invalid;
+                    _ownerLocations[index] = default;
+                    _ownerAssigned[index] = false;
+                }
             }
         }
 
@@ -835,15 +852,9 @@ namespace UltraSim.Server.ECS.Systems
 
             SetOwner(request.Entity, chunkEntity, request.Location);
 
-            if (world.TryGetEntityLocation(request.Entity, out var archetype, out var slot) &&
-                archetype.HasComponent(ChunkOwnerTypeId))
-            {
-                archetype.SetComponentValue(ChunkOwnerTypeId, slot, owner);
-            }
-            else
-            {
-                _world!.EnqueueComponentAdd(request.Entity, ChunkOwnerTypeId, owner);
-            }
+            // Always use deferred queue - never modify archetypes directly during parallel processing
+            // This prevents race conditions where slot indices become stale
+            _world!.EnqueueComponentAdd(request.Entity, ChunkOwnerTypeId, owner);
         }
 
         /// <summary>
