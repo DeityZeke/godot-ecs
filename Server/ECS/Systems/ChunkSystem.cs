@@ -176,7 +176,7 @@ namespace UltraSim.Server.ECS.Systems
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
 
             // Subscribe to World's entity batch created event for initial chunk assignment
-            EventSink.EntityBatchCreated += OnEntityBatchCreated;
+            UltraSim.EventSink.EntityBatchCreated += OnEntityBatchCreated;
             Logging.Log($"[ChunkSystem] Subscribed to World entity creation events");
 
             // Subscribe to MovementSystem's entity batch processed event

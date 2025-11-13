@@ -172,7 +172,7 @@ namespace UltraSim.ECS
         /// </summary>
         internal void FireEntityBatchCreated(Entity[] entities, int startIndex, int count)
         {
-            if (EventSink.EntityBatchCreated != null && count > 0)
+            if (count > 0)
             {
                 var args = new EntityBatchCreatedEventArgs(entities, startIndex, count);
                 EventSink.InvokeEntityBatchCreated(args);
@@ -190,7 +190,7 @@ namespace UltraSim.ECS
         /// </remarks>
         internal void FireEntityBatchCreated(List<Entity> entities)
         {
-            if (EventSink.EntityBatchCreated != null && entities.Count > 0)
+            if (entities.Count > 0)
             {
                 // TRUE zero-allocation: Pass List directly!
                 var args = new EntityBatchCreatedEventArgs(entities);
