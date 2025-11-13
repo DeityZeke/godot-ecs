@@ -63,6 +63,37 @@ namespace UltraSim.ECS
             Count = count;
         }
 
+        /// <summary>
+        /// Fast-path constructor: Creates signature from array of TypeIds in ONE operation.
+        /// Avoids iterative Add() calls that clone the array N times.
+        /// CRITICAL for EntityBuilder queue performance (50K entities = 150K saved allocations).
+        /// </summary>
+        internal static ComponentSignature FromTypeIds(ReadOnlySpan<int> typeIds)
+        {
+            if (typeIds.Length == 0)
+                return new ComponentSignature();
+
+            // Find highest typeId to determine array size
+            int maxId = 0;
+            foreach (var id in typeIds)
+            {
+                if (id > maxId) maxId = id;
+            }
+
+            int neededUlongs = (maxId / 64) + 1;
+            var bits = new ulong[neededUlongs];
+
+            // Set all bits in ONE pass (no cloning!)
+            foreach (var id in typeIds)
+            {
+                int word = id >> 6;
+                ulong mask = 1UL << (id & 63);
+                bits[word] |= mask;
+            }
+
+            return new ComponentSignature(bits, typeIds.Length);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(int id)
         {

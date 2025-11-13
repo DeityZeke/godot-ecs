@@ -300,6 +300,9 @@ namespace UltraSim.ECS
                     _createdEntitiesCache.Capacity = Math.Max(_createdEntitiesCache.Capacity, builderQueueSize);
                 }
 
+                // Reusable buffer for TypeIds (avoid allocation per entity)
+                Span<int> typeIdBuffer = stackalloc int[32]; // Stack allocation for up to 32 components
+
                 // Process with AsSpan for zero-allocation iteration
                 foreach (ref readonly var builder in CollectionsMarshal.AsSpan(_builderBatchCache))
                 {
@@ -307,12 +310,17 @@ namespace UltraSim.ECS
                     {
                         var components = builder.GetComponents();
 
-                        // Build component signature
-                        var signature = new ComponentSignature();
-                        foreach (ref readonly var comp in CollectionsMarshal.AsSpan(components))
+                        // Extract TypeIds into stack-allocated span (FAST PATH!)
+                        var componentSpan = CollectionsMarshal.AsSpan(components);
+                        int componentCount = Math.Min(componentSpan.Length, typeIdBuffer.Length);
+
+                        for (int i = 0; i < componentCount; i++)
                         {
-                            signature = signature.Add(comp.TypeId);
+                            typeIdBuffer[i] = componentSpan[i].TypeId;
                         }
+
+                        // Build signature from TypeIds in ONE operation (no iterative cloning!)
+                        var signature = ComponentSignature.FromTypeIds(typeIdBuffer.Slice(0, componentCount));
 
                         // Create entity directly in target archetype (NO thrashing!)
                         var entity = CreateWithSignature(signature);
