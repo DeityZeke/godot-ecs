@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using UltraSim;
+using UltraSim.ECS.Threading;
 
 namespace UltraSim.ECS
 {
@@ -22,6 +23,9 @@ namespace UltraSim.ECS
     {
         private readonly World _world;
         private readonly ArchetypeManager _archetypes;
+
+        // Dedicated thread pool for parallel entity creation (zero-allocation)
+        private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
 
         // Entity storage
         private const ulong VersionIncrement = 1UL << 32;
@@ -362,8 +366,12 @@ namespace UltraSim.ECS
                     // Parallel processing: Each thread handles a different archetype
                     var allCreatedEntities = trackForEvent ? new ConcurrentBag<Entity>() : null;
 
-                    Parallel.ForEach(signatureGroups.Values, group =>
+                    // Convert to array for index-based access (ManualThreadPool pattern)
+                    var groupsArray = signatureGroups.Values.ToArray();
+
+                    _threadPool.ParallelFor(groupsArray.Length, groupIndex =>
                     {
+                        var group = groupsArray[groupIndex];
                         foreach (var (builder, signature) in group)
                         {
                             try
