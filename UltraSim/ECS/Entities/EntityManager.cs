@@ -51,6 +51,11 @@ namespace UltraSim.ECS
         // Component list pooling for EntityBuilder reuse (zero-allocation)
         private readonly ConcurrentBag<List<ComponentInit>> _componentListPool = new();
 
+        // Signature cache for EntityBuilder queue (avoids rebuilding identical signatures)
+        // Key: Hash of TypeId pattern, Value: Cached ComponentSignature
+        // Dramatically speeds up batches with many entities sharing the same components
+        private readonly Dictionary<int, ComponentSignature> _signatureCache = new();
+
         public int EntityCount => _liveEntityCount;
 
         public EntityManager(World world, ArchetypeManager archetypes)
@@ -262,6 +267,9 @@ namespace UltraSim.ECS
         {
             const int ADAPTIVE_THRESHOLD = 500;
 
+            // Clear signature cache from previous frame (prevent unbounded growth)
+            _signatureCache.Clear();
+
             // Process destructions first - collect entities before destroying for event firing
             _destroyedEntitiesCache.Clear();
 
@@ -300,134 +308,61 @@ namespace UltraSim.ECS
                     _createdEntitiesCache.Capacity = Math.Max(_createdEntitiesCache.Capacity, builderQueueSize);
                 }
 
-                // Parallel processing for large batches (10K+ entities)
-                const int PARALLEL_THRESHOLD = 10000;
-                const int CHUNK_SIZE = 10000;
+                // SEQUENTIAL PROCESSING (parallel entity creation requires archetype-level locking)
+                // Signature caching dramatically reduces redundant work when many entities share components
+                Span<int> typeIdBuffer = stackalloc int[32];
 
-                if (builderQueueSize >= PARALLEL_THRESHOLD)
+                foreach (ref readonly var builder in CollectionsMarshal.AsSpan(_builderBatchCache))
                 {
-                    // PARALLEL PATH: Process in chunks across multiple threads
-                    int numChunks = (builderQueueSize + CHUNK_SIZE - 1) / CHUNK_SIZE;
-
-                    // Thread-local caches for created entities (if tracking)
-                    // trackAllValues: true enables .Values property for merging
-                    var threadLocalEntities = trackForEvent ? new System.Threading.ThreadLocal<List<Entity>>(() => new List<Entity>(CHUNK_SIZE), trackAllValues: true) : null;
-
-                    Parallel.For(0, numChunks, chunkIndex =>
+                    try
                     {
-                        int start = chunkIndex * CHUNK_SIZE;
-                        int end = Math.Min(start + CHUNK_SIZE, builderQueueSize);
+                        var components = builder.GetComponents();
 
-                        // Stack-allocate TypeId buffer per thread
-                        Span<int> typeIdBuffer = stackalloc int[32];
+                        // Extract TypeIds into stack-allocated span
+                        var componentSpan = CollectionsMarshal.AsSpan(components);
+                        int componentCount = Math.Min(componentSpan.Length, typeIdBuffer.Length);
 
-                        var builderSpan = CollectionsMarshal.AsSpan(_builderBatchCache);
-
-                        for (int i = start; i < end; i++)
+                        for (int i = 0; i < componentCount; i++)
                         {
-                            try
+                            typeIdBuffer[i] = componentSpan[i].TypeId;
+                        }
+
+                        // Signature caching: Hash TypeId pattern and check cache before building
+                        var typeIdSlice = typeIdBuffer.Slice(0, componentCount);
+                        int signatureHash = ComputeTypeIdHash(typeIdSlice);
+
+                        if (!_signatureCache.TryGetValue(signatureHash, out var signature))
+                        {
+                            // Cache miss: Build signature and cache it for subsequent entities
+                            signature = ComponentSignature.FromTypeIds(typeIdSlice);
+                            _signatureCache[signatureHash] = signature;
+                        }
+                        // Cache hit: Reuse cached signature (no allocation!)
+
+                        // Create entity directly in target archetype (NO thrashing!)
+                        var entity = CreateWithSignature(signature);
+
+                        // Set all component values using AsSpan
+                        if (TryGetLocation(entity, out var archetype, out var slot))
+                        {
+                            foreach (ref readonly var comp in componentSpan)
                             {
-                                ref readonly var builder = ref builderSpan[i];
-                                var components = builder.GetComponents();
-
-                                // Extract TypeIds into stack-allocated span
-                                var componentSpan = CollectionsMarshal.AsSpan(components);
-                                int componentCount = Math.Min(componentSpan.Length, typeIdBuffer.Length);
-
-                                for (int j = 0; j < componentCount; j++)
-                                {
-                                    typeIdBuffer[j] = componentSpan[j].TypeId;
-                                }
-
-                                // Build signature from TypeIds in ONE operation
-                                var signature = ComponentSignature.FromTypeIds(typeIdBuffer.Slice(0, componentCount));
-
-                                // Create entity directly in target archetype (NO thrashing!)
-                                var entity = CreateWithSignature(signature);
-
-                                // Set all component values using AsSpan
-                                if (TryGetLocation(entity, out var archetype, out var slot))
-                                {
-                                    foreach (ref readonly var comp in componentSpan)
-                                    {
-                                        archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
-                                    }
-                                }
-
-                                // Track for event if needed (thread-local)
-                                if (trackForEvent && threadLocalEntities != null)
-                                {
-                                    threadLocalEntities.Value!.Add(entity);
-                                }
-
-                                // Return component list to pool
-                                ReturnComponentList(components);
-                            }
-                            catch (Exception ex)
-                            {
-                                Logging.Log($"[EntityManager] EntityBuilder creation exception (parallel): {ex}", LogSeverity.Error);
+                                archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
                             }
                         }
-                    });
 
-                    // Merge thread-local entity lists into main cache for event firing
-                    if (trackForEvent && threadLocalEntities != null)
-                    {
-                        foreach (var localList in threadLocalEntities.Values)
+                        // Track for event if needed
+                        if (trackForEvent)
                         {
-                            _createdEntitiesCache.AddRange(localList);
+                            _createdEntitiesCache.Add(entity);
                         }
-                        threadLocalEntities.Dispose();
+
+                        // Return component list to pool
+                        ReturnComponentList(components);
                     }
-                }
-                else
-                {
-                    // SEQUENTIAL PATH: Process without parallelization for small batches
-                    Span<int> typeIdBuffer = stackalloc int[32];
-
-                    foreach (ref readonly var builder in CollectionsMarshal.AsSpan(_builderBatchCache))
+                    catch (Exception ex)
                     {
-                        try
-                        {
-                            var components = builder.GetComponents();
-
-                            // Extract TypeIds into stack-allocated span
-                            var componentSpan = CollectionsMarshal.AsSpan(components);
-                            int componentCount = Math.Min(componentSpan.Length, typeIdBuffer.Length);
-
-                            for (int i = 0; i < componentCount; i++)
-                            {
-                                typeIdBuffer[i] = componentSpan[i].TypeId;
-                            }
-
-                            // Build signature from TypeIds in ONE operation
-                            var signature = ComponentSignature.FromTypeIds(typeIdBuffer.Slice(0, componentCount));
-
-                            // Create entity directly in target archetype (NO thrashing!)
-                            var entity = CreateWithSignature(signature);
-
-                            // Set all component values using AsSpan
-                            if (TryGetLocation(entity, out var archetype, out var slot))
-                            {
-                                foreach (ref readonly var comp in componentSpan)
-                                {
-                                    archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
-                                }
-                            }
-
-                            // Track for event if needed
-                            if (trackForEvent)
-                            {
-                                _createdEntitiesCache.Add(entity);
-                            }
-
-                            // Return component list to pool
-                            ReturnComponentList(components);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log($"[EntityManager] EntityBuilder creation exception: {ex}", LogSeverity.Error);
-                        }
+                        Logging.Log($"[EntityManager] EntityBuilder creation exception: {ex}", LogSeverity.Error);
                     }
                 }
 
@@ -571,6 +506,26 @@ namespace UltraSim.ECS
                 list.Clear();
                 _componentListPool.Add(list);
             }
+        }
+
+        /// <summary>
+        /// Computes a hash code from a span of TypeIds for signature caching.
+        /// Uses FNV-1a hash algorithm for speed and good distribution.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ComputeTypeIdHash(ReadOnlySpan<int> typeIds)
+        {
+            const uint FNV_OFFSET_BASIS = 2166136261;
+            const uint FNV_PRIME = 16777619;
+
+            uint hash = FNV_OFFSET_BASIS;
+            foreach (var id in typeIds)
+            {
+                hash ^= (uint)id;
+                hash *= FNV_PRIME;
+            }
+
+            return (int)hash;
         }
     }
 }
