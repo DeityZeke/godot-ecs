@@ -222,6 +222,16 @@ namespace Client.ECS.Systems
                 ProcessChunksSequential(world, nearChunks);
             }
 
+            // PHASE 3: Clear dirty flags after processing chunks
+            foreach (var chunkInfo in nearChunks)
+            {
+                var chunkEntity = _chunkManager!.GetChunk(chunkInfo.Location);
+                if (chunkEntity != Entity.Invalid)
+                {
+                    _chunkSystem!.ClearChunkDirty(chunkEntity);
+                }
+            }
+
             // Release entities that are no longer in Near zone
             ReleaseInactiveVisuals();
 
@@ -230,6 +240,9 @@ namespace Client.ECS.Systems
                 Logging.Log($"[{Name}] Active MeshInstances: {_activeBindingCount}/{_totalAllocatedMeshInstances}, Pools: {_chunkPools.Count}");
             }
         }
+
+        // Track previous visibility per chunk for change detection
+        private readonly Dictionary<ChunkLocation, bool> _previousVisibility = new();
 
         private List<(ChunkLocation Location, bool Visible)> GetNearChunks(World world)
         {
@@ -249,8 +262,21 @@ namespace Client.ECS.Systems
                 for (int i = 0; i < renderChunks.Length; i++)
                 {
                     ref var renderChunk = ref renderChunks[i];
-                    // Use ServerChunkLocation (absolute world position) to identify which server chunk entities to render
-                    nearChunks.Add((renderChunk.ServerChunkLocation, renderChunk.Visible));
+                    var serverChunkLoc = renderChunk.ServerChunkLocation;
+                    var visible = renderChunk.Visible;
+
+                    // PHASE 3 OPTIMIZATION: Only process chunks if:
+                    // 1. Server chunk is dirty (entity list changed), OR
+                    // 2. Visibility changed (frustum culling update)
+                    bool isDirty = _chunkSystem!.IsChunkDirty(world, _chunkManager!.GetChunk(serverChunkLoc));
+                    bool visibilityChanged = !_previousVisibility.TryGetValue(serverChunkLoc, out var prevVis) || prevVis != visible;
+
+                    if (isDirty || visibilityChanged)
+                    {
+                        // Use ServerChunkLocation (absolute world position) to identify which server chunk entities to render
+                        nearChunks.Add((serverChunkLoc, visible));
+                        _previousVisibility[serverChunkLoc] = visible;
+                    }
                 }
             }
 
