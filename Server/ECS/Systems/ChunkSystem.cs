@@ -168,6 +168,7 @@ namespace UltraSim.Server.ECS.Systems
         private static readonly int ChunkStateTypeId = ComponentManager.GetTypeId<ChunkState>();
         private static readonly int ChunkHashTypeId = ComponentManager.GetTypeId<ChunkHash>();
         private static readonly int UnregisteredChunkTagTypeId = ComponentManager.GetTypeId<UnregisteredChunkTag>();
+        private static readonly int DirtyChunkTagTypeId = ComponentManager.GetTypeId<DirtyChunkTag>();
 
         public override void OnInitialize(World world)
         {
@@ -896,14 +897,19 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Add entity to chunk's entity list for efficient render queries.
+        /// Marks chunk as dirty for client visual cache rebuild.
         /// </summary>
         private void TrackEntityInChunk(Entity entity, Entity chunkEntity)
         {
             _chunkEntityTracker.Add(chunkEntity, entity);
+
+            // Mark chunk as dirty so client knows to rebuild visual cache
+            _buffer.AddComponent(chunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         /// <summary>
         /// Move entity from old chunk to new chunk in tracking.
+        /// Marks both chunks as dirty for client visual cache rebuild.
         /// </summary>
         private void MoveEntityBetweenChunks(Entity entity, Entity oldChunkEntity, Entity newChunkEntity)
         {
@@ -911,6 +917,10 @@ namespace UltraSim.Server.ECS.Systems
                 return;
 
             _chunkEntityTracker.Move(entity, oldChunkEntity, newChunkEntity);
+
+            // Mark both chunks as dirty so client knows to rebuild visual caches
+            _buffer.AddComponent(oldChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _buffer.AddComponent(newChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         private void ProcessAssignment(World world, ChunkAssignmentRequest request)
@@ -934,10 +944,22 @@ namespace UltraSim.Server.ECS.Systems
 
             var owner = new ChunkOwner(chunkEntity, request.Location);
 
-            var hadOwner = TryGetOwner(request.Entity, out var previousChunk, out _);
+            var hadOwner = TryGetOwner(request.Entity, out var previousChunk, out var previousLocation);
 
             if (hadOwner)
             {
+                // SANITY CHECK: Verify entity is still outside previous chunk bounds
+                // Handles case where entity crossed boundary, got queued, then crossed back before processing
+                if (world.TryGetComponent<Position>(request.Entity, out var currentPos))
+                {
+                    var previousBounds = _chunkManager.ChunkToWorldBounds(previousLocation);
+                    if (previousBounds.Contains(currentPos.X, currentPos.Y, currentPos.Z))
+                    {
+                        // Entity moved back into bounds, no reassignment needed
+                        return;
+                    }
+                }
+
                 if (previousChunk != chunkEntity)
                 {
                     MoveEntityBetweenChunks(request.Entity, previousChunk, chunkEntity);
@@ -1093,6 +1115,65 @@ namespace UltraSim.Server.ECS.Systems
 
             return Entity.Invalid; // Will be available next frame
         }
+
+        #region Public Query API (for Client RenderChunkManager)
+
+        /// <summary>
+        /// Get all entities currently in a server spatial chunk.
+        /// Used by client RenderChunkManager to query which entities to render.
+        /// </summary>
+        public ChunkEntityEnumerable GetEntitiesInChunk(Entity chunkEntity)
+        {
+            return _chunkEntityTracker.GetEntities(chunkEntity);
+        }
+
+        /// <summary>
+        /// Get count of entities in a chunk (fast, no enumeration).
+        /// </summary>
+        public int GetEntityCountInChunk(Entity chunkEntity)
+        {
+            return _chunkEntityTracker.GetEntityCount(chunkEntity);
+        }
+
+        /// <summary>
+        /// Check if a server spatial chunk has been modified since last visual cache rebuild.
+        /// </summary>
+        public bool IsChunkDirty(World world, Entity chunkEntity)
+        {
+            return world.HasComponent<DirtyChunkTag>(chunkEntity);
+        }
+
+        /// <summary>
+        /// Clear dirty flag after client rebuilds visual cache.
+        /// Called by RenderChunkManager after processing chunk.
+        /// </summary>
+        public void ClearChunkDirty(Entity chunkEntity)
+        {
+            _buffer.RemoveComponent(chunkEntity, DirtyChunkTagTypeId);
+        }
+
+        /// <summary>
+        /// Get all dirty chunks (for client to enumerate and rebuild).
+        /// Returns list of chunk entities that need visual cache updates.
+        /// </summary>
+        public List<Entity> GetDirtyChunks(World world)
+        {
+            var result = new List<Entity>();
+            var archetypes = world.QueryArchetypes(typeof(DirtyChunkTag));
+
+            foreach (var archetype in archetypes)
+            {
+                if (archetype.Count == 0)
+                    continue;
+
+                var entities = archetype.GetEntityArray();
+                result.AddRange(entities);
+            }
+
+            return result;
+        }
+
+        #endregion
 
         public override void OnShutdown(World world)
         {
