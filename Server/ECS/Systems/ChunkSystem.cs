@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Components;
@@ -175,16 +176,12 @@ namespace UltraSim.Server.ECS.Systems
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
 
             // Subscribe to World's entity batch created event for initial chunk assignment
-            world.EntityBatchCreated += OnEntityBatchCreated;
+            EventSink.EntityBatchCreated += OnEntityBatchCreated;
             Logging.Log($"[ChunkSystem] Subscribed to World entity creation events");
 
             // Subscribe to MovementSystem's entity batch processed event
-            var movementSystem = world.Systems.GetSystem<OptimizedMovementSystem>() as OptimizedMovementSystem;
-            if (movementSystem != null)
-            {
-                movementSystem.EntityBatchProcessed += OnEntityBatchProcessed;
-                Logging.Log($"[ChunkSystem] Subscribed to MovementSystem batch events");
-            }
+            UltraSim.Server.EventSink.EntityBatchProcessed += OnEntityBatchProcessed;
+            Logging.Log($"[ChunkSystem] Subscribed to MovementSystem batch events");
 
             Logging.Log($"[ChunkSystem] Initialized with ChunkManager (64x32x64)");
         }

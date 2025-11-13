@@ -11,38 +11,11 @@ using UltraSim.ECS.Settings;
 using UltraSim.ECS.SIMD;
 using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Threading;
+using UltraSim.Server;
 using UltraSim.Server.ECS.Systems;
 
 namespace UltraSim.ECS.Systems
 {
-    /// <summary>
-    /// Event args for entity batch processing events.
-    /// Provides access to a batch of entities that were processed.
-    /// </summary>
-    public readonly struct EntityBatchProcessedEventArgs
-    {
-        public readonly Entity[] Entities;
-        public readonly int StartIndex;
-        public readonly int Count;
-
-        public EntityBatchProcessedEventArgs(Entity[] entities, int startIndex, int count)
-        {
-            Entities = entities;
-            StartIndex = startIndex;
-            Count = count;
-        }
-
-        /// <summary>
-        /// Get a ReadOnlySpan view of the batch entities.
-        /// </summary>
-        public ReadOnlySpan<Entity> GetSpan() => new ReadOnlySpan<Entity>(Entities, StartIndex, Count);
-    }
-
-    /// <summary>
-    /// Delegate for entity batch processed events.
-    /// </summary>
-    public delegate void EntityBatchProcessedHandler(EntityBatchProcessedEventArgs args);
-
     /// <summary>
     /// OPTIMIZED MovementSystem with parallel chunk processing.
     /// Processes 1M entities in ~2-3ms instead of 8-12ms.
@@ -87,12 +60,6 @@ namespace UltraSim.ECS.Systems
 
         private ChunkManager? _chunkManager;
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
-
-        /// <summary>
-        /// Event fired after a batch of entities has been processed.
-        /// Subscribers can use this to perform chunk updates or other post-processing.
-        /// </summary>
-        public event EntityBatchProcessedHandler? EntityBatchProcessed;
 
         public override void OnInitialize(World world)
         {
@@ -157,11 +124,11 @@ namespace UltraSim.ECS.Systems
                 });
 
                 // Fire event with the processed entities for this archetype
-                if (EntityBatchProcessed != null && count > 0)
+                if (UltraSim.Server.EventSink.EntityBatchProcessed != null && count > 0)
                 {
                     //Logging.Log($"[MovementSystem] Firing event for {count} entities");
                     var args = new EntityBatchProcessedEventArgs(entities, 0, count);
-                    EntityBatchProcessed(args);
+                    UltraSim.Server.EventSink.InvokeEntityBatchProcessed(args);
                 }
             }
         }

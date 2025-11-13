@@ -42,12 +42,6 @@ namespace UltraSim.ECS
         public SystemManager Systems => _systems;
         private bool _settingsInitialized = false;
 
-        /// <summary>
-        /// Event fired after a batch of entities has been created.
-        /// Subscribers can perform initial setup/assignment on newly created entities.
-        /// </summary>
-        public event EntityBatchCreatedHandler? EntityBatchCreated;
-
         public World(IHost host)
         {
             Host = host ?? throw new ArgumentNullException(nameof(host));
@@ -178,10 +172,10 @@ namespace UltraSim.ECS
         /// </summary>
         internal void FireEntityBatchCreated(Entity[] entities, int startIndex, int count)
         {
-            if (EntityBatchCreated != null && count > 0)
+            if (EventSink.EntityBatchCreated != null && count > 0)
             {
                 var args = new EntityBatchCreatedEventArgs(entities, startIndex, count);
-                EntityBatchCreated(args);
+                EventSink.InvokeEntityBatchCreated(args);
             }
         }
 
@@ -196,11 +190,11 @@ namespace UltraSim.ECS
         /// </remarks>
         internal void FireEntityBatchCreated(List<Entity> entities)
         {
-            if (EntityBatchCreated != null && entities.Count > 0)
+            if (EventSink.EntityBatchCreated != null && entities.Count > 0)
             {
                 // TRUE zero-allocation: Pass List directly!
                 var args = new EntityBatchCreatedEventArgs(entities);
-                EntityBatchCreated(args);
+                EventSink.InvokeEntityBatchCreated(args);
             }
         }
 

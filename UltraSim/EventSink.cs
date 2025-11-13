@@ -5,6 +5,7 @@ using System;
 
 using UltraSim.ECS;
 using UltraSim.ECS.Systems;
+using UltraSim.ECS.Events;
 
 namespace UltraSim
 {
@@ -29,6 +30,13 @@ namespace UltraSim
         public static event Action? WorldLoaded;
         public static event Action? WorldShutdown;
 
+        // --- Entity Lifecycle ---
+        /// <summary>
+        /// Fired after a batch of entities has been created.
+        /// Subscribers can perform initial setup/assignment on newly created entities.
+        /// </summary>
+        public static event EntityBatchCreatedHandler? EntityBatchCreated;
+
         // --- System Lifecycle ---
         public static event Action<Type>? SystemRegistered;
         public static event Action<Type>? SystemUnregistered;
@@ -52,6 +60,8 @@ namespace UltraSim
         public static void InvokeWorldLoad() => WorldLoad?.Invoke();
         public static void InvokeWorldLoaded() => WorldLoaded?.Invoke();
         public static void InvokeWorldShutdown() => WorldShutdown?.Invoke();
+
+        public static void InvokeEntityBatchCreated(EntityBatchCreatedEventArgs args) => EntityBatchCreated?.Invoke(args);
 
         public static void InvokeSystemRegistered(Type t) => SystemRegistered?.Invoke(t);
         public static void InvokeSystemUnregistered(Type t) => SystemUnregistered?.Invoke(t);
