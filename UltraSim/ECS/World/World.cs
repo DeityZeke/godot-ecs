@@ -179,47 +179,31 @@ namespace UltraSim.ECS
 
         /// <summary>
         /// Fires the EntityBatchCreated event with the specified entities from a List.
-        /// Convenience overload that avoids ToArray() at call site.
+        /// ZERO ALLOCATION - Passes List directly to EventArgs without ToArray().
         /// </summary>
         /// <remarks>
-        /// NOTE: This still allocates via ToArray() because EntityBatchCreatedEventArgs requires Entity[].
-        /// For true zero-allocation, we would need to refactor EventArgs to accept ReadOnlySpan.
-        /// This overload measures if there's any cache locality benefit from centralized ToArray().
+        /// EventArgs now stores the List internally and uses CollectionsMarshal.AsSpan
+        /// for zero-allocation iteration via GetSpan().
+        /// Subscribers should use args.GetSpan() for best performance.
         /// </remarks>
         internal void FireEntityBatchCreated(List<Entity> entities)
         {
             if (EntityBatchCreated != null && entities.Count > 0)
             {
-                // Still needs ToArray() due to EventArgs signature
-                // But test will show if calling it here vs at call site makes a difference
-                var args = new EntityBatchCreatedEventArgs(entities.ToArray(), 0, entities.Count);
+                // TRUE zero-allocation: Pass List directly!
+                var args = new EntityBatchCreatedEventArgs(entities);
                 EntityBatchCreated(args);
             }
         }
 
         /// <summary>
-        /// EXPERIMENTAL: Fires EntityBatchCreated using CollectionsMarshal.AsSpan path.
-        /// Tests if using Span as intermediate step provides any benefit.
+        /// DEPRECATED: Use FireEntityBatchCreated(List&lt;Entity&gt;) instead.
+        /// This overload is kept for testing purposes only.
         /// </summary>
-        /// <remarks>
-        /// Still allocates via span.ToArray() due to EventArgs requiring Entity[].
-        /// This is essentially the same as the List overload above, but explicitly uses
-        /// CollectionsMarshal.AsSpan as an intermediate step to measure any potential
-        /// JIT optimization differences.
-        /// </remarks>
         internal void FireEntityBatchCreatedSpanPath(List<Entity> entities)
         {
-            if (EntityBatchCreated != null && entities.Count > 0)
-            {
-                // Use CollectionsMarshal.AsSpan to get direct access to List's internal buffer
-                var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(entities);
-
-                // Still need to convert to array for EventArgs (allocates)
-                // But measures if the Span intermediate step has any benefit
-                var array = span.ToArray();
-                var args = new EntityBatchCreatedEventArgs(array, 0, entities.Count);
-                EntityBatchCreated(args);
-            }
+            // Just call the main overload - no difference anymore
+            FireEntityBatchCreated(entities);
         }
 
         #endregion
