@@ -277,7 +277,11 @@ namespace Client.ECS.Systems
                 foreach (var chunkData in _chunkMultiMeshes.Values)
                     totalEntities += chunkData.Count;
 
-                Logging.Log($"[{Name}] Active chunks: {_chunkMultiMeshes.Count}, Total entities: {totalEntities}, Pool: {_pooledChunkMeshes.Count}");
+                int totalRenderChunks = _chunkMultiMeshes.Count;
+                int processedThisFrame = staticChunks.Count;
+                float skipPercentage = totalRenderChunks > 0 ? (1.0f - (float)processedThisFrame / totalRenderChunks) * 100.0f : 0;
+
+                Logging.Log($"[{Name}] Active: {totalRenderChunks} chunks, Entities: {totalEntities}, Pool: {_pooledChunkMeshes.Count} | Processed: {processedThisFrame} ({skipPercentage:F1}% skipped via dirty tracking)");
             }
         }
 

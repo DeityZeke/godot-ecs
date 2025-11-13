@@ -237,7 +237,11 @@ namespace Client.ECS.Systems
 
             if (SystemSettings.EnableDebugLogs.Value && _frameCounter % 60 == 0)
             {
-                Logging.Log($"[{Name}] Active MeshInstances: {_activeBindingCount}/{_totalAllocatedMeshInstances}, Pools: {_chunkPools.Count}");
+                int totalNearChunks = _chunkPools.Count;
+                int processedThisFrame = nearChunks.Count;
+                float skipPercentage = totalNearChunks > 0 ? (1.0f - (float)processedThisFrame / totalNearChunks) * 100.0f : 0;
+
+                Logging.Log($"[{Name}] Active: {_activeBindingCount}/{_totalAllocatedMeshInstances} instances, Pools: {totalNearChunks} | Processed: {processedThisFrame} ({skipPercentage:F1}% skipped via dirty tracking)");
             }
         }
 
