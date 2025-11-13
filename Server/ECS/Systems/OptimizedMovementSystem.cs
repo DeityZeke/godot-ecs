@@ -57,6 +57,7 @@ namespace UltraSim.ECS.Systems
         private static readonly int PosId = ComponentManager.GetTypeId<Position>(); //ComponentTypeRegistry.GetId<Position>();
         private static readonly int VelId = ComponentManager.GetTypeId<Velocity>(); //ComponentTypeRegistry.GetId<Velocity>();
         private static readonly int StaticRenderId = ComponentManager.GetTypeId<StaticRenderTag>();
+        private static readonly int ChunkOwnerId = ComponentManager.GetTypeId<ChunkOwner>();
 
         private ChunkManager? _chunkManager;
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
@@ -123,12 +124,31 @@ namespace UltraSim.ECS.Systems
                     SimdOperations.ApplyVelocity(posSlice, velSlice, adjustedDelta);
                 });
 
-                // Fire event with the processed entities for this archetype
-                if (count > 0)
+                // OPTIMIZATION: Entities check their own boundaries and self-enqueue if crossed
+                // This is MUCH faster than ChunkSystem doing archetype queries on all moved entities
+                if (_chunkManager != null && arch.HasComponent(ChunkOwnerId))
                 {
-                    //Logging.Log($"[MovementSystem] Firing event for {count} entities");
-                    var args = new EntityBatchProcessedEventArgs(entities, 0, count);
-                    UltraSim.Server.EventSink.InvokeEntityBatchProcessed(args);
+                    var posSpan = CollectionsMarshal.AsSpan(posList);
+                    var owners = arch.GetComponentSpan<ChunkOwner>(ChunkOwnerId);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        ref readonly var owner = ref owners[i];
+
+                        // Only check entities that have been assigned to chunks
+                        if (!owner.IsAssigned)
+                            continue;
+
+                        ref readonly var pos = ref posSpan[i];
+
+                        // Fast boundary check using cached bounds
+                        if (!owner.CachedBounds.Contains(pos.X, pos.Y, pos.Z))
+                        {
+                            // Entity crossed chunk boundary - enqueue for reassignment
+                            var newChunkLoc = _chunkManager.WorldToChunk(pos.X, pos.Y, pos.Z);
+                            ChunkAssignmentQueue.Enqueue(entities[i], newChunkLoc);
+                        }
+                    }
                 }
             }
         }
