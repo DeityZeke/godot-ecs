@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Godot;
 using UltraSim;
 using UltraSim.ECS;
@@ -14,13 +15,17 @@ using UltraSim.WorldECS;
 namespace Client.ECS.StressTests
 {
     /// <summary>
-    /// Compares 6 different ProcessQueues optimization strategies:
-    /// V1: Simple list reuse (baseline optimization)
-    /// V2: Adaptive threshold (small=immediate, large=batched)
-    /// V3: Chunked processing with modulo
-    /// V4: Dynamic threshold (user's suggested queue.count * 0.001)
-    /// V5: Parallel.For on builder invocation
-    /// V6: Parallel with chunked partitioning
+    /// Compares 12 different ProcessQueues optimization strategies:
+    /// V1-V6: Original implementations (call ToArray() at site)
+    /// V7-V12: "Span" versions (use List overload, ToArray() in World)
+    ///
+    /// V1:  Simple list reuse (baseline)
+    /// V2:  Adaptive threshold (<500 immediate, >=500 batched)
+    /// V3:  Chunked processing (1000-entity chunks)
+    /// V4:  Dynamic threshold (queue.count * 0.001)
+    /// V5:  Parallel.For on builder invocation
+    /// V6:  Parallel with chunked partitioning
+    /// V7-V12: Same as V1-V6 but using List<Entity> overload
     /// </summary>
     public partial class ProcessQueuesOptimizationComparison : Node, IHost
     {
@@ -40,22 +45,28 @@ namespace Client.ECS.StressTests
         private struct TestResult
         {
             public int EntityCount;
-            public double V1_TimeMs;
-            public double V2_TimeMs;
-            public double V3_TimeMs;
-            public double V4_TimeMs;
-            public double V5_TimeMs;
-            public double V6_TimeMs;
-            public double V1_PerEntityNs;
-            public double V2_PerEntityNs;
-            public double V3_PerEntityNs;
-            public double V4_PerEntityNs;
-            public double V5_PerEntityNs;
-            public double V6_PerEntityNs;
+            public double[] Times;    // 12 versions
+            public double[] PerEntityNs; // 12 versions
             public string Winner;
+            public string SpanWinner;  // Winner among V7-V12
         }
 
         private readonly List<TestResult> _results = new();
+        private readonly string[] _versionNames = new[]
+        {
+            "V1: Reuse",
+            "V2: Adaptive",
+            "V3: Chunked",
+            "V4: Dynamic",
+            "V5: Parallel",
+            "V6: ParChunk",
+            "V7: SpanReuse",
+            "V8: SpanAdapt",
+            "V9: SpanChunk",
+            "V10: SpanDyn",
+            "V11: SpanParal",
+            "V12: SpanParCh"
+        };
 
         public override void _Ready()
         {
@@ -65,16 +76,17 @@ namespace Client.ECS.StressTests
             _world = new World(this);
 
             GD.Print("╔════════════════════════════════════════════════════════════════╗");
-            GD.Print("║     PROCESSQUEUES OPTIMIZATION COMPARISON TEST                ║");
+            GD.Print("║     PROCESSQUEUES OPTIMIZATION - FULL COMPARISON (12 VERS)    ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print("Testing 6 optimization strategies:");
-            GD.Print("  V1: Simple list reuse (baseline)");
-            GD.Print("  V2: Adaptive threshold (<500 immediate, >=500 batched)");
-            GD.Print("  V3: Chunked processing (1000-entity chunks)");
-            GD.Print("  V4: Dynamic threshold (queue.count * 0.001)");
-            GD.Print("  V5: Parallel.For on builder invocation");
-            GD.Print("  V6: Parallel with chunked partitioning");
+            GD.Print("Testing 12 optimization strategies:");
+            GD.Print("  V1:  Simple list reuse (ToArray at site)");
+            GD.Print("  V2:  Adaptive threshold (ToArray at site)");
+            GD.Print("  V3:  Chunked processing (ToArray at site)");
+            GD.Print("  V4:  Dynamic threshold (ToArray at site)");
+            GD.Print("  V5:  Parallel.For (ToArray at site)");
+            GD.Print("  V6:  Parallel chunked (ToArray at site)");
+            GD.Print("  V7-V12: Same as V1-V6 but using List<Entity> overload");
             GD.Print("");
 
             RunNextTest();
@@ -94,62 +106,52 @@ namespace Client.ECS.StressTests
 
             ClearAllEntities();
 
-            // Test all 6 versions
-            var v1Time = TestVersion(entityCount, ProcessQueuesV1);
-            ClearAllEntities();
+            // Test all 12 versions
+            var times = new double[12];
+            Action<ConcurrentQueue<Action<Entity>>, List<Entity>>[] testFuncs = new[]
+            {
+                ProcessQueuesV1, ProcessQueuesV2, ProcessQueuesV3,
+                ProcessQueuesV4, ProcessQueuesV5, ProcessQueuesV6,
+                ProcessQueuesV7, ProcessQueuesV8, ProcessQueuesV9,
+                ProcessQueuesV10, ProcessQueuesV11, ProcessQueuesV12
+            };
 
-            var v2Time = TestVersion(entityCount, ProcessQueuesV2);
-            ClearAllEntities();
-
-            var v3Time = TestVersion(entityCount, ProcessQueuesV3);
-            ClearAllEntities();
-
-            var v4Time = TestVersion(entityCount, ProcessQueuesV4);
-            ClearAllEntities();
-
-            var v5Time = TestVersion(entityCount, ProcessQueuesV5);
-            ClearAllEntities();
-
-            var v6Time = TestVersion(entityCount, ProcessQueuesV6);
-            ClearAllEntities();
+            for (int i = 0; i < 12; i++)
+            {
+                times[i] = TestVersion(entityCount, testFuncs[i]);
+                ClearAllEntities();
+            }
 
             // Record results
+            var perEntityNs = times.Select(t => (t * 1_000_000.0) / entityCount).ToArray();
+
+            // Determine overall winner
+            var minTime = times.Min();
+            int winnerIdx = Array.IndexOf(times, minTime);
+
+            // Determine span winner (V7-V12)
+            var spanTimes = times.Skip(6).ToArray();
+            var spanMinTime = spanTimes.Min();
+            int spanWinnerIdx = 6 + Array.IndexOf(spanTimes, spanMinTime);
+
             var result = new TestResult
             {
                 EntityCount = entityCount,
-                V1_TimeMs = v1Time,
-                V2_TimeMs = v2Time,
-                V3_TimeMs = v3Time,
-                V4_TimeMs = v4Time,
-                V5_TimeMs = v5Time,
-                V6_TimeMs = v6Time,
-                V1_PerEntityNs = (v1Time * 1_000_000.0) / entityCount,
-                V2_PerEntityNs = (v2Time * 1_000_000.0) / entityCount,
-                V3_PerEntityNs = (v3Time * 1_000_000.0) / entityCount,
-                V4_PerEntityNs = (v4Time * 1_000_000.0) / entityCount,
-                V5_PerEntityNs = (v5Time * 1_000_000.0) / entityCount,
-                V6_PerEntityNs = (v6Time * 1_000_000.0) / entityCount,
+                Times = times,
+                PerEntityNs = perEntityNs,
+                Winner = $"V{winnerIdx + 1}",
+                SpanWinner = $"V{spanWinnerIdx + 1}"
             };
-
-            // Determine winner
-            var times = new[] { v1Time, v2Time, v3Time, v4Time, v5Time, v6Time };
-            var minTime = times.Min();
-            if (Math.Abs(v1Time - minTime) < 0.001) result.Winner = "V1";
-            else if (Math.Abs(v2Time - minTime) < 0.001) result.Winner = "V2";
-            else if (Math.Abs(v3Time - minTime) < 0.001) result.Winner = "V3";
-            else if (Math.Abs(v4Time - minTime) < 0.001) result.Winner = "V4";
-            else if (Math.Abs(v5Time - minTime) < 0.001) result.Winner = "V5";
-            else result.Winner = "V6";
 
             _results.Add(result);
 
-            GD.Print($"  V1 (List Reuse):      {v1Time:F3} ms ({result.V1_PerEntityNs:F0} ns/entity)");
-            GD.Print($"  V2 (Adaptive):        {v2Time:F3} ms ({result.V2_PerEntityNs:F0} ns/entity)");
-            GD.Print($"  V3 (Chunked):         {v3Time:F3} ms ({result.V3_PerEntityNs:F0} ns/entity)");
-            GD.Print($"  V4 (Dynamic):         {v4Time:F3} ms ({result.V4_PerEntityNs:F0} ns/entity)");
-            GD.Print($"  V5 (Parallel.For):    {v5Time:F3} ms ({result.V5_PerEntityNs:F0} ns/entity)");
-            GD.Print($"  V6 (Parallel Chunked):{v6Time:F3} ms ({result.V6_PerEntityNs:F0} ns/entity)");
-            GD.Print($"  Winner: {result.Winner}");
+            // Print results
+            for (int i = 0; i < 12; i++)
+            {
+                string marker = (i == winnerIdx) ? " ⭐" : "";
+                GD.Print($"  {_versionNames[i],-15}: {times[i],7:F3} ms ({perEntityNs[i],6:F0} ns/ent){marker}");
+            }
+            GD.Print($"  Winner: {result.Winner} | Span Winner: {result.SpanWinner}");
 
             _currentTestIndex++;
             CallDeferred(nameof(RunNextTest));
@@ -163,11 +165,12 @@ namespace Client.ECS.StressTests
             // Enqueue entities
             for (int i = 0; i < count; i++)
             {
+                int captured = i; // Capture for closure
                 queue.Enqueue(entity =>
                 {
                     _world!.EnqueueComponentAdd(entity.Index,
                         ComponentManager.GetTypeId<Position>(),
-                        new Position { X = i, Y = i, Z = i });
+                        new Position { X = captured, Y = captured, Z = captured });
                 });
             }
 
@@ -180,91 +183,57 @@ namespace Client.ECS.StressTests
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // V1: SIMPLE LIST REUSE (Baseline Optimization)
+        // V1-V6: Original versions (ToArray at call site)
         // ═══════════════════════════════════════════════════════════════
+
         private void ProcessQueuesV1(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
         {
-            createdEntities.Clear(); // Reuse list instead of allocating
-
+            createdEntities.Clear();
             while (queue.TryDequeue(out var builder))
             {
                 var entity = _world!.CreateEntity();
                 createdEntities.Add(entity);
-                try
-                {
-                    builder?.Invoke(entity);
-                }
-                catch (Exception ex)
-                {
-                    GD.PrintErr($"[V1] Entity builder exception: {ex}");
-                }
+                try { builder?.Invoke(entity); }
+                catch (Exception ex) { GD.PrintErr($"[V1] {ex}"); }
             }
-
             if (createdEntities.Count > 0)
-            {
                 _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
-            }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // V2: ADAPTIVE THRESHOLD (<500 = immediate, >=500 = batched)
-        // ═══════════════════════════════════════════════════════════════
         private void ProcessQueuesV2(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
         {
-            const int BATCH_THRESHOLD = 500;
+            const int THRESHOLD = 500;
             int queueSize = queue.Count;
 
-            if (queueSize < BATCH_THRESHOLD)
+            if (queueSize < THRESHOLD)
             {
-                // Small batch: Process immediately without tracking
                 while (queue.TryDequeue(out var builder))
                 {
                     var entity = _world!.CreateEntity();
-                    try
-                    {
-                        builder?.Invoke(entity);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.Print($"[V2] Entity builder exception: {ex}", LogSeverity.Error);
-                    }
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V2] {ex}"); }
                 }
             }
             else
             {
-                // Large batch: Collect and fire event once
                 createdEntities.Clear();
                 createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
-
                 while (queue.TryDequeue(out var builder))
                 {
                     var entity = _world!.CreateEntity();
                     createdEntities.Add(entity);
-                    try
-                    {
-                        builder?.Invoke(entity);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.PrintErr($"[V2] Entity builder exception: {ex}");
-                    }
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V2] {ex}"); }
                 }
-
                 if (createdEntities.Count > 0)
-                {
                     _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
-                }
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // V3: CHUNKED PROCESSING (1000-entity chunks + remainder)
-        // ═══════════════════════════════════════════════════════════════
         private void ProcessQueuesV3(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
         {
             const int CHUNK_SIZE = 1000;
             int queueSize = queue.Count;
-
             if (queueSize == 0) return;
 
             createdEntities.Clear();
@@ -273,109 +242,306 @@ namespace Client.ECS.StressTests
             int chunks = queueSize / CHUNK_SIZE;
             int remainder = queueSize % CHUNK_SIZE;
 
-            // Process full chunks
             for (int c = 0; c < chunks; c++)
             {
                 createdEntities.Clear();
-
                 for (int i = 0; i < CHUNK_SIZE && queue.TryDequeue(out var builder); i++)
                 {
                     var entity = _world!.CreateEntity();
                     createdEntities.Add(entity);
-                    try
-                    {
-                        builder?.Invoke(entity);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.PrintErr($"[V3] Entity builder exception: {ex}");
-                    }
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V3] {ex}"); }
                 }
-
                 if (createdEntities.Count > 0)
-                {
                     _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
-                }
             }
 
-            // Process remainder
             if (remainder > 0)
             {
                 createdEntities.Clear();
-
                 while (queue.TryDequeue(out var builder))
                 {
                     var entity = _world!.CreateEntity();
                     createdEntities.Add(entity);
-                    try
-                    {
-                        builder?.Invoke(entity);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.PrintErr($"[V3] Entity builder exception: {ex}");
-                    }
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V3] {ex}"); }
                 }
-
                 if (createdEntities.Count > 0)
-                {
                     _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
-                }
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // V4: DYNAMIC THRESHOLD (queue.count * 0.001)
-        // ═══════════════════════════════════════════════════════════════
         private void ProcessQueuesV4(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
         {
             int queueSize = queue.Count;
-
-            // User's suggested threshold: queue.count * 0.001 > 1 → batch
-            // This means batch if queueSize > 1000
             bool shouldBatch = (queueSize * 0.001) > 1;
 
             if (!shouldBatch)
             {
-                // Immediate spawn (no tracking)
                 while (queue.TryDequeue(out var builder))
                 {
                     var entity = _world!.CreateEntity();
-                    try
-                    {
-                        builder?.Invoke(entity);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.PrintErr($"[V4] Entity builder exception: {ex}");
-                    }
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V4] {ex}"); }
                 }
             }
             else
             {
-                // Batch spawn (collect and fire event)
                 createdEntities.Clear();
                 createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
-
                 while (queue.TryDequeue(out var builder))
                 {
                     var entity = _world!.CreateEntity();
                     createdEntities.Add(entity);
-                    try
-                    {
-                        builder?.Invoke(entity);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.PrintErr($"[V4] Entity builder exception: {ex}");
-                    }
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V4] {ex}"); }
                 }
-
                 if (createdEntities.Count > 0)
-                {
                     _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
+            }
+        }
+
+        private void ProcessQueuesV5(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            var builders = new Action<Entity>[queueSize];
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+
+            int index = 0;
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                builders[index++] = builder;
+            }
+
+            Parallel.For(0, createdEntities.Count, i =>
+            {
+                try { builders[i]?.Invoke(createdEntities[i]); }
+                catch (Exception ex) { GD.PrintErr($"[V5] {ex}"); }
+            });
+
+            if (createdEntities.Count > 0)
+                _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
+        }
+
+        private void ProcessQueuesV6(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            var builders = new Action<Entity>[queueSize];
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+
+            int index = 0;
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                builders[index++] = builder;
+            }
+
+            const int CHUNK_SIZE = 1000;
+            int chunkCount = (createdEntities.Count + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+            Parallel.For(0, chunkCount, chunkIdx =>
+            {
+                int start = chunkIdx * CHUNK_SIZE;
+                int end = Math.Min(start + CHUNK_SIZE, createdEntities.Count);
+                for (int i = start; i < end; i++)
+                {
+                    try { builders[i]?.Invoke(createdEntities[i]); }
+                    catch (Exception ex) { GD.PrintErr($"[V6] {ex}"); }
+                }
+            });
+
+            if (createdEntities.Count > 0)
+                _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // V7-V12: "Span" versions (use List<Entity> overload)
+        // ═══════════════════════════════════════════════════════════════
+
+        private void ProcessQueuesV7(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            createdEntities.Clear();
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                try { builder?.Invoke(entity); }
+                catch (Exception ex) { GD.PrintErr($"[V7] {ex}"); }
+            }
+            if (createdEntities.Count > 0)
+                _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
+        }
+
+        private void ProcessQueuesV8(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            const int THRESHOLD = 500;
+            int queueSize = queue.Count;
+
+            if (queueSize < THRESHOLD)
+            {
+                while (queue.TryDequeue(out var builder))
+                {
+                    var entity = _world!.CreateEntity();
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V8] {ex}"); }
                 }
             }
+            else
+            {
+                createdEntities.Clear();
+                createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+                while (queue.TryDequeue(out var builder))
+                {
+                    var entity = _world!.CreateEntity();
+                    createdEntities.Add(entity);
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V8] {ex}"); }
+                }
+                if (createdEntities.Count > 0)
+                    _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
+            }
+        }
+
+        private void ProcessQueuesV9(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            const int CHUNK_SIZE = 1000;
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, Math.Min(queueSize, CHUNK_SIZE));
+
+            int chunks = queueSize / CHUNK_SIZE;
+            int remainder = queueSize % CHUNK_SIZE;
+
+            for (int c = 0; c < chunks; c++)
+            {
+                createdEntities.Clear();
+                for (int i = 0; i < CHUNK_SIZE && queue.TryDequeue(out var builder); i++)
+                {
+                    var entity = _world!.CreateEntity();
+                    createdEntities.Add(entity);
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V9] {ex}"); }
+                }
+                if (createdEntities.Count > 0)
+                    _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
+            }
+
+            if (remainder > 0)
+            {
+                createdEntities.Clear();
+                while (queue.TryDequeue(out var builder))
+                {
+                    var entity = _world!.CreateEntity();
+                    createdEntities.Add(entity);
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V9] {ex}"); }
+                }
+                if (createdEntities.Count > 0)
+                    _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
+            }
+        }
+
+        private void ProcessQueuesV10(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            bool shouldBatch = (queueSize * 0.001) > 1;
+
+            if (!shouldBatch)
+            {
+                while (queue.TryDequeue(out var builder))
+                {
+                    var entity = _world!.CreateEntity();
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V10] {ex}"); }
+                }
+            }
+            else
+            {
+                createdEntities.Clear();
+                createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+                while (queue.TryDequeue(out var builder))
+                {
+                    var entity = _world!.CreateEntity();
+                    createdEntities.Add(entity);
+                    try { builder?.Invoke(entity); }
+                    catch (Exception ex) { GD.PrintErr($"[V10] {ex}"); }
+                }
+                if (createdEntities.Count > 0)
+                    _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
+            }
+        }
+
+        private void ProcessQueuesV11(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            var builders = new Action<Entity>[queueSize];
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+
+            int index = 0;
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                builders[index++] = builder;
+            }
+
+            Parallel.For(0, createdEntities.Count, i =>
+            {
+                try { builders[i]?.Invoke(createdEntities[i]); }
+                catch (Exception ex) { GD.PrintErr($"[V11] {ex}"); }
+            });
+
+            if (createdEntities.Count > 0)
+                _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
+        }
+
+        private void ProcessQueuesV12(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
+        {
+            int queueSize = queue.Count;
+            if (queueSize == 0) return;
+
+            var builders = new Action<Entity>[queueSize];
+            createdEntities.Clear();
+            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
+
+            int index = 0;
+            while (queue.TryDequeue(out var builder))
+            {
+                var entity = _world!.CreateEntity();
+                createdEntities.Add(entity);
+                builders[index++] = builder;
+            }
+
+            const int CHUNK_SIZE = 1000;
+            int chunkCount = (createdEntities.Count + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+            Parallel.For(0, chunkCount, chunkIdx =>
+            {
+                int start = chunkIdx * CHUNK_SIZE;
+                int end = Math.Min(start + CHUNK_SIZE, createdEntities.Count);
+                for (int i = start; i < end; i++)
+                {
+                    try { builders[i]?.Invoke(createdEntities[i]); }
+                    catch (Exception ex) { GD.PrintErr($"[V12] {ex}"); }
+                }
+            });
+
+            if (createdEntities.Count > 0)
+                _world!.FireEntityBatchCreated(createdEntities);  // ← List overload!
         }
 
         private void ClearAllEntities()
@@ -387,14 +553,10 @@ namespace Client.ECS.StressTests
             {
                 var entities = archetype.GetEntityArray();
                 foreach (var entity in entities)
-                {
                     buffer.DestroyEntity(entity);
-                }
             }
 
             buffer.Apply(_world);
-
-            // Let GC settle
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
@@ -405,184 +567,53 @@ namespace Client.ECS.StressTests
             GD.Print("║     PROCESSQUEUES OPTIMIZATION - FINAL COMPARISON             ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print("Entity Count | V1: Reuse | V2: Adaptive | V3: Chunked | V4: Dynamic | V5: Parallel | V6: ParChunk | Winner");
-            GD.Print("-------------|-----------|--------------|-------------|-------------|--------------|-------------|--------");
+            GD.Print("Per-Entity Cost (nanoseconds) - Lower is Better:");
+            GD.Print("Count    | V1    | V2    | V3    | V4    | V5    | V6    | V7    | V8    | V9    | V10   | V11   | V12   | Winner");
+            GD.Print("---------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|--------");
 
             foreach (var result in _results)
             {
-                string winner = result.Winner;
-                GD.Print($"{result.EntityCount,12:N0} | {result.V1_TimeMs,8:F3}ms | {result.V2_TimeMs,11:F3}ms | {result.V3_TimeMs,10:F3}ms | {result.V4_TimeMs,10:F3}ms | {result.V5_TimeMs,11:F3}ms | {result.V6_TimeMs,10:F3}ms | {winner}");
+                var ns = result.PerEntityNs;
+                GD.Print($"{result.EntityCount,8:N0} | {ns[0],5:F0} | {ns[1],5:F0} | {ns[2],5:F0} | {ns[3],5:F0} | {ns[4],5:F0} | {ns[5],5:F0} | {ns[6],5:F0} | {ns[7],5:F0} | {ns[8],5:F0} | {ns[9],5:F0} | {ns[10],5:F0} | {ns[11],5:F0} | {result.Winner}");
             }
 
-            GD.Print("\nPer-Entity Cost (nanoseconds):");
-            GD.Print("Entity Count | V1: Reuse | V2: Adaptive | V3: Chunked | V4: Dynamic | V5: Parallel | V6: ParChunk | Winner");
-            GD.Print("-------------|-----------|--------------|-------------|-------------|--------------|-------------|--------");
-
+            // Count wins
+            var wins = new int[12];
             foreach (var result in _results)
             {
-                string winner = result.Winner;
-                GD.Print($"{result.EntityCount,12:N0} | {result.V1_PerEntityNs,8:F0}ns | {result.V2_PerEntityNs,11:F0}ns | {result.V3_PerEntityNs,10:F0}ns | {result.V4_PerEntityNs,10:F0}ns | {result.V5_PerEntityNs,11:F0}ns | {result.V6_PerEntityNs,10:F0}ns | {winner}");
+                int winnerIdx = int.Parse(result.Winner.Substring(1)) - 1;
+                wins[winnerIdx]++;
             }
-
-            // Count wins for each version
-            var wins = new Dictionary<string, int>
-            {
-                ["V1"] = _results.Count(r => r.Winner == "V1"),
-                ["V2"] = _results.Count(r => r.Winner == "V2"),
-                ["V3"] = _results.Count(r => r.Winner == "V3"),
-                ["V4"] = _results.Count(r => r.Winner == "V4"),
-                ["V5"] = _results.Count(r => r.Winner == "V5"),
-                ["V6"] = _results.Count(r => r.Winner == "V6")
-            };
 
             GD.Print("\n╔════════════════════════════════════════════════════════════════╗");
             GD.Print("║                    OVERALL WINNER SUMMARY                     ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝\n");
 
-            GD.Print($"V1 (List Reuse):        {wins["V1"]}/{_results.Count} wins");
-            GD.Print($"V2 (Adaptive):          {wins["V2"]}/{_results.Count} wins");
-            GD.Print($"V3 (Chunked):           {wins["V3"]}/{_results.Count} wins");
-            GD.Print($"V4 (Dynamic):           {wins["V4"]}/{_results.Count} wins");
-            GD.Print($"V5 (Parallel.For):      {wins["V5"]}/{_results.Count} wins");
-            GD.Print($"V6 (Parallel Chunked):  {wins["V6"]}/{_results.Count} wins");
+            for (int i = 0; i < 12; i++)
+            {
+                GD.Print($"{_versionNames[i],-20}: {wins[i]}/{_results.Count} wins");
+            }
 
-            var overallWinner = wins.OrderByDescending(kv => kv.Value).First();
-
+            int overallWinnerIdx = Array.IndexOf(wins, wins.Max());
             GD.Print($"\n╔════════════════════════════════════════════════════════════════╗");
-            GD.Print($"║  OVERALL WINNER: {overallWinner.Key,-45} ║");
+            GD.Print($"║  OVERALL WINNER: {_versionNames[overallWinnerIdx],-42} ║");
             GD.Print("╚════════════════════════════════════════════════════════════════╝");
 
-            // Recommendation
-            GD.Print("\nRECOMMENDATION:");
-            if (overallWinner.Key == "V1")
-            {
-                GD.Print("  → Use V1 (Simple List Reuse)");
-                GD.Print("  → Simplest implementation with best overall performance");
-                GD.Print("  → One-line change: reuse _createdEntitiesCache.Clear()");
-            }
-            else if (overallWinner.Key == "V2")
-            {
-                GD.Print("  → Use V2 (Adaptive Threshold)");
-                GD.Print("  → Optimizes small batches by skipping event tracking");
-                GD.Print("  → Best balance of simplicity and performance");
-            }
-            else if (overallWinner.Key == "V3")
-            {
-                GD.Print("  → Use V3 (Chunked Processing)");
-                GD.Print("  → Best for very large batches (10k+ entities)");
-                GD.Print("  → Prevents memory spikes with chunked events");
-            }
-            else if (overallWinner.Key == "V4")
-            {
-                GD.Print("  → Use V4 (Dynamic Threshold)");
-                GD.Print("  → User's suggested approach performs best");
-                GD.Print("  → Threshold automatically scales with queue size");
-            }
-            else if (overallWinner.Key == "V5")
-            {
-                GD.Print("  → Use V5 (Parallel.For)");
-                GD.Print("  → Parallel builder invocation wins");
-                GD.Print("  → Best for systems with multi-core CPUs");
-            }
+            // Compare V1-V6 vs V7-V12
+            int origWins = wins.Take(6).Sum();
+            int spanWins = wins.Skip(6).Sum();
+
+            GD.Print($"\nV1-V6 (ToArray at site):   {origWins}/{_results.Count} total wins");
+            GD.Print($"V7-V12 (List overload):    {spanWins}/{_results.Count} total wins");
+
+            if (spanWins > origWins)
+                GD.Print("\n✓ List<Entity> overload provides measurable benefit!");
+            else if (spanWins == origWins)
+                GD.Print("\n→ List<Entity> overload has no significant impact (same performance)");
             else
-            {
-                GD.Print("  → Use V6 (Parallel Chunked)");
-                GD.Print("  → Parallel with chunked partitioning wins");
-                GD.Print("  → Best cache locality with parallelism");
-            }
+                GD.Print("\n✗ List<Entity> overload is actually slower (cache locality issue?)");
 
             GD.Print("");
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // V5: PARALLEL.FOR (Parallel builder invocation)
-        // ═══════════════════════════════════════════════════════════════
-        private void ProcessQueuesV5(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
-        {
-            int queueSize = queue.Count;
-            if (queueSize == 0) return;
-
-            // Pre-allocate entities sequentially (EntityManager.Create is NOT thread-safe)
-            var builders = new Action<Entity>[queueSize];
-            createdEntities.Clear();
-            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
-
-            int index = 0;
-            while (queue.TryDequeue(out var builder))
-            {
-                var entity = _world!.CreateEntity();  // Sequential allocation
-                createdEntities.Add(entity);
-                builders[index++] = builder;
-            }
-
-            // Parallel invoke builders (EnqueueComponentAdd uses ConcurrentQueue - thread-safe)
-            Parallel.For(0, createdEntities.Count, i =>
-            {
-                try
-                {
-                    builders[i]?.Invoke(createdEntities[i]);
-                }
-                catch (Exception ex)
-                {
-                    GD.PrintErr($"[V5] Entity builder exception: {ex}");
-                }
-            });
-
-            // Fire event once
-            if (createdEntities.Count > 0)
-            {
-                _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // V6: PARALLEL WITH CHUNKED PARTITIONING (Cache-friendly)
-        // ═══════════════════════════════════════════════════════════════
-        private void ProcessQueuesV6(ConcurrentQueue<Action<Entity>> queue, List<Entity> createdEntities)
-        {
-            int queueSize = queue.Count;
-            if (queueSize == 0) return;
-
-            // Pre-allocate entities sequentially
-            var builders = new Action<Entity>[queueSize];
-            createdEntities.Clear();
-            createdEntities.Capacity = Math.Max(createdEntities.Capacity, queueSize);
-
-            int index = 0;
-            while (queue.TryDequeue(out var builder))
-            {
-                var entity = _world!.CreateEntity();
-                createdEntities.Add(entity);
-                builders[index++] = builder;
-            }
-
-            // Parallel with chunked partitioning (better cache locality)
-            const int CHUNK_SIZE = 1000;
-            int chunkCount = (createdEntities.Count + CHUNK_SIZE - 1) / CHUNK_SIZE;
-
-            Parallel.For(0, chunkCount, chunkIdx =>
-            {
-                int start = chunkIdx * CHUNK_SIZE;
-                int end = Math.Min(start + CHUNK_SIZE, createdEntities.Count);
-
-                for (int i = start; i < end; i++)
-                {
-                    try
-                    {
-                        builders[i]?.Invoke(createdEntities[i]);
-                    }
-                    catch (Exception ex)
-                    {
-                        GD.PrintErr($"[V6] Entity builder exception: {ex}");
-                    }
-                }
-            });
-
-            // Fire event once
-            if (createdEntities.Count > 0)
-            {
-                _world!.FireEntityBatchCreated(createdEntities.ToArray(), 0, createdEntities.Count);
-            }
         }
     }
 }

@@ -177,6 +177,26 @@ namespace UltraSim.ECS
             }
         }
 
+        /// <summary>
+        /// Fires the EntityBatchCreated event with the specified entities from a List.
+        /// Convenience overload that avoids ToArray() at call site.
+        /// </summary>
+        /// <remarks>
+        /// NOTE: This still allocates via ToArray() because EntityBatchCreatedEventArgs requires Entity[].
+        /// For true zero-allocation, we would need to refactor EventArgs to accept ReadOnlySpan.
+        /// This overload measures if there's any cache locality benefit from centralized ToArray().
+        /// </remarks>
+        internal void FireEntityBatchCreated(List<Entity> entities)
+        {
+            if (EntityBatchCreated != null && entities.Count > 0)
+            {
+                // Still needs ToArray() due to EventArgs signature
+                // But test will show if calling it here vs at call site makes a difference
+                var args = new EntityBatchCreatedEventArgs(entities.ToArray(), 0, entities.Count);
+                EntityBatchCreated(args);
+            }
+        }
+
         #endregion
 
         #region Component Operations (Internal - called by ComponentManager)
