@@ -950,13 +950,19 @@ namespace UltraSim.Server.ECS.Systems
             {
                 // SANITY CHECK: Verify entity is still outside previous chunk bounds
                 // Handles case where entity crossed boundary, got queued, then crossed back before processing
-                if (world.TryGetComponent<Position>(request.Entity, out var currentPos))
+                if (world.TryGetEntityLocation(request.Entity, out var entityArch, out var entitySlot) &&
+                    entityArch.HasComponent(PosTypeId))
                 {
-                    var previousBounds = _chunkManager.ChunkToWorldBounds(previousLocation);
-                    if (previousBounds.Contains(currentPos.X, currentPos.Y, currentPos.Z))
+                    var positions = entityArch.GetComponentSpan<Position>(PosTypeId);
+                    if ((uint)entitySlot < (uint)positions.Length)
                     {
-                        // Entity moved back into bounds, no reassignment needed
-                        return;
+                        var currentPos = positions[entitySlot];
+                        var previousBounds = _chunkManager.ChunkToWorldBounds(previousLocation);
+                        if (previousBounds.Contains(currentPos.X, currentPos.Y, currentPos.Z))
+                        {
+                            // Entity moved back into bounds, no reassignment needed
+                            return;
+                        }
                     }
                 }
 
@@ -1123,7 +1129,11 @@ namespace UltraSim.Server.ECS.Systems
         /// </summary>
         public bool IsChunkDirty(World world, Entity chunkEntity)
         {
-            return world.HasComponent<DirtyChunkTag>(chunkEntity);
+            if (world.TryGetEntityLocation(chunkEntity, out var archetype, out _))
+            {
+                return archetype.HasComponent(DirtyChunkTagTypeId);
+            }
+            return false;
         }
 
         /// <summary>
