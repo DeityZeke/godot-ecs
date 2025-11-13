@@ -177,10 +177,11 @@ namespace Client.ECS.StressTests
 
             for (int i = 0; i < count; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 1, Y = 0, Z = 0 })
-                    .Add(new RenderTag()));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 1, Y = 0, Z = 0 });
+                builder.Add(new RenderTag());
+                _world.EnqueueCreateEntity(builder);
             }
 
             double enqueueMs = _sw.Elapsed.TotalMilliseconds;
@@ -215,27 +216,30 @@ namespace Client.ECS.StressTests
             // Enqueue enemies
             for (int i = 0; i < enemyCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 1, Y = 0, Z = 0 })
-                    .Add(new EnemyTag { Level = 1 }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 1, Y = 0, Z = 0 });
+                builder.Add(new EnemyTag { Level = 1 });
+                _world.EnqueueCreateEntity(builder);
             }
 
             // Enqueue projectiles
             for (int i = 0; i < projectileCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 5, Y = 0, Z = 0 })
-                    .Add(new ProjectileTag { Damage = 10.0f }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 5, Y = 0, Z = 0 });
+                builder.Add(new ProjectileTag { Damage = 10.0f });
+                _world.EnqueueCreateEntity(builder);
             }
 
             // Enqueue pickups
             for (int i = 0; i < pickupCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new PickupTag { ItemId = 100 }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new PickupTag { ItemId = 100 });
+                _world.EnqueueCreateEntity(builder);
             }
 
             double enqueueMs = _sw.Elapsed.TotalMilliseconds;
@@ -276,48 +280,54 @@ namespace Client.ECS.StressTests
             // Enqueue all entity types
             for (int i = 0; i < enemyCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 1, Y = 0, Z = 0 })
-                    .Add(new EnemyTag { Level = 1 }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 1, Y = 0, Z = 0 });
+                builder.Add(new EnemyTag { Level = 1 });
+                _world.EnqueueCreateEntity(builder);
             }
 
             for (int i = 0; i < projectileCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 5, Y = 0, Z = 0 })
-                    .Add(new ProjectileTag { Damage = 10.0f }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 5, Y = 0, Z = 0 });
+                builder.Add(new ProjectileTag { Damage = 10.0f });
+                _world.EnqueueCreateEntity(builder);
             }
 
             for (int i = 0; i < pickupCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new PickupTag { ItemId = 100 }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new PickupTag { ItemId = 100 });
+                _world.EnqueueCreateEntity(builder);
             }
 
             for (int i = 0; i < buildingCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new BuildingTag { Health = 1000 }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new BuildingTag { Health = 1000 });
+                _world.EnqueueCreateEntity(builder);
             }
 
             for (int i = 0; i < particleCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 0, Y = 1, Z = 0 })
-                    .Add(new ParticleTag { Lifetime = 2.0f }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 0, Y = 1, Z = 0 });
+                builder.Add(new ParticleTag { Lifetime = 2.0f });
+                _world.EnqueueCreateEntity(builder);
             }
 
             for (int i = 0; i < npcCount; i++)
             {
-                _world!.EnqueueCreate(e => e
-                    .Add(new Position { X = i, Y = 0, Z = 0 })
-                    .Add(new Velocity { X = 0.5f, Y = 0, Z = 0 })
-                    .Add(new NPCTag { Name = "NPC" }));
+                var builder = _world!.CreateEntityBuilder();
+                builder.Add(new Position { X = i, Y = 0, Z = 0 });
+                builder.Add(new Velocity { X = 0.5f, Y = 0, Z = 0 });
+                builder.Add(new NPCTag { Name = "NPC" });
+                _world.EnqueueCreateEntity(builder);
             }
 
             double enqueueMs = _sw.Elapsed.TotalMilliseconds;
@@ -341,10 +351,10 @@ namespace Client.ECS.StressTests
             _world!.Tick(0.016); // Process destruction queue
         }
 
-        private void OnEntityBatchCreated(object? sender, EntityBatchEventArgs e)
+        private void OnEntityBatchCreated(EntityBatchCreatedEventArgs args)
         {
             _eventsFired++;
-            _entitiesInEvent += e.Entities.Count;
+            _entitiesInEvent += args.Count;
         }
 
         private void PrintFinalResults()
