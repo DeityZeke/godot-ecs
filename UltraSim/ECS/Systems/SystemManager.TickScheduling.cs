@@ -92,11 +92,28 @@ namespace UltraSim.ECS.Systems
                 }
             }
 
-            // Remove from batch cache
-            if (_systemBatches.ContainsKey(system))
+            // CRITICAL: Remove from batch cache - clean up ALL entries that contain this system, not just if it's the key
+            // Bug fix: Previously only removed if system was the key, causing memory leak
+            // Systems can be in batches without being the key, so we must check all batches
+            var keysToRemove = new List<BaseSystem>();
+            foreach (var kvp in _systemBatches)
             {
-                _systemBatches.Remove(system);
+                bool containsSystem = false;
+                foreach (var batch in kvp.Value)
+                {
+                    if (batch.Contains(system))
+                    {
+                        containsSystem = true;
+                        break;
+                    }
+                }
+
+                if (containsSystem)
+                    keysToRemove.Add(kvp.Key);
             }
+
+            foreach (var key in keysToRemove)
+                _systemBatches.Remove(key);
 
             // Rebuild cached list for zero-alloc iteration
             RebuildTickBucketsCache();
@@ -206,10 +223,32 @@ namespace UltraSim.ECS.Systems
             if (_systemBatches.TryGetValue(firstSystem, out var cachedBatches)
                 && cachedBatches.Count > 0)
             {
-                // Verify cache is still valid (same systems)
-                var cachedSystemCount = cachedBatches.Sum(b => b.Count);
-                if (cachedSystemCount == systems.Count)
-                    return cachedBatches;
+                // CRITICAL: Verify cache is still valid - check EXACT system list, not just count
+                // Bug fix: Previously only checked count, which could return wrong batches if systems changed
+                // Example: [ChunkSystem, RenderSystem] (count=2) vs [ChunkSystem, CollisionSystem] (count=2) are different!
+                var cachedSystems = new HashSet<BaseSystem>();
+                foreach (var batch in cachedBatches)
+                {
+                    foreach (var sys in batch)
+                        cachedSystems.Add(sys);
+                }
+
+                // Check if cached system set exactly matches current system set
+                if (cachedSystems.Count == systems.Count)
+                {
+                    bool allMatch = true;
+                    foreach (var sys in systems)
+                    {
+                        if (!cachedSystems.Contains(sys))
+                        {
+                            allMatch = false;
+                            break;
+                        }
+                    }
+
+                    if (allMatch)
+                        return cachedBatches;
+                }
             }
 
             // Need to create new batches for this system set
