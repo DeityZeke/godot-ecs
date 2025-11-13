@@ -260,24 +260,23 @@ namespace UltraSim.ECS
         /// <summary>
         /// Processes all queued entity operations.
         /// Called during World.Tick() pipeline.
-        /// Uses V8 optimization: Adaptive threshold with zero-allocation events.
         /// </summary>
-        /// <remarks>
-        /// V8 Optimization Strategy:
-        /// - Small batches (&lt;500): Skip event tracking for minimal overhead
-        /// - Large batches (≥500): Batch efficiently with zero-allocation events
-        /// - Reuses _createdEntitiesCache to avoid List allocation
-        /// - Uses World.FireEntityBatchCreated(List) for zero-allocation event firing
-        /// Performance: 79 ns/entity at 100k entities (12.6M entities/sec)
-        /// </remarks>
         public void ProcessQueues()
         {
-            const int ADAPTIVE_THRESHOLD = 500;
-
             // Clear signature cache from previous frame (prevent unbounded growth)
             _signatureCache.Clear();
 
-            // Process destructions first - collect entities before destroying for event firing
+            // Process in order: destroy first, then create (prevents use-after-free issues)
+            ProcessEntityDestructionQueue();
+            ProcessEntityBuilderCreationQueue();
+            ProcessEntityCreationQueue();
+        }
+
+        /// <summary>
+        /// Processes queued entity destructions and fires batch events.
+        /// </summary>
+        private void ProcessEntityDestructionQueue()
+        {
             _destroyedEntitiesCache.Clear();
 
             while (_destroyQueue.TryDequeue(out var idx))
@@ -292,6 +291,19 @@ namespace UltraSim.ECS
             {
                 _world.FireEntityBatchDestroyed(_destroyedEntitiesCache);
             }
+        }
+
+        /// <summary>
+        /// Processes EntityBuilder queue with parallel-by-archetype optimization.
+        /// AVOIDS archetype thrashing by creating entities directly in target archetype.
+        /// </summary>
+        /// <remarks>
+        /// Performance: 79 ns/entity at 100k entities (12.6M entities/sec)
+        /// Parallelization: Activates when batch >= 1000 entities AND multiple signature groups
+        /// </remarks>
+        private void ProcessEntityBuilderCreationQueue()
+        {
+            const int ADAPTIVE_THRESHOLD = 500;
 
             // Process EntityBuilder queue (component-batched creation, NO archetype thrashing)
             int builderQueueSize = _createWithBuilderQueue.Count;
@@ -468,14 +480,26 @@ namespace UltraSim.ECS
                     _world.FireEntityBatchCreated(_createdEntitiesCache);
                 }
             }
+        }
 
-            // Adaptive entity creation based on batch size (regular Action<Entity> queue)
+        /// <summary>
+        /// Processes Action&lt;Entity&gt; creation queue with adaptive threshold optimization.
+        /// Small batches skip event tracking for minimal overhead.
+        /// </summary>
+        /// <remarks>
+        /// Adaptive Strategy:
+        /// - Small batches (&lt;500): Skip event tracking for minimal overhead
+        /// - Large batches (≥500): Batch efficiently with zero-allocation events
+        /// </remarks>
+        private void ProcessEntityCreationQueue()
+        {
+            const int ADAPTIVE_THRESHOLD = 500;
+
             int queueSize = _createQueue.Count;
 
             if (queueSize < ADAPTIVE_THRESHOLD)
             {
                 // Small batch: Process immediately without event tracking
-                // This skips the overhead of List management and event firing for small batches
                 while (_createQueue.TryDequeue(out var builder))
                 {
                     var entity = Create();
