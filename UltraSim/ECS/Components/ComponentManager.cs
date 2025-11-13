@@ -103,6 +103,16 @@ namespace UltraSim.ECS
         }
 
         /// <summary>
+        /// Gets the highest component type ID currently registered.
+        /// Returns -1 if no components are registered.
+        /// Used for dynamic ComponentSignature sizing.
+        /// </summary>
+        public static int GetHighestTypeId()
+        {
+            lock (_typeLock) return _idToType.Count - 1;
+        }
+
+        /// <summary>
         /// Clears the registry (testing only).
         /// </summary>
         public static void ClearRegistry()
