@@ -9,10 +9,10 @@ using Godot;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.SIMD;
-using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Threading;
 using UltraSim.Server;
 using UltraSim.Server.ECS.Systems;
+using Server.ECS.Chunk;
 
 namespace UltraSim.ECS.Systems
 {
@@ -20,6 +20,7 @@ namespace UltraSim.ECS.Systems
     /// OPTIMIZED MovementSystem with parallel chunk processing.
     /// Processes 1M entities in ~2-3ms instead of 8-12ms.
     /// </summary>
+    [RequireSystem("UltraSim.Server.ECS.Systems.SimplifiedChunkSystem")]
     public sealed class OptimizedMovementSystem : BaseSystem
     {
 
@@ -59,13 +60,14 @@ namespace UltraSim.ECS.Systems
         private static readonly int StaticRenderId = ComponentManager.GetTypeId<StaticRenderTag>();
         private static readonly int ChunkOwnerId = ComponentManager.GetTypeId<ChunkOwner>();
 
-        private ChunkManager? _chunkManager;
+        private SimplifiedChunkManager? _chunkManager;
         private static readonly ManualThreadPool _threadPool = new ManualThreadPool(System.Environment.ProcessorCount);
+        private Entity[] _chunkCrossingBuffer = new Entity[1024]; // Reusable buffer for entities that crossed chunks
 
         public override void OnInitialize(World world)
         {
             _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(Velocity));
-            var chunkSystem = world.Systems.GetSystem<ChunkSystem>() as ChunkSystem;
+            var chunkSystem = world.Systems.GetSystem<SimplifiedChunkSystem>() as SimplifiedChunkSystem;
             _chunkManager = chunkSystem?.GetChunkManager();
 
 #if USE_DEBUG
@@ -92,8 +94,13 @@ namespace UltraSim.ECS.Systems
             foreach (var arch in _cachedQuery!)
             {
                 if (arch.Count == 0) continue;
-                if (arch.HasComponent(StaticRenderId))
-                    continue;
+
+                // Skip static entities for movement (they don't move)
+                // But we still need to check chunk crossings for ALL entities
+                bool isStatic = arch.HasComponent(StaticRenderId);
+
+                if (isStatic)
+                    continue; // Static entities don't move, skip velocity application
 
                 var posComponentList = arch.GetComponentListTyped<Position>(PosId);
                 var velComponentList = arch.GetComponentListTyped<Velocity>(VelId);
@@ -124,30 +131,39 @@ namespace UltraSim.ECS.Systems
                     SimdOperations.ApplyVelocity(posSlice, velSlice, adjustedDelta);
                 });
 
-                // OPTIMIZATION: Entities check their own boundaries and self-enqueue if crossed
-                // This is MUCH faster than ChunkSystem doing archetype queries on all moved entities
+                // Check for entities that crossed chunk boundaries and fire event
+                // Only entities that actually moved between chunks are sent to SimplifiedChunkSystem
                 if (_chunkManager != null && arch.HasComponent(ChunkOwnerId))
                 {
                     var posSpan = CollectionsMarshal.AsSpan(posList);
                     var owners = arch.GetComponentSpan<ChunkOwner>(ChunkOwnerId);
 
+                    // Ensure buffer is large enough
+                    if (_chunkCrossingBuffer.Length < count)
+                        _chunkCrossingBuffer = new Entity[count];
+
+                    int crossingCount = 0;
+
                     for (int i = 0; i < count; i++)
                     {
                         ref readonly var owner = ref owners[i];
-
-                        // Only check entities that have been assigned to chunks
-                        if (!owner.IsAssigned)
-                            continue;
-
                         ref readonly var pos = ref posSpan[i];
 
-                        // Check if entity crossed chunk boundary
+                        // Calculate new chunk location based on current position
                         var newChunkLoc = _chunkManager.WorldToChunk(pos.X, pos.Y, pos.Z);
+
+                        // Only enqueue entities that crossed chunk boundaries
                         if (!newChunkLoc.Equals(owner.Location))
                         {
-                            // Entity crossed chunk boundary - enqueue for reassignment
-                            ChunkAssignmentQueue.Enqueue(entities[i], newChunkLoc);
+                            _chunkCrossingBuffer[crossingCount++] = entities[i];
                         }
+                    }
+
+                    // Fire event only if entities actually crossed chunk boundaries
+                    if (crossingCount > 0)
+                    {
+                        Server.EventSink.InvokeEnqueueChunkUpdate(
+                            new Server.ChunkUpdateEventArgs(_chunkCrossingBuffer, 0, crossingCount));
                     }
                 }
             }

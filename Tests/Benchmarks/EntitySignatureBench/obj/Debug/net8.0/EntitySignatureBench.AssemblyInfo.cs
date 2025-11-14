@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EntitySignatureBench")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dcbd27d3afa8f3f363bc0667084a5f9af975bf11")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6faa7294482ed2257a7fc881264888744584d3b5")]
 [assembly: System.Reflection.AssemblyProductAttribute("EntitySignatureBench")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EntitySignatureBench")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

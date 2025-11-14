@@ -7,11 +7,12 @@ using System.Runtime.InteropServices;
 
 using UltraSim;
 using UltraSim.ECS;
-using UltraSim.ECS.Chunk;
+using Server.ECS.Chunk;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
 using UltraSim.ECS.Events;
+using Godot;
 
 namespace UltraSim.Server.ECS.Systems
 {
@@ -66,7 +67,9 @@ namespace UltraSim.Server.ECS.Systems
             // Subscribe to World events
             UltraSim.EventSink.EntityBatchCreated += OnEntityBatchCreated;
             UltraSim.EventSink.EntityBatchDestroyed += OnEntityBatchDestroyed;
-            // TODO: Subscribe to position update events when available
+
+            // Subscribe to Server events (movement systems)
+            UltraSim.Server.EventSink.EnqueueChunkUpdate += OnChunkUpdateRequested;
 
             Logging.Log($"[{Name}] Initialized with SimplifiedChunkManager (64x32x64)");
         }
@@ -104,10 +107,34 @@ namespace UltraSim.Server.ECS.Systems
             }
         }
 
+        /// <summary>
+        /// Event handler: Entities that crossed chunk boundaries (fired by movement systems).
+        /// Just enqueue them - actual chunk reassignment happens in Update().
+        /// </summary>
+        private void OnChunkUpdateRequested(Server.ChunkUpdateEventArgs args)
+        {
+            if (_chunkManager == null || _world == null)
+                return;
+
+            var entitySpan = args.GetSpan();
+
+            if (SystemSettings.EnableDebugLogs.Value && entitySpan.Length > 0)
+            {
+                Logging.Log($"[{Name}] Received chunk update event with {entitySpan.Length} entities");
+            }
+
+            for (int i = 0; i < entitySpan.Length; i++)
+            {
+                _entityMovedQueue.Enqueue(entitySpan[i]);
+            }
+        }
+
         public override void Update(World world, double delta)
         {
             if (_chunkManager == null)
                 return;
+
+            Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedQueue.Count} | Destroy: {_entityDestroyedQueue.Count}");
 
             // Process queues in order
             ProcessCreatedEntities();
@@ -207,27 +234,44 @@ namespace UltraSim.Server.ECS.Systems
         private void ProcessDestroyedEntities()
         {
             int processed = 0;
+            int slowPath = 0;
 
             while (_entityDestroyedQueue.TryDequeue(out var entity))
             {
-                // Entity.Packed might be stale (recycled) - doesn't matter!
-                // We're just removing the reference from chunk tracking
+                // FAST PATH: Try to get last known chunk location from component
+                // This works if entity still exists in archetype (rare case)
+                bool removed = false;
 
-                // Try to get last known chunk location
-                // NOTE: Component might not exist anymore, but try anyway
                 if (_world!.TryGetEntityLocation(entity, out var archetype, out var slot) &&
                     archetype.HasComponent(ChunkOwnerTypeId))
                 {
                     var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                    var owner = owners[slot];
-                    _chunkManager!.StopTracking(entity.Packed, owner.Location);
-                    processed++;
+
+                    // Safety check: slot might be out of bounds if entity was swapped/removed
+                    if (slot >= 0 && slot < owners.Length)
+                    {
+                        var owner = owners[slot];
+                        _chunkManager!.StopTracking(entity.Packed, owner.Location);
+                        removed = true;
+                        processed++;
+                    }
+                }
+
+                // SLOW PATH: Entity already destroyed, scan all chunks
+                // This is the common case for entity destruction
+                if (!removed)
+                {
+                    if (_chunkManager!.StopTrackingAnywhere(entity.Packed))
+                    {
+                        processed++;
+                        slowPath++;
+                    }
                 }
             }
 
             if (processed > 0 && SystemSettings.EnableDebugLogs.Value)
             {
-                Logging.Log($"[{Name}] Removed {processed} destroyed entities from chunks");
+                Logging.Log($"[{Name}] Removed {processed} destroyed entities from chunks (fast: {processed - slowPath}, slow: {slowPath})");
             }
         }
     }

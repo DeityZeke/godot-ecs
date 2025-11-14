@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using UltraSim.ECS.Components;
 
-namespace UltraSim.ECS.Chunk
+namespace Server.ECS.Chunk
 {
     /// <summary>
     /// Represents a spatial chunk that tracks entities within its bounds.

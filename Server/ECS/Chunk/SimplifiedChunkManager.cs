@@ -3,12 +3,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using UltraSim;
 using UltraSim.ECS.Components;
 
-namespace UltraSim.ECS.Chunk
+namespace Server.ECS.Chunk
 {
     /// <summary>
     /// Simplified ChunkManager - pure spatial index.
@@ -133,6 +135,28 @@ namespace UltraSim.ECS.Chunk
 
             StopTracking(entityPacked, fromLocation);
             TrackEntity(entityPacked, toLocation);
+        }
+
+        /// <summary>
+        /// Remove entity from all chunks (slow fallback when location is unknown).
+        /// Scans all chunks to find and remove the entity.
+        /// Use this only when you can't determine the entity's last known chunk location.
+        /// </summary>
+        public bool StopTrackingAnywhere(ulong entityPacked)
+        {
+            bool removed = false;
+            var chunkValues = _chunks.Values;
+
+            foreach (var chunk in chunkValues.ToArray().AsSpan())
+            {
+                if (chunk.IsTracking(entityPacked))
+                {
+                    chunk.StopTracking(entityPacked);
+                    removed = true;
+                    // Don't break - entity shouldn't be in multiple chunks, but be thorough
+                }
+            }
+            return removed;
         }
 
         // === SPATIAL QUERIES ===

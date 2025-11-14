@@ -111,8 +111,8 @@ public partial class HybridBootstrapper : WorldHostBase
     {
         if (EnableChunkSystems)
         {
-            world.EnqueueSystemCreate<ChunkSystem>();
-            world.EnqueueSystemEnable<ChunkSystem>();
+            world.EnqueueSystemCreate<SimplifiedChunkSystem>();
+            world.EnqueueSystemEnable<SimplifiedChunkSystem>();
         }
 
         world.EnqueueSystemCreate<EntitySpawnerSystem>();
@@ -130,8 +130,15 @@ public partial class HybridBootstrapper : WorldHostBase
 
     private void RegisterClientSystems(World world)
     {
+        // NOTE: Render systems are DISABLED when using SimplifiedChunkSystem
+        // They require the old ChunkManager architecture which is incompatible
+        // TODO: Create new render systems compatible with SimplifiedChunkManager/SpatialChunk
+
         if (EnableHybridRendering)
         {
+            GD.PrintRich("[color=yellow][HybridBootstrapper] Render systems disabled - incompatible with SimplifiedChunkSystem[/color]");
+            // OLD CODE (incompatible with SimplifiedChunkSystem):
+            /*
             // NEW: Clean architecture rendering systems (strategy-based split)
             // Each system has SINGLE RESPONSIBILITY:
             // 1. RenderChunkManager: Window + zone tagging + pooling
@@ -154,6 +161,7 @@ public partial class HybridBootstrapper : WorldHostBase
 
             world.EnqueueSystemCreate<BillboardEntityRenderSystem>();
             world.EnqueueSystemEnable<BillboardEntityRenderSystem>();
+            */
         }
 
         if (EnableAdaptiveRenderer)
@@ -168,6 +176,17 @@ public partial class HybridBootstrapper : WorldHostBase
         if (!EnableHybridRendering)
             return;
 
+        // NOTE: Render systems are NOT compatible with SimplifiedChunkSystem
+        // The simplified system uses a different architecture (SpatialChunk vs chunk entities)
+        // Render systems are disabled when using SimplifiedChunkSystem
+        GD.PrintRich("[color=yellow][HybridBootstrapper] Render systems skipped - using SimplifiedChunkSystem (incompatible architecture)[/color]");
+
+        // TODO: Create new render systems compatible with SimplifiedChunkSystem
+        // Or refactor SimplifiedChunkSystem to be compatible with existing render systems
+        return;
+
+        // OLD CODE (incompatible with SimplifiedChunkSystem):
+        /*
         var world = ActiveWorld;
         var chunkSystemBase = world.Systems.GetSystem<ChunkSystem>();
 
@@ -211,5 +230,6 @@ public partial class HybridBootstrapper : WorldHostBase
         }
 
         GD.Print("[HybridBootstrapper] Clean architecture rendering systems connected successfully!");
+        */
     }
 }
