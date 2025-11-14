@@ -62,8 +62,9 @@ namespace Client
             var world = ActiveWorld;
 
             // Server-side systems
-            world.EnqueueSystemCreate<ChunkSystem>();
-            world.EnqueueSystemEnable<ChunkSystem>();
+            // NEW: Simplified chunk system (pure entity tracking, no component manipulation)
+            world.EnqueueSystemCreate<SimplifiedChunkSystem>();
+            world.EnqueueSystemEnable<SimplifiedChunkSystem>();
 
             world.EnqueueSystemCreate<EntitySpawnerSystem>();
             world.EnqueueSystemEnable<EntitySpawnerSystem>();
@@ -108,11 +109,11 @@ namespace Client
         private void ConnectHybridRenderSystems()
         {
             var world = ActiveWorld;
-            var chunkSystemBase = world.Systems.GetSystem<ChunkSystem>();
+            var chunkSystemBase = world.Systems.GetSystem<SimplifiedChunkSystem>();
 
-            if (chunkSystemBase is not ChunkSystem chunkSystem)
+            if (chunkSystemBase is not SimplifiedChunkSystem chunkSystem)
             {
-                GD.PushWarning("[ClientHost] ChunkSystem not found - hybrid rendering disabled!");
+                GD.PushWarning("[ClientHost] SimplifiedChunkSystem not found - hybrid rendering disabled!");
                 return;
             }
 
@@ -123,27 +124,13 @@ namespace Client
                 return;
             }
 
-            // NEW: Connect clean architecture systems (design doc compliant)
+            // NOTE: Render systems are NOT compatible with SimplifiedChunkSystem/SimplifiedChunkManager
+            // The simplified systems use a different architecture (SpatialChunk vs chunk entities)
+            // Render systems are disabled when using simplified chunk system
+            GD.PrintRich("[color=yellow][ClientHost] Render systems skipped - using SimplifiedChunkSystem (incompatible architecture)[/color]");
 
-            if (world.Systems.GetSystem<RenderChunkManager>() is RenderChunkManager renderChunkManager)
-            {
-                renderChunkManager.SetChunkManager(chunkManager);
-                GD.Print("[ClientHost] Connected RenderChunkManager to ChunkManager");
-            }
-
-            if (world.Systems.GetSystem<DynamicEntityRenderSystem>() is DynamicEntityRenderSystem dynamicSystem)
-            {
-                dynamicSystem.SetChunkManager(chunkManager, chunkSystem);
-                GD.Print("[ClientHost] Connected DynamicEntityRenderSystem to ChunkManager + ChunkSystem");
-            }
-
-            if (world.Systems.GetSystem<StaticEntityRenderSystem>() is StaticEntityRenderSystem staticSystem)
-            {
-                staticSystem.SetChunkManager(chunkManager, chunkSystem);
-                GD.Print("[ClientHost] Connected StaticEntityRenderSystem to ChunkManager + ChunkSystem");
-            }
-
-            GD.Print("[ClientHost] Strategy-based rendering systems connected successfully!");
+            // TODO: Create new render systems compatible with SimplifiedChunkSystem
+            // Or refactor SimplifiedChunkSystem to be compatible with existing render systems
     }
     }
 }

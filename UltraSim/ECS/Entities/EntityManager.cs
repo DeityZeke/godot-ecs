@@ -105,8 +105,8 @@ namespace UltraSim.ECS
             // Get empty archetype from ArchetypeManager
             var baseArch = _archetypes.GetEmptyArchetype();
 
-            baseArch.AddEntity(entity);
-            SetLookup(idx, 0, baseArch.Count - 1);
+            int slot = baseArch.AddEntity(entity);
+            SetLookup(idx, 0, slot);
             _liveEntityCount++;
 
             return entity;
@@ -145,12 +145,12 @@ namespace UltraSim.ECS
             // Get or create archetype from ArchetypeManager
             var archetype = _archetypes.GetOrCreate(signature);
 
-            // Add entity to archetype
-            archetype.AddEntity(entity);
+            // Add entity to archetype and get the actual slot (thread-safe)
+            int slot = archetype.AddEntity(entity);
 
             // Update lookup
             int archetypeIdx = _archetypes.GetArchetypeIndex(archetype);
-            SetLookup(idx, archetypeIdx, archetype.Count - 1);
+            SetLookup(idx, archetypeIdx, slot);
             _liveEntityCount++;
 
             return entity;
@@ -260,24 +260,23 @@ namespace UltraSim.ECS
         /// <summary>
         /// Processes all queued entity operations.
         /// Called during World.Tick() pipeline.
-        /// Uses V8 optimization: Adaptive threshold with zero-allocation events.
         /// </summary>
-        /// <remarks>
-        /// V8 Optimization Strategy:
-        /// - Small batches (&lt;500): Skip event tracking for minimal overhead
-        /// - Large batches (≥500): Batch efficiently with zero-allocation events
-        /// - Reuses _createdEntitiesCache to avoid List allocation
-        /// - Uses World.FireEntityBatchCreated(List) for zero-allocation event firing
-        /// Performance: 79 ns/entity at 100k entities (12.6M entities/sec)
-        /// </remarks>
         public void ProcessQueues()
         {
-            const int ADAPTIVE_THRESHOLD = 500;
-
             // Clear signature cache from previous frame (prevent unbounded growth)
             _signatureCache.Clear();
 
-            // Process destructions first - collect entities before destroying for event firing
+            // Process in order: destroy first, then create (prevents use-after-free issues)
+            ProcessEntityDestructionQueue();
+            ProcessEntityBuilderCreationQueue();
+            ProcessEntityCreationQueue();
+        }
+
+        /// <summary>
+        /// Processes queued entity destructions and fires batch events.
+        /// </summary>
+        private void ProcessEntityDestructionQueue()
+        {
             _destroyedEntitiesCache.Clear();
 
             while (_destroyQueue.TryDequeue(out var idx))
@@ -292,6 +291,19 @@ namespace UltraSim.ECS
             {
                 _world.FireEntityBatchDestroyed(_destroyedEntitiesCache);
             }
+        }
+
+        /// <summary>
+        /// Processes EntityBuilder queue with parallel-by-archetype optimization.
+        /// AVOIDS archetype thrashing by creating entities directly in target archetype.
+        /// </summary>
+        /// <remarks>
+        /// Performance: 79 ns/entity at 100k entities (12.6M entities/sec)
+        /// Parallelization: Activates when batch >= 1000 entities AND multiple signature groups
+        /// </remarks>
+        private void ProcessEntityBuilderCreationQueue()
+        {
+            const int ADAPTIVE_THRESHOLD = 500;
 
             // Process EntityBuilder queue (component-batched creation, NO archetype thrashing)
             int builderQueueSize = _createWithBuilderQueue.Count;
@@ -360,11 +372,13 @@ namespace UltraSim.ECS
                     }
                 }
 
-                // PHASE 2: Process each signature group in parallel
-                // KEY INSIGHT: Different signatures = different archetypes = no race conditions!
+                // PHASE 2: Process each signature group
+                // PARALLEL PROCESSING DISABLED: Lookup table corruption issues under investigation
+                // Root cause: Shared entity ID namespace + lookup tables across all threads
+                // Even with locks, concurrent access patterns causing slot mismatches
                 const int PARALLEL_GROUP_THRESHOLD = 1000; // Only parallelize if total entities >= 1K
 
-                if (builderQueueSize >= PARALLEL_GROUP_THRESHOLD && signatureGroups.Count > 1)
+                if (false && builderQueueSize >= PARALLEL_GROUP_THRESHOLD && signatureGroups.Count > 1)
                 {
                     // Parallel processing: Each thread handles a different archetype
                     var allCreatedEntities = trackForEvent ? new ConcurrentBag<Entity>() : null;
@@ -383,19 +397,19 @@ namespace UltraSim.ECS
                                 var componentSpan = CollectionsMarshal.AsSpan(components);
 
                                 Entity entity;
-                                // CRITICAL: Lock entity allocation (modifies _packedVersions, _entityVersions, etc.)
-                                // Archetype operations are already thread-safe since each group targets different archetypes
+                                // CRITICAL: Lock ENTIRE entity creation + component setting
+                                // Entities in same group = same signature = same archetype (must serialize all operations)
                                 lock (_entityAllocationLock)
                                 {
                                     entity = CreateWithSignature(signature);
-                                }
 
-                                // Set all component values using AsSpan (thread-safe: different archetypes)
-                                if (TryGetLocation(entity, out var archetype, out var slot))
-                                {
-                                    foreach (ref readonly var comp in componentSpan)
+                                    // Set all component values INSIDE lock to prevent archetype corruption
+                                    if (TryGetLocation(entity, out var archetype, out var slot))
                                     {
-                                        archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
+                                        foreach (ref readonly var comp in componentSpan)
+                                        {
+                                            archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
+                                        }
                                     }
                                 }
 
@@ -468,14 +482,26 @@ namespace UltraSim.ECS
                     _world.FireEntityBatchCreated(_createdEntitiesCache);
                 }
             }
+        }
 
-            // Adaptive entity creation based on batch size (regular Action<Entity> queue)
+        /// <summary>
+        /// Processes Action&lt;Entity&gt; creation queue with adaptive threshold optimization.
+        /// Small batches skip event tracking for minimal overhead.
+        /// </summary>
+        /// <remarks>
+        /// Adaptive Strategy:
+        /// - Small batches (&lt;500): Skip event tracking for minimal overhead
+        /// - Large batches (≥500): Batch efficiently with zero-allocation events
+        /// </remarks>
+        private void ProcessEntityCreationQueue()
+        {
+            const int ADAPTIVE_THRESHOLD = 500;
+
             int queueSize = _createQueue.Count;
 
             if (queueSize < ADAPTIVE_THRESHOLD)
             {
                 // Small batch: Process immediately without event tracking
-                // This skips the overhead of List management and event firing for small batches
                 while (_createQueue.TryDequeue(out var builder))
                 {
                     var entity = Create();

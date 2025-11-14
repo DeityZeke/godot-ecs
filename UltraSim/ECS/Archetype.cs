@@ -81,7 +81,7 @@ namespace UltraSim.ECS
             return _lists[idx] as ComponentList<T>;
         }
 
-        public void AddEntity(Entity e)
+        public int AddEntity(Entity e)
         {
             int newIndex = _entities.Count;
             _entities.Add(e);
@@ -91,6 +91,8 @@ namespace UltraSim.ECS
             {
                 _lists[i].AddDefault();
             }
+
+            return newIndex;
         }
 
         public void MoveEntityTo(int slot, Archetype target, object? newComponent = null)
@@ -99,8 +101,7 @@ namespace UltraSim.ECS
                 throw new InvalidOperationException($"Invalid slot {slot} for archetype with {_entities.Count} entities.");
 
             var entity = _entities[slot];
-            target.AddEntity(entity);
-            int newSlot = target.Count - 1;
+            int newSlot = target.AddEntity(entity);
 
             // copy shared components using linear iteration (no enumerator)
             for (int i = 0; i < _componentCount; i++)
