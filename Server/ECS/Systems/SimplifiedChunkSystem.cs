@@ -54,7 +54,13 @@ namespace UltraSim.Server.ECS.Systems
 
         // Processing queues (thread-safe)
         private readonly ConcurrentQueue<Entity> _entityCreatedQueue = new();
-        private readonly ConcurrentQueue<Entity> _entityMovedQueue = new();
+
+        // Move tracking uses ConcurrentDictionary instead of ConcurrentQueue for:
+        // 1. Automatic deduplication - same entity enqueued multiple times only processed once
+        // 2. Dead entity filtering - can check IsEntityValid at enqueue time
+        // 3. Performance - fast-moving entities may cross multiple boundaries per frame
+        // Key = entity.Packed (unique ID), Value = Entity (latest version)
+        private readonly ConcurrentDictionary<ulong, Entity> _entityMovedMap = new();
 
         private static readonly int PosTypeId = ComponentManager.GetTypeId<Position>();
         private static readonly int ChunkOwnerTypeId = ComponentManager.GetTypeId<ChunkOwner>();
@@ -157,7 +163,7 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Event handler: Entities that crossed chunk boundaries (fired by movement systems).
-        /// Just enqueue them - actual chunk reassignment happens in Update().
+        /// Filters dead entities immediately and deduplicates (same entity only tracked once).
         /// </summary>
         private void OnChunkUpdateRequested(Server.ChunkUpdateEventArgs args)
         {
@@ -165,15 +171,28 @@ namespace UltraSim.Server.ECS.Systems
                 return;
 
             var entitySpan = args.GetSpan();
-
-            if (SystemSettings.EnableDebugLogs.Value && entitySpan.Length > 0)
-            {
-                Logging.Log($"[{Name}] Received chunk update event with {entitySpan.Length} entities");
-            }
+            int added = 0;
+            int filtered = 0;
 
             for (int i = 0; i < entitySpan.Length; i++)
             {
-                _entityMovedQueue.Enqueue(entitySpan[i]);
+                var entity = entitySpan[i];
+
+                // Filter dead entities immediately (don't track zombies)
+                if (!_world.IsEntityValid(entity))
+                {
+                    filtered++;
+                    continue;
+                }
+
+                // Add or update (deduplication - keeps latest if entity already pending)
+                _entityMovedMap[entity.Packed] = entity;
+                added++;
+            }
+
+            if (SystemSettings.EnableDebugLogs.Value && entitySpan.Length > 0)
+            {
+                Logging.Log($"[{Name}] Received chunk update event with {entitySpan.Length} entities ({added} added, {filtered} dead filtered)");
             }
         }
 
@@ -182,7 +201,7 @@ namespace UltraSim.Server.ECS.Systems
             if (_chunkManager == null)
                 return;
 
-            Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedQueue.Count}");
+            Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedMap.Count}");
 
             // Process queues in order
             ProcessCreatedEntities();
@@ -232,21 +251,42 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Process entities that moved between chunks.
+        /// Entities are already deduplicated and dead-filtered by OnChunkUpdateRequested.
         /// </summary>
         private void ProcessMovedEntities()
         {
-            int processed = 0;
+            if (_entityMovedMap.Count == 0)
+                return;
 
-            while (_entityMovedQueue.TryDequeue(out var entity))
+            int processed = 0;
+            int skipped = 0;
+
+            // Snapshot the dictionary (thread-safe iteration while events may still fire)
+            foreach (var kvp in _entityMovedMap.ToArray())
             {
+                // Remove from map immediately
+                _entityMovedMap.TryRemove(kvp.Key, out _);
+
+                var entity = kvp.Value;
+
+                // Double-check validity (entity might have been destroyed between enqueue and processing)
                 if (!_world!.IsEntityValid(entity))
+                {
+                    skipped++;
                     continue;
+                }
 
                 if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
+                {
+                    skipped++;
                     continue;
+                }
 
                 if (!archetype.HasComponent(ChunkOwnerTypeId) || !archetype.HasComponent(PosTypeId))
+                {
+                    skipped++;
                     continue;
+                }
 
                 var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
                 var oldOwner = owners[slot];
@@ -259,7 +299,10 @@ namespace UltraSim.Server.ECS.Systems
 
                 // Still in same chunk?
                 if (oldOwner.Location.Equals(newChunkLoc))
+                {
+                    skipped++;
                     continue;
+                }
 
                 // Move tracking
                 _chunkManager.MoveEntity(entity.Packed, oldOwner.Location, newChunkLoc);
@@ -270,9 +313,9 @@ namespace UltraSim.Server.ECS.Systems
                 processed++;
             }
 
-            if (processed > 0 && SystemSettings.EnableDebugLogs.Value)
+            if ((processed > 0 || skipped > 0) && SystemSettings.EnableDebugLogs.Value)
             {
-                Logging.Log($"[{Name}] Moved {processed} entities between chunks");
+                Logging.Log($"[{Name}] Moved {processed} entities between chunks (skipped {skipped})");
             }
         }
 
