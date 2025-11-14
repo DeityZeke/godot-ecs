@@ -96,6 +96,7 @@ namespace Server.ECS.Chunk
         /// Remove all entities that match any packed ID in the provided span.
         /// Returns the number of entities removed.
         /// Thread-safe.
+        /// DEPRECATED: Use RemoveIfInSet for better performance with large batches.
         /// </summary>
         public int RemoveMatching(System.ReadOnlySpan<ulong> packedIds)
         {
@@ -109,6 +110,32 @@ namespace Server.ECS.Chunk
                         removed++;
                     }
                 }
+                return removed;
+            }
+        }
+
+        /// <summary>
+        /// Remove all entities in this chunk that exist in the provided HashSet.
+        /// More efficient than RemoveMatching for large batches - O(chunk size) instead of O(chunk size × batch size).
+        /// Returns the number of entities removed.
+        /// Thread-safe.
+        /// </summary>
+        public int RemoveIfInSet(HashSet<ulong> deadSet)
+        {
+            lock (_lock)
+            {
+                int removed = 0;
+
+                // ToArray() to avoid modification during enumeration
+                foreach (var entityPacked in _trackedEntities.ToArray())
+                {
+                    if (deadSet.Contains(entityPacked))
+                    {
+                        _trackedEntities.Remove(entityPacked);
+                        removed++;
+                    }
+                }
+
                 return removed;
             }
         }
