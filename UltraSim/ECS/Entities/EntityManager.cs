@@ -274,22 +274,38 @@ namespace UltraSim.ECS
 
         /// <summary>
         /// Processes queued entity destructions and fires batch events.
+        /// Fires EntityDestroyRequest BEFORE destruction (components accessible),
+        /// then fires EntityDestroyed AFTER destruction (components removed).
         /// </summary>
         private void ProcessEntityDestructionQueue()
         {
             _destroyedEntitiesCache.Clear();
 
+            // PHASE 1: Collect all entities to be destroyed (don't destroy yet!)
             while (_destroyQueue.TryDequeue(out var idx))
             {
                 var entity = CreateEntityHandle(idx);
                 _destroyedEntitiesCache.Add(entity);
+            }
+
+            // PHASE 2: Fire EntityDestroyRequest event (entities still alive, components accessible)
+            if (_destroyedEntitiesCache.Count > 0)
+            {
+                var args = new EntityBatchDestroyRequestEventArgs(_destroyedEntitiesCache);
+                EventSink.InvokeEntityBatchDestroyRequest(args);
+            }
+
+            // PHASE 3: Actually destroy the entities
+            foreach (var entity in _destroyedEntitiesCache)
+            {
                 Destroy(entity);
             }
 
-            // Fire EntityBatchDestroyed event if any entities were destroyed
+            // PHASE 4: Fire EntityDestroyed event (entities destroyed, components removed)
             if (_destroyedEntitiesCache.Count > 0)
             {
-                _world.FireEntityBatchDestroyed(_destroyedEntitiesCache);
+                var args = new EntityBatchDestroyedEventArgs(_destroyedEntitiesCache);
+                EventSink.InvokeEntityBatchDestroyed(args);
             }
         }
 

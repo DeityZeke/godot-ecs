@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 
 using UltraSim;
 using UltraSim.ECS.Systems;
-using UltraSim.ECS.Events;
 
 namespace UltraSim.ECS
 {

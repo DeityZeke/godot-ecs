@@ -13,7 +13,6 @@ using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
-using UltraSim.ECS.Events;
 
 namespace UltraSim.Server.ECS.Systems
 {

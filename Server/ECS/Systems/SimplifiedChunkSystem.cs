@@ -11,7 +11,6 @@ using Server.ECS.Chunk;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
-using UltraSim.ECS.Events;
 using Godot;
 
 namespace UltraSim.Server.ECS.Systems
@@ -54,7 +53,6 @@ namespace UltraSim.Server.ECS.Systems
         // Processing queues (thread-safe)
         private readonly ConcurrentQueue<Entity> _entityCreatedQueue = new();
         private readonly ConcurrentQueue<Entity> _entityMovedQueue = new();
-        private readonly ConcurrentQueue<Entity> _entityDestroyedQueue = new();
 
         private static readonly int PosTypeId = ComponentManager.GetTypeId<Position>();
         private static readonly int ChunkOwnerTypeId = ComponentManager.GetTypeId<ChunkOwner>();
@@ -66,7 +64,7 @@ namespace UltraSim.Server.ECS.Systems
 
             // Subscribe to World events
             UltraSim.EventSink.EntityBatchCreated += OnEntityBatchCreated;
-            UltraSim.EventSink.EntityBatchDestroyed += OnEntityBatchDestroyed;
+            UltraSim.EventSink.EntityBatchDestroyRequest += OnEntityBatchDestroyRequest;
 
             // Subscribe to Server events (movement systems)
             UltraSim.Server.EventSink.EnqueueChunkUpdate += OnChunkUpdateRequested;
@@ -93,17 +91,36 @@ namespace UltraSim.Server.ECS.Systems
         }
 
         /// <summary>
-        /// Event handler: Just enqueue entities for cleanup.
+        /// Event handler: Process entity destruction IMMEDIATELY.
+        /// Entities are still alive, components are accessible - FAST PATH ALWAYS WORKS!
+        /// No need to queue - cleanup happens synchronously during queue processing.
         /// </summary>
-        private void OnEntityBatchDestroyed(EntityBatchDestroyedEventArgs args)
+        private void OnEntityBatchDestroyRequest(EntityBatchDestroyRequestEventArgs args)
         {
             if (_chunkManager == null || _world == null)
                 return;
 
+            int processed = 0;
             var entitySpan = args.GetSpan();
+
             for (int i = 0; i < entitySpan.Length; i++)
             {
-                _entityDestroyedQueue.Enqueue(entitySpan[i]);
+                var entity = entitySpan[i];
+
+                // Entities are still alive - components guaranteed accessible!
+                if (_world.TryGetEntityLocation(entity, out var archetype, out var slot) &&
+                    archetype.HasComponent(ChunkOwnerTypeId))
+                {
+                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                    var owner = owners[slot];
+                    _chunkManager.StopTracking(entity.Packed, owner.Location);
+                    processed++;
+                }
+            }
+
+            if (processed > 0 && SystemSettings.EnableDebugLogs.Value)
+            {
+                Logging.Log($"[{Name}] Removed {processed} entities from chunk tracking (100% fast path!)");
             }
         }
 
@@ -134,12 +151,12 @@ namespace UltraSim.Server.ECS.Systems
             if (_chunkManager == null)
                 return;
 
-            Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedQueue.Count} | Destroy: {_entityDestroyedQueue.Count}");
+            Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedQueue.Count}");
 
             // Process queues in order
             ProcessCreatedEntities();
             ProcessMovedEntities();
-            ProcessDestroyedEntities();
+            // NOTE: Destroyed entities are handled IMMEDIATELY via EntityBatchDestroyRequest event - no queue!
 
             // Periodic statistics
             if (SystemSettings.EnableDebugLogs.Value)
@@ -228,51 +245,5 @@ namespace UltraSim.Server.ECS.Systems
             }
         }
 
-        /// <summary>
-        /// Process destroyed entities - remove from chunk tracking.
-        /// </summary>
-        private void ProcessDestroyedEntities()
-        {
-            int processed = 0;
-            int slowPath = 0;
-
-            while (_entityDestroyedQueue.TryDequeue(out var entity))
-            {
-                // FAST PATH: Try to get last known chunk location from component
-                // This works if entity still exists in archetype (rare case)
-                bool removed = false;
-
-                if (_world!.TryGetEntityLocation(entity, out var archetype, out var slot) &&
-                    archetype.HasComponent(ChunkOwnerTypeId))
-                {
-                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-
-                    // Safety check: slot might be out of bounds if entity was swapped/removed
-                    if (slot >= 0 && slot < owners.Length)
-                    {
-                        var owner = owners[slot];
-                        _chunkManager!.StopTracking(entity.Packed, owner.Location);
-                        removed = true;
-                        processed++;
-                    }
-                }
-
-                // SLOW PATH: Entity already destroyed, scan all chunks
-                // This is the common case for entity destruction
-                if (!removed)
-                {
-                    if (_chunkManager!.StopTrackingAnywhere(entity.Packed))
-                    {
-                        processed++;
-                        slowPath++;
-                    }
-                }
-            }
-
-            if (processed > 0 && SystemSettings.EnableDebugLogs.Value)
-            {
-                Logging.Log($"[{Name}] Removed {processed} destroyed entities from chunks (fast: {processed - slowPath}, slow: {slowPath})");
-            }
-        }
     }
 }
