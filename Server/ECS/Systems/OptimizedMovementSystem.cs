@@ -115,6 +115,8 @@ namespace UltraSim.ECS.Systems
                 int count = Math.Min(posList.Count, velList.Count);
                 int numChunks = (count + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
+                Logging.Log($"[OptimizedMovementSystem] Processing archetype: arch.Count={arch.Count}, posList.Count={posList.Count}, velList.Count={velList.Count}, calculated count={count}");
+
                 float adjustedDelta = (float)delta * speedMultiplier;
 
                 // Use manual thread pool (zero allocations!)
@@ -146,6 +148,9 @@ namespace UltraSim.ECS.Systems
 
                     for (int i = 0; i < count; i++)
                     {
+                        if (!world.IsEntityValid(entities[i]))
+                            continue;
+
                         ref readonly var owner = ref owners[i];
                         ref readonly var pos = ref posSpan[i];
 

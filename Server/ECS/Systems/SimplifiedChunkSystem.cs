@@ -13,6 +13,7 @@ using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
 using Godot;
+using System.Linq;
 
 namespace UltraSim.Server.ECS.Systems
 {
@@ -112,6 +113,9 @@ namespace UltraSim.Server.ECS.Systems
             for (int i = 0; i < entitySpan.Length; i++)
             {
                 var entity = entitySpan[i];
+                
+            if (_entityCreatedQueue.Contains(entity))
+            _entityCreatedQueue.
 
                 // Entities are still alive - components guaranteed accessible!
                 if (_world.TryGetEntityLocation(entity, out var archetype, out var slot) &&
