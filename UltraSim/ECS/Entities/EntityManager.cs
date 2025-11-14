@@ -163,9 +163,14 @@ namespace UltraSim.ECS
         public void Destroy(Entity entity)
         {
             if (!TryGetLookup(entity.Index, out var loc))
+            {
+                Logging.Log($"Destroy failed: entity {entity} has no lookup", LogSeverity.Warning);
                 return;
+            }
 
             var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+            
+            Logging.Log($"Destroying {entity}: arch slot={loc.slot}, arch.Count={arch.Count}");
             
             arch.RemoveAtSwap(loc.slot);
             _freeHandles.Push(entity.Packed + VersionIncrement);

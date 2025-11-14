@@ -13,6 +13,8 @@ namespace UltraSim.ECS
 
     public sealed class Archetype
     {
+        private World _world;
+
         // parallel arrays for compact storage and cache locality
         private int[] _typeIds;
         private IComponentList[] _lists;
@@ -29,10 +31,12 @@ namespace UltraSim.ECS
         public ComponentSignature Signature { get; }
         public int Count => _entities.Count;
 
-        public Archetype() : this(new ComponentSignature(), DefaultEntityCapacity, DefaultComponentCapacity) { }
+        public Archetype(World world) : this(world, new ComponentSignature(), DefaultEntityCapacity, DefaultComponentCapacity) { }
 
-        public Archetype(ComponentSignature signature, int entityCapacity = DefaultEntityCapacity, int componentCapacity = DefaultComponentCapacity)
+        public Archetype(World world, ComponentSignature signature, int entityCapacity = DefaultEntityCapacity, int componentCapacity = DefaultComponentCapacity)
         {
+            _world = world;
+
             Signature = signature;
             _entities = new List<Entity>(entityCapacity);
 
@@ -141,8 +145,19 @@ namespace UltraSim.ECS
                 for (int i = 0; i < _componentCount; i++)
                     _lists[i].SwapLastIntoSlot(slot, last);
 
-                World.Current?.UpdateEntityLookup(movedEntity.Index, this, slot);
+                //World.Current?.UpdateEntityLookup(movedEntity.Index, this, slot);
+                //if (World.Current == null)
+                if (_world == null)
+                {
+                    Logging.Log($"World variable is NULL during swap! Cannot update lookup for entity {movedEntity}", LogSeverity.Error);
+                }
+                else
+                {
+                    //World.Current.UpdateEntityLookup(movedEntity.Index, this, slot);
+                    _world.UpdateEntityLookup(movedEntity.Index, this, slot);
+                }
             }
+        
 
             // remove last element in each component list
             for (int i = 0; i < _componentCount; i++)

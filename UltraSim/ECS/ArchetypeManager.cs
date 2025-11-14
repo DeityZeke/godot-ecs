@@ -27,7 +27,7 @@ namespace UltraSim.ECS
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
             // Create empty archetype (archetype 0)
-            var emptyArch = new Archetype();
+            var emptyArch = new Archetype(_world);
             _archetypes.Add(emptyArch);
             _signatureCache[new ComponentSignatureKey(emptyArch.Signature)] = emptyArch;
         }
@@ -109,7 +109,7 @@ namespace UltraSim.ECS
             }
 
             // 3. Create new archetype
-            var newArch = new Archetype(signature);
+            var newArch = new Archetype(_world, signature);
 
             // ENSURE COMPONENT LISTS — CACHED DELEGATES
             foreach (var typeId in signature.GetIds())
