@@ -92,7 +92,8 @@ namespace UltraSim.Server.ECS.Systems
 
         /// <summary>
         /// Event handler: Process entity destruction IMMEDIATELY.
-        /// Entities are still alive, components are accessible - FAST PATH ALWAYS WORKS!
+        /// Uses hybrid approach: Fast path (component lookup) + cleanup pass (span matching).
+        /// Entities are still alive, components accessible.
         /// No need to queue - cleanup happens synchronously during queue processing.
         /// </summary>
         private void OnEntityBatchDestroyRequest(EntityBatchDestroyRequestEventArgs args)
@@ -100,9 +101,11 @@ namespace UltraSim.Server.ECS.Systems
             if (_chunkManager == null || _world == null)
                 return;
 
-            int processed = 0;
             var entitySpan = args.GetSpan();
+            int beforeCount = _chunkManager.GetTotalTrackedEntities();
 
+            // PHASE 1: Fast path - use ChunkOwner component to find location
+            int fastPathRemoved = 0;
             for (int i = 0; i < entitySpan.Length; i++)
             {
                 var entity = entitySpan[i];
@@ -114,13 +117,32 @@ namespace UltraSim.Server.ECS.Systems
                     var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
                     var owner = owners[slot];
                     _chunkManager.StopTracking(entity.Packed, owner.Location);
-                    processed++;
+                    fastPathRemoved++;
                 }
             }
 
-            if (processed > 0 && SystemSettings.EnableDebugLogs.Value)
+            int afterFastPath = _chunkManager.GetTotalTrackedEntities();
+
+            // PHASE 2: Cleanup pass - handle entities that moved but component not yet updated
+            int cleanupRemoved = 0;
+            if (afterFastPath > 0)
             {
-                Logging.Log($"[{Name}] Removed {processed} entities from chunk tracking (100% fast path!)");
+                // Component was stale (entity moved, but update still in deferred queue)
+                cleanupRemoved = _chunkManager.RemoveDeadEntities(entitySpan);
+            }
+
+            int afterCleanup = _chunkManager.GetTotalTrackedEntities();
+            int totalRemoved = fastPathRemoved + cleanupRemoved;
+
+            if (totalRemoved > 0 && SystemSettings.EnableDebugLogs.Value)
+            {
+                Logging.Log($"[{Name}] BEFORE destroy: {beforeCount} entities tracked");
+                Logging.Log($"[{Name}] AFTER fast path: {afterFastPath} remaining (removed {fastPathRemoved})");
+                if (cleanupRemoved > 0)
+                {
+                    Logging.Log($"[{Name}] AFTER cleanup pass: {afterCleanup} remaining (removed {cleanupRemoved})");
+                }
+                Logging.Log($"[{Name}] Removed {totalRemoved} entities from chunk tracking (fast: {fastPathRemoved}, cleanup: {cleanupRemoved})");
             }
         }
 

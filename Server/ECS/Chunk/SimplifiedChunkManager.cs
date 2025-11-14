@@ -159,6 +159,41 @@ namespace Server.ECS.Chunk
             return removed;
         }
 
+        /// <summary>
+        /// Remove all dead entities from chunks (cleanup pass for entities that couldn't be removed via fast path).
+        /// Uses Span for zero-allocation iteration - converts entities to packed IDs and scans chunks.
+        /// Only processes chunks that still have entities tracked.
+        /// Returns total number of entities removed.
+        /// </summary>
+        public int RemoveDeadEntities(ReadOnlySpan<UltraSim.ECS.Entity> deadEntities)
+        {
+            if (deadEntities.Length == 0)
+                return 0;
+
+            // Convert Entity span to packed IDs (stack allocation for reasonable sizes)
+            Span<ulong> deadPacked = deadEntities.Length <= 1024
+                ? stackalloc ulong[deadEntities.Length]
+                : new ulong[deadEntities.Length];
+
+            for (int i = 0; i < deadEntities.Length; i++)
+            {
+                deadPacked[i] = deadEntities[i].Packed;
+            }
+
+            // Iterate chunks and remove matching entities
+            int totalRemoved = 0;
+            foreach (var chunk in _chunks.Values)
+            {
+                if (chunk.EntityCount == 0)
+                    continue;
+
+                int removed = chunk.RemoveMatching(deadPacked);
+                totalRemoved += removed;
+            }
+
+            return totalRemoved;
+        }
+
         // === SPATIAL QUERIES ===
 
         /// <summary>
@@ -227,6 +262,19 @@ namespace Server.ECS.Chunk
         }
 
         // === STATISTICS ===
+
+        /// <summary>
+        /// Get the total number of entities currently tracked across all chunks.
+        /// </summary>
+        public int GetTotalTrackedEntities()
+        {
+            int totalEntities = 0;
+            foreach (var chunk in _chunks.Values)
+            {
+                totalEntities += chunk.EntityCount;
+            }
+            return totalEntities;
+        }
 
         public string GetStatistics()
         {

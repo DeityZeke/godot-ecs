@@ -91,5 +91,26 @@ namespace Server.ECS.Chunk
                 _trackedEntities.Clear();
             }
         }
+
+        /// <summary>
+        /// Remove all entities that match any packed ID in the provided span.
+        /// Returns the number of entities removed.
+        /// Thread-safe.
+        /// </summary>
+        public int RemoveMatching(System.ReadOnlySpan<ulong> packedIds)
+        {
+            lock (_lock)
+            {
+                int removed = 0;
+                for (int i = 0; i < packedIds.Length; i++)
+                {
+                    if (_trackedEntities.Remove(packedIds[i]))
+                    {
+                        removed++;
+                    }
+                }
+                return removed;
+            }
+        }
     }
 }
