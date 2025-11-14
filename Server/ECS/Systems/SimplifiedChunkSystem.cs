@@ -115,7 +115,6 @@ namespace UltraSim.Server.ECS.Systems
                 var entity = entitySpan[i];
                 
             if (_entityCreatedQueue.Contains(entity))
-            _entityCreatedQueue.
 
                 // Entities are still alive - components guaranteed accessible!
                 if (_world.TryGetEntityLocation(entity, out var archetype, out var slot) &&
