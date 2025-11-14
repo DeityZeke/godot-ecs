@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 using UltraSim;
@@ -104,6 +105,8 @@ namespace UltraSim.Server.ECS.Systems
             var entitySpan = args.GetSpan();
             int beforeCount = _chunkManager.GetTotalTrackedEntities();
 
+            var stopwatch = Stopwatch.StartNew();
+
             // PHASE 1: Fast path - use ChunkOwner component to find location
             int fastPathRemoved = 0;
             for (int i = 0; i < entitySpan.Length; i++)
@@ -131,18 +134,21 @@ namespace UltraSim.Server.ECS.Systems
                 cleanupRemoved = _chunkManager.RemoveDeadEntities(entitySpan);
             }
 
+            stopwatch.Stop();
+
             int afterCleanup = _chunkManager.GetTotalTrackedEntities();
             int totalRemoved = fastPathRemoved + cleanupRemoved;
 
             if (totalRemoved > 0 && SystemSettings.EnableDebugLogs.Value)
             {
+                double elapsedMs = stopwatch.Elapsed.TotalMilliseconds;
                 Logging.Log($"[{Name}] BEFORE destroy: {beforeCount} entities tracked");
                 Logging.Log($"[{Name}] AFTER fast path: {afterFastPath} remaining (removed {fastPathRemoved})");
                 if (cleanupRemoved > 0)
                 {
                     Logging.Log($"[{Name}] AFTER cleanup pass: {afterCleanup} remaining (removed {cleanupRemoved})");
                 }
-                Logging.Log($"[{Name}] Removed {totalRemoved} entities from chunk tracking (fast: {fastPathRemoved}, cleanup: {cleanupRemoved})");
+                Logging.Log($"[{Name}] Removed {totalRemoved} entities from chunk tracking (fast: {fastPathRemoved}, cleanup: {cleanupRemoved}) in {elapsedMs:F4}ms");
             }
         }
 
