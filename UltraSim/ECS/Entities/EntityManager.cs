@@ -342,8 +342,20 @@ namespace UltraSim.ECS
                     archetypeCounts[loc.archetypeIdx] = 0;
                 archetypeCounts[loc.archetypeIdx]++;
 
-                // Destroy without checking lookup again (we already have it)
+                // Get archetype and validate slot is in bounds
                 var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+
+                // CRITICAL FIX: Lookup may be stale due to previous destroys in this batch
+                // If slot is out of bounds, entity was already removed (skip it)
+                if (loc.slot >= arch.Count)
+                {
+                    // Stale lookup - entity already removed by a previous destroy in this batch
+                    // Clear the stale lookup and continue
+                    ClearLookup(entity.Index);
+                    failedCount++;
+                    continue;
+                }
+
                 int archCountBefore = arch.Count;
                 arch.RemoveAtSwap(loc.slot, entity);
                 int archCountAfter = arch.Count;
