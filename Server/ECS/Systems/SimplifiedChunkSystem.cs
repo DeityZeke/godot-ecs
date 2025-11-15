@@ -94,6 +94,9 @@ namespace UltraSim.Server.ECS.Systems
             var entitySpan = args.GetSpan();
             for (int i = 0; i < entitySpan.Length; i++)
             {
+                if (!_world.IsEntityValid(entitySpan[i]))
+                    continue;
+
                 _entityCreatedQueue.Enqueue(entitySpan[i]);
             }
         }
@@ -120,7 +123,7 @@ namespace UltraSim.Server.ECS.Systems
             {
                 var entity = entitySpan[i];
                 
-            if (_entityCreatedQueue.Contains(entity))
+                //if (_entityCreatedQueue.Contains(entity))
 
                 // Entities are still alive - components guaranteed accessible!
                 if (_world.TryGetEntityLocation(entity, out var archetype, out var slot) &&
@@ -201,7 +204,7 @@ namespace UltraSim.Server.ECS.Systems
             if (_chunkManager == null)
                 return;
 
-            Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedMap.Count}");
+            //Logging.Log($"Queues: Create: {_entityCreatedQueue.Count} | Move: {_entityMovedMap.Count}");
 
             // Process queues in order
             ProcessCreatedEntities();
