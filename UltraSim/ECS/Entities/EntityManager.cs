@@ -169,7 +169,7 @@ namespace UltraSim.ECS
             }
 
             var arch = _archetypes.GetArchetype(loc.archetypeIdx);
-            arch.RemoveAtSwap(loc.slot);
+            arch.RemoveAtSwap(loc.slot, entity);
             _freeHandles.Push(entity.Packed + VersionIncrement);
             _entityVersions[(int)entity.Index]++;
             _packedVersions[(int)entity.Index] += VersionIncrement;
@@ -338,7 +338,7 @@ namespace UltraSim.ECS
 
                 // Destroy without checking lookup again (we already have it)
                 var arch = _archetypes.GetArchetype(loc.archetypeIdx);
-                arch.RemoveAtSwap(loc.slot);
+                arch.RemoveAtSwap(loc.slot, entity);
                 _freeHandles.Push(entity.Packed + VersionIncrement);
                 _entityVersions[(int)entity.Index]++;
                 _packedVersions[(int)entity.Index] += VersionIncrement;

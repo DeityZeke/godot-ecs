@@ -171,18 +171,28 @@ namespace UltraSim.ECS
                 target.SetComponentValueBoxed(newTypeId, newSlot, newComponent);
             }
 
-            RemoveAtSwap(slot);
+            RemoveAtSwap(slot, entity);
         }
 
-        public void RemoveAtSwap(int slot)
+        public void RemoveAtSwap(int slot, Entity expectedEntity)
         {
             // Bounds check - slot may be invalid if entity already removed
             if (slot < 0 || slot >= _entities.Count)
                 return;
 
-            // Check if already dead
-            if (_entities[slot].Packed == DeadEntity.Packed)
+            // CRITICAL: Validate we're destroying the RIGHT entity using Packed (index + version)
+            // This prevents destroying the wrong entity due to stale lookups during batch operations
+            var actualEntity = _entities[slot];
+            if (actualEntity.Packed != expectedEntity.Packed)
+            {
+                // Silent return if already dead (expected during cleanup)
+                if (actualEntity.Packed == DeadEntity.Packed)
+                    return;
+
+                // Log warning if trying to destroy wrong entity (stale lookup!)
+                Logging.Log($"[Archetype.RemoveAtSwap] Entity mismatch at slot {slot}! Expected {expectedEntity}, found {actualEntity}. Ignoring to prevent destroying wrong entity.", LogSeverity.Warning);
                 return;
+            }
 
             // Mark slot as dead instead of swapping
             _entities[slot] = DeadEntity;
