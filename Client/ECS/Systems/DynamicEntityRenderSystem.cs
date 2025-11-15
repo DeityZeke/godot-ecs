@@ -299,7 +299,6 @@ namespace Client.ECS.Systems
 
         private void ProcessChunksParallel(World world, List<(ChunkLocation Location, bool Visible)> nearChunks)
         {
-            // Parallel.ForEach over chunks - each chunk is independent
             Parallel.ForEach(nearChunks, chunkInfo =>
             {
                 ProcessChunk(world, chunkInfo.Location, chunkInfo.Visible);

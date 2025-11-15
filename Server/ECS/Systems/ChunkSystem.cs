@@ -317,30 +317,7 @@ namespace UltraSim.Server.ECS.Systems
             if (batches.Count == 0)
                 return;
 
-            // TODO: Implement ProcessMovementBatchSmart method
-            // This method was referenced but not implemented
-            /*
-            // Decide parallel vs sequential
-            bool useParallel = SystemSettings.ParallelBatchProcessing.Value &&
-                               batches.Count >= SystemSettings.ParallelBatchThreshold.Value;
-
-            if (useParallel)
-            {
-                Parallel.ForEach(batches, batch => ProcessMovementBatchSmart(batch));
-            }
-            else
-            {
-                foreach (var batch in batches)
-                {
-                    ProcessMovementBatchSmart(batch);
-                }
-            }
-
-            if (SystemSettings.EnableDebugLogs.Value && batches.Count > 0)
-            {
-                Logging.Log($"[ChunkSystem] Processed {batches.Count} deferred movement batches ({(useParallel ? "parallel" : "sequential")})");
-            }
-            */
+            // TODO: Implement ProcessMovementBatchSmart method if deferred movement processing is re-enabled.
         }
 
         /// <summary>
@@ -641,8 +618,6 @@ namespace UltraSim.Server.ECS.Systems
 
         private int ProcessAssignmentsParallel(World world, List<ChunkAssignmentRequest> requests)
         {
-            // SIMPLIFIED: Use same pattern as creation batch processing
-            // No partitioner, no worker cache, no fallback - just simple parallel foreach
             Parallel.ForEach(requests, request =>
             {
                 ProcessAssignment(world, request);

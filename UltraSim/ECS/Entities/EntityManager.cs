@@ -38,7 +38,7 @@ namespace UltraSim.ECS
         private int _liveEntityCount = 0;
         
         // Deferred operation queues
-        private readonly ConcurrentQueue<uint> _destroyQueue = new();
+        private readonly ConcurrentQueue<Entity> _destroyQueue = new();
         private readonly ConcurrentQueue<Action<Entity>> _createQueue = new();
         private readonly ConcurrentQueue<EntityBuilder> _createWithBuilderQueue = new();
 
@@ -47,6 +47,7 @@ namespace UltraSim.ECS
 
         // Reusable list for batch entity destruction (V8 optimization, mirrors creation pattern)
         private readonly List<Entity> _destroyedEntitiesCache = new(1000);
+        private byte[] _destroyProcessedFlags = Array.Empty<byte>();
 
         // Reusable list for draining EntityBuilder queue (zero-allocation)
         private readonly List<EntityBuilder> _builderBatchCache = new(1000);
@@ -226,13 +227,18 @@ namespace UltraSim.ECS
         public void EnqueueDestroy(Entity entity)
         {
             if (IsAlive(entity))
-                _destroyQueue.Enqueue(entity.Index);
+                _destroyQueue.Enqueue(entity);
         }
 
         public void EnqueueDestroy(uint entityIndex)
         {
-            if (entityIndex > 0 && entityIndex < _entityArchetypeIndices.Count && _entityArchetypeIndices[(int)entityIndex] >= 0)
-                _destroyQueue.Enqueue(entityIndex);
+            if (entityIndex > 0 &&
+                entityIndex < _entityArchetypeIndices.Count &&
+                _entityArchetypeIndices[(int)entityIndex] >= 0)
+            {
+                var version = entityIndex < _entityVersions.Count ? _entityVersions[(int)entityIndex] : 0;
+                _destroyQueue.Enqueue(new Entity(entityIndex, version));
+            }
         }
 
         /// <summary>
@@ -301,20 +307,21 @@ namespace UltraSim.ECS
             _destroyedEntitiesCache.Clear();
 
             // PHASE 1: Collect all entities to be destroyed (don't destroy yet!)
-            while (_destroyQueue.TryDequeue(out var idx))
+            while (_destroyQueue.TryDequeue(out var entity))
             {
-                var entity = CreateEntityHandle(idx);
                 _destroyedEntitiesCache.Add(entity);
             }
 
             int queuedCount = _destroyedEntitiesCache.Count;
+            if (queuedCount == 0)
+                return;
+
+            EnsureDestroyFlagCapacity(queuedCount);
+            Array.Clear(_destroyProcessedFlags, 0, queuedCount);
 
             // PHASE 2: Fire EntityDestroyRequest event (entities still alive, components accessible)
-            if (_destroyedEntitiesCache.Count > 0)
-            {
-                var args = new EntityBatchDestroyRequestEventArgs(_destroyedEntitiesCache);
-                EventSink.InvokeEntityBatchDestroyRequest(args);
-            }
+            var requestArgs = new EntityBatchDestroyRequestEventArgs(_destroyedEntitiesCache);
+            EventSink.InvokeEntityBatchDestroyRequest(requestArgs);
 
             // PHASE 3: Actually destroy the entities
             // Use multi-pass approach to handle stale lookups from swap-and-pop operations
@@ -322,44 +329,80 @@ namespace UltraSim.ECS
             int passCount = 0;
             int remainingToDestroy = queuedCount;
             var archetypeCounts = new Dictionary<int, int>();
+            var flags = _destroyProcessedFlags;
 
             while (remainingToDestroy > 0 && passCount < 100)  // Safety limit to prevent infinite loop
             {
                 passCount++;
                 int destroyedThisPass = 0;
 
-                foreach (var entity in _destroyedEntitiesCache)
+                for (int i = 0; i < _destroyedEntitiesCache.Count; i++)
                 {
-                    // Skip if already destroyed (no lookup)
-                    if (!TryGetLookup(entity.Index, out var loc))
+                    if (flags[i] != 0)
                         continue;
 
-                    // Get archetype and check if slot is valid
-                    var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+                    var entity = _destroyedEntitiesCache[i];
 
-                    // Skip if lookup is out of bounds (will be valid in next pass as archetype shrinks)
-                    if (loc.slot >= arch.Count)
+                    if (!entity.IsValid || !IsAlive(entity))
+                    {
+                        flags[i] = 1;
+                        destroyedCount++;
+                        destroyedThisPass++;
                         continue;
+                    }
 
-                    // Try to destroy - RemoveAtSwap returns false if entity mismatch or other failure
-                    if (!arch.RemoveAtSwap(loc.slot, entity))
-                        continue;  // Failed (mismatch or bounds), will retry next pass
+                    if (!TryGetLocation(entity, out var archetype, out var slot))
+                    {
+                        flags[i] = 1;
+                        destroyedCount++;
+                        destroyedThisPass++;
+                        continue;
+                    }
 
-                    // Removal succeeded - track archetype and do cleanup
-                    if (!archetypeCounts.ContainsKey(loc.archetypeIdx))
-                        archetypeCounts[loc.archetypeIdx] = 0;
-                    archetypeCounts[loc.archetypeIdx]++;
+                    // Resolve slot if lookup became stale due to swap cascades
+                    if (slot >= archetype.Count)
+                    {
+                        slot = archetype.FindEntitySlot(entity);
+                        if (slot < 0)
+                        {
+                            // Entity not found anymore - treat as processed
+                            flags[i] = 1;
+                            destroyedCount++;
+                            destroyedThisPass++;
+                            continue;
+                        }
+                    }
+
+                    if (!archetype.RemoveAtSwap(slot, entity))
+                    {
+                        // Retry by searching for the entity's current slot (it may have moved again)
+                        slot = archetype.FindEntitySlot(entity);
+                        if (slot < 0 || !archetype.RemoveAtSwap(slot, entity))
+                        {
+                            // Could not destroy this pass; try again next loop
+                            continue;
+                        }
+                    }
+
+                    var archIndex = _archetypes.GetArchetypeIndex(archetype);
+                    if (archIndex >= 0)
+                    {
+                        if (!archetypeCounts.ContainsKey(archIndex))
+                            archetypeCounts[archIndex] = 0;
+                        archetypeCounts[archIndex]++;
+                    }
 
                     _freeHandles.Push(entity.Packed + VersionIncrement);
                     _entityVersions[(int)entity.Index]++;
                     _packedVersions[(int)entity.Index] += VersionIncrement;
                     ClearLookup(entity.Index);
                     _liveEntityCount--;
+                    flags[i] = 1;
                     destroyedCount++;
                     destroyedThisPass++;
                 }
 
-                remainingToDestroy -= destroyedThisPass;
+                remainingToDestroy = queuedCount - destroyedCount;
 
                 // If we made no progress this pass, stop (shouldn't happen but safety check)
                 if (destroyedThisPass == 0)
@@ -628,6 +671,19 @@ namespace UltraSim.ECS
                 _entityArchetypeIndices.Add(-1);
                 _entitySlots.Add(-1);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EnsureDestroyFlagCapacity(int count)
+        {
+            if (_destroyProcessedFlags.Length >= count)
+                return;
+
+            int newSize = _destroyProcessedFlags.Length == 0 ? 128 : _destroyProcessedFlags.Length * 2;
+            if (newSize < count)
+                newSize = count;
+
+            Array.Resize(ref _destroyProcessedFlags, newSize);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

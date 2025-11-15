@@ -42,6 +42,7 @@ namespace UltraSim.ECS.Systems
             public ButtonSetting ClearAll { get; private set; }
             public ButtonSetting ClearFirst1000 { get; private set; }
             public ButtonSetting ClearRandom1000 { get; private set; }
+            public ButtonSetting ClearRandom10000 { get; private set; }
             public ButtonSetting ClearHalf { get; private set; }
 
             public Settings()
@@ -92,6 +93,9 @@ namespace UltraSim.ECS.Systems
                 ClearRandom1000 = RegisterButton("Clear Random 1,000",
                     tooltip: "Destroy 1,000 random entities (tests scattered slot deletion)");
 
+                ClearRandom10000 = RegisterButton("Clear Random 10,000",
+                    tooltip: "Destroy 10,000 random entities to stress-test destruction");
+
                 ClearHalf = RegisterButton("Clear Half (50%)",
                     tooltip: "Destroy 50% of entities randomly (stress tests multi-pass logic)");
             }
@@ -127,6 +131,7 @@ namespace UltraSim.ECS.Systems
             SystemSettings.ClearAll.Clicked += ClearAllEntities;
             SystemSettings.ClearFirst1000.Clicked += () => ClearFirstN(1000);
             SystemSettings.ClearRandom1000.Clicked += () => ClearRandomN(1000);
+            SystemSettings.ClearRandom10000.Clicked += () => ClearRandomN(10_000);
             SystemSettings.ClearHalf.Clicked += ClearHalf;
 
             Logging.Log($"[{Name}] Initialized with spawn radius {SystemSettings.SpawnRadius.Value}");

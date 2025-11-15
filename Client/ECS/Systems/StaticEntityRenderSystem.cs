@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Godot;
 using UltraSim;
 using UltraSim.ECS;
@@ -344,7 +344,6 @@ namespace Client.ECS.Systems
 
         private void ProcessChunksParallel(World world, List<(ChunkLocation Location, bool Visible)> staticChunks)
         {
-            // Parallel.ForEach over chunks - each chunk is independent
             Parallel.ForEach(staticChunks, chunkInfo =>
             {
                 ProcessChunk(world, chunkInfo.Location, chunkInfo.Visible);

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace UltraSim.ECS
 {
@@ -259,6 +260,33 @@ namespace UltraSim.ECS
         public Entity[] GetEntityArray()
         {
             return _entities.ToArray();
+        }
+
+        /// <summary>
+        /// Finds the slot index for the specified entity within this archetype.
+        /// Returns -1 if the entity is not present.
+        /// </summary>
+        public int FindEntitySlot(Entity entity)
+        {
+            var span = CollectionsMarshal.AsSpan(_entities);
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i].Packed == entity.Packed)
+                    return i;
+            }
+            return -1;
+        }
+
+        public bool TryGetEntityAtSlot(int slot, out Entity entity)
+        {
+            if (slot >= 0 && slot < _entities.Count)
+            {
+                entity = _entities[slot];
+                return true;
+            }
+
+            entity = default;
+            return false;
         }
     }
 }

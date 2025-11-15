@@ -301,6 +301,13 @@ namespace UltraSim.ECS
                 return;
             }
 
+            if (!sourceArch.TryGetEntityAtSlot(sourceSlot, out var occupied) || occupied.Packed != entity.Packed)
+            {
+                sourceSlot = sourceArch.FindEntitySlot(entity);
+                if (sourceSlot < 0 || sourceSlot >= sourceArch.Count)
+                    return;
+            }
+
             // Calculate new signature and get target archetype
             var newSig = sourceArch.Signature.Add(componentTypeId);
             var targetArch = _archetypes.GetOrCreate(newSig);
@@ -332,6 +339,13 @@ namespace UltraSim.ECS
             {
                 // This shouldn't happen if IsAlive returned true, but be defensive
                 return;
+            }
+
+            if (!oldArch.TryGetEntityAtSlot(slot, out var occupant) || occupant.Packed != entity.Packed)
+            {
+                slot = oldArch.FindEntitySlot(entity);
+                if (slot < 0 || slot >= oldArch.Count)
+                    return;
             }
 
             if (!oldArch.HasComponent(componentTypeId))
