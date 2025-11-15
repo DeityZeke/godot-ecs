@@ -323,6 +323,7 @@ namespace UltraSim.ECS
             // PHASE 3: Actually destroy the entities
             int destroyedCount = 0;
             int failedCount = 0;
+            var archetypeCounts = new Dictionary<int, int>();
 
             foreach (var entity in _destroyedEntitiesCache)
             {
@@ -336,15 +337,36 @@ namespace UltraSim.ECS
                     continue;
                 }
 
+                // Track which archetypes we're destroying from
+                if (!archetypeCounts.ContainsKey(loc.archetypeIdx))
+                    archetypeCounts[loc.archetypeIdx] = 0;
+                archetypeCounts[loc.archetypeIdx]++;
+
                 // Destroy without checking lookup again (we already have it)
                 var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+                int archCountBefore = arch.Count;
                 arch.RemoveAtSwap(loc.slot, entity);
+                int archCountAfter = arch.Count;
+
+                if (archCountAfter != archCountBefore - 1)
+                {
+                    Logging.Log($"[EntityManager] ARCHETYPE COUNT DIDN'T DECREASE! Before={archCountBefore}, After={archCountAfter}, ArchIdx={loc.archetypeIdx}", LogSeverity.Error);
+                }
+
                 _freeHandles.Push(entity.Packed + VersionIncrement);
                 _entityVersions[(int)entity.Index]++;
                 _packedVersions[(int)entity.Index] += VersionIncrement;
                 ClearLookup(entity.Index);
                 _liveEntityCount--;
                 destroyedCount++;
+            }
+
+            if (archetypeCounts.Count > 0 && queuedCount > 1000)
+            {
+                foreach (var kvp in archetypeCounts)
+                {
+                    Logging.Log($"[EntityManager] Destroyed {kvp.Value} entities from archetype {kvp.Key}", LogSeverity.Info);
+                }
             }
 
             if (failedCount > 0)
