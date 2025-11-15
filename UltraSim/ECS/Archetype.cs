@@ -25,11 +25,20 @@ namespace UltraSim.ECS
 
         private readonly List<Entity> _entities;
 
+        // Deferred compaction: track dead slots for reuse
+        private readonly List<int> _deadSlots = new();
+        private int _liveCount;  // Number of live entities (excludes dead slots)
+
+        // Sentinel value for dead entities
+        private static readonly Entity DeadEntity = new Entity(uint.MaxValue);
+
         private const int DefaultComponentCapacity = 8;
         private const int DefaultEntityCapacity = 1024;
 
         public ComponentSignature Signature { get; }
-        public int Count => _entities.Count;
+
+        // Count returns LIVE entities only (excluding dead slots)
+        public int Count => _liveCount;
 
         public Archetype(World world) : this(world, new ComponentSignature(), DefaultEntityCapacity, DefaultComponentCapacity) { }
 
@@ -69,11 +78,32 @@ namespace UltraSim.ECS
 
         public IEnumerable<string> DebugValidate()
         {
+            // Validate component list sizes match entity list
             for (int i = 0; i < _componentCount; i++)
             {
                 var list = _lists[i];
                 if (list.Count != _entities.Count)
                     yield return $"Archetype mismatch: component {_typeIds[i]} has {list.Count} entries, entities={_entities.Count}";
+            }
+
+            // Validate live count matches actual live entities
+            int actualLiveCount = 0;
+            for (int i = 0; i < _entities.Count; i++)
+            {
+                if (_entities[i].Packed != DeadEntity.Packed)
+                    actualLiveCount++;
+            }
+
+            if (actualLiveCount != _liveCount)
+                yield return $"Archetype live count mismatch: _liveCount={_liveCount}, actual={actualLiveCount}";
+
+            // Validate dead slots are actually dead
+            foreach (var deadSlot in _deadSlots)
+            {
+                if (deadSlot < 0 || deadSlot >= _entities.Count)
+                    yield return $"Dead slot {deadSlot} out of bounds (count={_entities.Count})";
+                else if (_entities[deadSlot].Packed != DeadEntity.Packed)
+                    yield return $"Dead slot {deadSlot} contains live entity {_entities[deadSlot]}";
             }
         }
 
@@ -87,16 +117,32 @@ namespace UltraSim.ECS
 
         public int AddEntity(Entity e)
         {
-            int newIndex = _entities.Count;
-            _entities.Add(e);
+            int slot;
 
-            // expand each component list to accommodate the new slot
-            for (int i = 0; i < _componentCount; i++)
+            // Try to reuse a dead slot first
+            if (_deadSlots.Count > 0)
             {
-                _lists[i].AddDefault();
+                slot = _deadSlots[_deadSlots.Count - 1];
+                _deadSlots.RemoveAt(_deadSlots.Count - 1);
+                _entities[slot] = e;
+
+                // Component data already exists at this slot, no need to expand lists
+            }
+            else
+            {
+                // No dead slots available, append new slot
+                slot = _entities.Count;
+                _entities.Add(e);
+
+                // Expand each component list to accommodate the new slot
+                for (int i = 0; i < _componentCount; i++)
+                {
+                    _lists[i].AddDefault();
+                }
             }
 
-            return newIndex;
+            _liveCount++;
+            return slot;
         }
 
         public void MoveEntityTo(int slot, Archetype target, object? newComponent = null)
@@ -130,40 +176,104 @@ namespace UltraSim.ECS
 
         public void RemoveAtSwap(int slot)
         {
-            int last = _entities.Count - 1;
-
             // Bounds check - slot may be invalid if entity already removed
-            if (slot < 0 || slot > last)
+            if (slot < 0 || slot >= _entities.Count)
                 return;
 
-            if (slot != last)
+            // Check if already dead
+            if (_entities[slot].Packed == DeadEntity.Packed)
+                return;
+
+            // Mark slot as dead instead of swapping
+            _entities[slot] = DeadEntity;
+            _deadSlots.Add(slot);
+            _liveCount--;
+
+            // Component data remains in place - will be overwritten when slot is reused
+            // No need to update entity lookups - this entity is being destroyed anyway
+        }
+
+        /// <summary>
+        /// Compact the archetype by moving live entities from the end into dead slots.
+        /// This reduces memory fragmentation and improves cache coherency.
+        /// Should be called periodically or when fragmentation is high.
+        /// </summary>
+        public void Compact()
+        {
+            if (_deadSlots.Count == 0)
+                return;
+
+            // Sort dead slots lowest to highest for efficient filling
+            _deadSlots.Sort();
+
+            int lastIndex = _entities.Count - 1;
+            int deadSlotIndex = 0;
+
+            // Fill dead slots from the end of the list
+            while (deadSlotIndex < _deadSlots.Count && lastIndex >= 0)
             {
-                var movedEntity = _entities[last];
-                _entities[slot] = movedEntity;
+                int deadSlot = _deadSlots[deadSlotIndex];
 
-                // fast linear swap for each component list
-                for (int i = 0; i < _componentCount; i++)
-                    _lists[i].SwapLastIntoSlot(slot, last);
+                // If dead slot is beyond current end, we're done
+                if (deadSlot >= lastIndex)
+                    break;
 
-                //World.Current?.UpdateEntityLookup(movedEntity.Index, this, slot);
-                //if (World.Current == null)
-                if (_world == null)
+                // Find the last live entity
+                while (lastIndex > deadSlot && _entities[lastIndex].Packed == DeadEntity.Packed)
                 {
-                    Logging.Log($"World variable is NULL during swap! Cannot update lookup for entity {movedEntity}", LogSeverity.Error);
+                    lastIndex--;
                 }
-                else
+
+                // If we've collapsed to the dead slot position, we're done
+                if (lastIndex <= deadSlot)
+                    break;
+
+                // Move the live entity from end into dead slot
+                var movedEntity = _entities[lastIndex];
+                _entities[deadSlot] = movedEntity;
+
+                // Move component data
+                for (int i = 0; i < _componentCount; i++)
                 {
-                    //World.Current.UpdateEntityLookup(movedEntity.Index, this, slot);
-                    _world.UpdateEntityLookup(movedEntity.Index, this, slot);
+                    _lists[i].SwapLastIntoSlot(deadSlot, lastIndex);
+                }
+
+                // Update entity lookup to point to new slot
+                if (_world != null)
+                {
+                    _world.UpdateEntityLookup(movedEntity.Index, this, deadSlot);
+                }
+
+                // Mark old position as processed
+                _entities[lastIndex] = DeadEntity;
+                lastIndex--;
+                deadSlotIndex++;
+            }
+
+            // Remove all dead slots from the end
+            int newCount = lastIndex + 1;
+            while (newCount > 0 && _entities[newCount - 1].Packed == DeadEntity.Packed)
+            {
+                newCount--;
+            }
+
+            // Trim entity list and component lists
+            if (newCount < _entities.Count)
+            {
+                _entities.RemoveRange(newCount, _entities.Count - newCount);
+
+                for (int i = 0; i < _componentCount; i++)
+                {
+                    int toRemove = _lists[i].Count - newCount;
+                    for (int j = 0; j < toRemove; j++)
+                    {
+                        _lists[i].RemoveLast();
+                    }
                 }
             }
-        
 
-            // remove last element in each component list
-            for (int i = 0; i < _componentCount; i++)
-                _lists[i].RemoveLast();
-
-            _entities.RemoveAt(last);
+            // Clear dead slots list - all slots are now compact
+            _deadSlots.Clear();
         }
 
         // Ensure a typed component list exists for this archetype
@@ -243,6 +353,21 @@ namespace UltraSim.ECS
             return true;
         }
 
-        public Entity[] GetEntityArray() => _entities.ToArray();
+        public Entity[] GetEntityArray()
+        {
+            // Return only live entities (skip dead slots)
+            var result = new Entity[_liveCount];
+            int writeIndex = 0;
+
+            for (int i = 0; i < _entities.Count; i++)
+            {
+                if (_entities[i].Packed != DeadEntity.Packed)
+                {
+                    result[writeIndex++] = _entities[i];
+                }
+            }
+
+            return result;
+        }
     }
 }
