@@ -233,12 +233,45 @@ namespace UltraSim.ECS
         /// <summary>
         /// Compacts all archetypes by removing dead slots.
         /// Should be called after entity destruction to ensure systems see compact arrays.
+        /// Includes safety check to detect and fix zombie entities.
         /// </summary>
         public void CompactAll()
         {
+            int archetypesFixed = 0;
+            int zombiesCleared = 0;
+
             foreach (var arch in _archetypes)
             {
+                // Compact to remove dead slots
                 arch.Compact();
+
+                // SAFETY CHECK: Detect zombie entities (mismatch between Count and internal lists)
+                // This catches bugs where entities remain in component lists but shouldn't
+                if (!arch.ValidateConsistency(out int entityListCount, out int componentListCount, out int liveCount))
+                {
+                    // Mismatch detected!
+                    if (liveCount == 0 && (entityListCount > 0 || componentListCount > 0))
+                    {
+                        // Zero live entities but archetype still has data = ZOMBIES!
+                        Logging.Log($"[ArchetypeManager.CompactAll] ZOMBIE DETECTION! Archetype has Count=0 but entityList={entityListCount}, componentList={componentListCount}. Force clearing!", LogSeverity.Warning);
+                        arch.ForceClear();
+                        archetypesFixed++;
+                        zombiesCleared += entityListCount;
+                    }
+                    else if (entityListCount != componentListCount)
+                    {
+                        // Component list size doesn't match entity list = CORRUPTION!
+                        Logging.Log($"[ArchetypeManager.CompactAll] CORRUPTION DETECTED! entityList={entityListCount} != componentList={componentListCount}, liveCount={liveCount}. Force clearing!", LogSeverity.Error);
+                        arch.ForceClear();
+                        archetypesFixed++;
+                        zombiesCleared += entityListCount;
+                    }
+                }
+            }
+
+            if (archetypesFixed > 0)
+            {
+                Logging.Log($"[ArchetypeManager.CompactAll] Fixed {archetypesFixed} corrupted archetypes, cleared {zombiesCleared} zombie entities", LogSeverity.Warning);
             }
         }
 

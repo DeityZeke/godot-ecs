@@ -287,6 +287,51 @@ namespace UltraSim.ECS
             }
         }
 
+        /// <summary>
+        /// Validates consistency between entity list, component lists, and live count.
+        /// Returns false if there's a mismatch (indicating corruption or zombie entities).
+        /// </summary>
+        public bool ValidateConsistency(out int entityListCount, out int componentListCount, out int liveCount)
+        {
+            entityListCount = _entities.Count;
+            liveCount = _liveCount;
+            componentListCount = _componentCount > 0 ? _lists[0].Count : 0;
+
+            // Check 1: Component lists should match entity list
+            if (_componentCount > 0 && componentListCount != entityListCount)
+                return false;
+
+            // Check 2: If liveCount is 0, lists should be empty
+            if (liveCount == 0 && entityListCount > 0)
+                return false;
+
+            // Check 3: liveCount should be <= entityListCount
+            if (liveCount > entityListCount)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Emergency force clear of all archetype data.
+        /// Used when corruption is detected to prevent crashes.
+        /// </summary>
+        public void ForceClear()
+        {
+            _entities.Clear();
+            _deadSlots.Clear();
+            _liveCount = 0;
+
+            for (int i = 0; i < _componentCount; i++)
+            {
+                int count = _lists[i].Count;
+                for (int j = 0; j < count; j++)
+                {
+                    _lists[i].RemoveLast();
+                }
+            }
+        }
+
         // Ensure a typed component list exists for this archetype
         internal void EnsureComponentList<T>(int componentTypeId) where T : struct
         {
