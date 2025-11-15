@@ -277,13 +277,28 @@ namespace UltraSim.ECS
             // Clear dead slots list - all slots are now compact
             _deadSlots.Clear();
 
-            if (deadFound != deadSlotCount || writeIndex != _liveCount)
+            // CRITICAL FIX: Force _liveCount to match reality (writeIndex = actual live entities found)
+            // This fixes any corruption where _liveCount got out of sync
+            if (writeIndex != _liveCount)
+            {
+                Logging.Log($"[Archetype.Compact] FIXING _liveCount! Was {_liveCount}, actual live entities={writeIndex}. Correcting...", LogSeverity.Warning);
+                _liveCount = writeIndex;
+            }
+
+            if (deadFound != deadSlotCount || writeIndex != beforeCount - deadSlotCount)
             {
                 Logging.Log($"[Archetype.Compact] MISMATCH! Before: {beforeCount} entities, _deadSlots.Count={deadSlotCount}, _liveCount={_liveCount}. Found {deadFound} dead during scan, writeIndex={writeIndex}. After: {_entities.Count}", LogSeverity.Warning);
             }
             else if (beforeCount > 1000)
             {
                 Logging.Log($"[Archetype.Compact] Large compaction: {beforeCount} -> {_entities.Count} ({deadFound} dead removed)", LogSeverity.Info);
+            }
+
+            // FINAL SAFETY CHECK: If all entities are dead after compaction, clear everything
+            if (_liveCount == 0 && _entities.Count > 0)
+            {
+                Logging.Log($"[Archetype.Compact] All entities dead but lists not empty ({_entities.Count}). Force clearing!", LogSeverity.Warning);
+                ForceClear();
             }
         }
 
