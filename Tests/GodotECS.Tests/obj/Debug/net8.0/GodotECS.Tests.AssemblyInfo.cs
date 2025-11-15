@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GodotECS.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2f1e318a2edf066eb6e4b857eb497137375b3068")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1e74b32996bc4ad1ce54c4edd1500c3f00557a47")]
 [assembly: System.Reflection.AssemblyProductAttribute("GodotECS.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GodotECS.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

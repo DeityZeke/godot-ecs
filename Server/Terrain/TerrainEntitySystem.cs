@@ -28,6 +28,7 @@ namespace Server.Terrain
         private int _radiusXZ = 8;
         private int _radiusY = 2;
         private bool _autoSave = true;
+        private bool _commandBufferDisabledLogged = false;
 
         public override int SystemId => GetHashCode();
         public override string Name => "Terrain Entity Manager";
@@ -84,6 +85,15 @@ namespace Server.Terrain
 
         public override void Update(World world, double delta)
         {
+            if (!_commandBufferDisabledLogged)
+            {
+                Logging.Log($"[{Name}] Terrain entity spawning paused (CommandBuffer implementation removed)", LogSeverity.Warning, Name);
+                _commandBufferDisabledLogged = true;
+            }
+
+            return;
+
+#if false
             int loaded = 0;
             while (_loadQueue.Count > 0 && loaded < _chunksLoadedPerFrame)
             {
@@ -127,6 +137,7 @@ namespace Server.Terrain
                 // TODO: Store Entity from buffer result
                 loaded++;
             }
+#endif
         }
 
         private ChunkBounds CalculateChunkBounds(ChunkLocation location)

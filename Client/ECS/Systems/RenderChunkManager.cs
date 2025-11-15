@@ -110,12 +110,11 @@ namespace Client.ECS.Systems
         private ChunkLocation _lastPlayerChunk = new(int.MaxValue, int.MaxValue, int.MaxValue);
         private double _timeSinceLastUpdate = 0;
         private int _frameCounter = 0;
+        private bool _legacyCommandBufferWarningLogged = false;
 
         // Track previous zone assignments to know which tags to remove
         private enum ZoneType : byte { None, Near, Mid, Far }
         private readonly Dictionary<ChunkLocation, ZoneType> _previousZones = new();
-
-        private readonly CommandBuffer _buffer = new();
 
         public override void OnInitialize(World world)
         {
@@ -200,6 +199,16 @@ namespace Client.ECS.Systems
 
             int yRadius = nearRadius; // Y range matches near radius
 
+            if (!_legacyCommandBufferWarningLogged)
+            {
+                Logging.Log($"[{Name}] Legacy CommandBuffer path disabled pending deferred queue rewrite.");
+                _legacyCommandBufferWarningLogged = true;
+            }
+
+            // TODO: Reimplement proactive render window updates using the deferred queue pipeline.
+            return;
+
+#if false
             // Calculate all chunk locations in window
             var windowLocations = new HashSet<ChunkLocation>();
             var windowZones = new Dictionary<ChunkLocation, ZoneType>();
@@ -403,8 +412,10 @@ namespace Client.ECS.Systems
 
                 Logging.Log($"[{Name}] Window: Near={nearCount}, Mid={midCount}, Far={farCount}, Created={created}, Reused={reused}, Pooled={pooled}, Updated={updated}, PoolSize={poolSizeAfter}");
             }
+#endif
         }
 
+#if false
         private void UpdateZoneTags(CommandBuffer buffer, Entity chunkEntity, ChunkLocation location, ZoneType oldZone, ZoneType newZone)
         {
             // Remove old tag
@@ -451,15 +462,15 @@ namespace Client.ECS.Systems
                     break;
             }
         }
+#endif
 
         public override void OnShutdown(World world)
         {
             _previousZones.Clear();
-            _buffer.Dispose();
 
             if (SystemSettings.EnableDebugLogs.Value)
             {
-                Logging.Log($"[{Name}] Shutting down");
+                Logging.Log($"[{Name}] Shutting down (legacy render chunk pipeline disabled)");
             }
         }
     }

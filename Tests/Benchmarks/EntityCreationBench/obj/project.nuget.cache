@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "o2GcaA94PAk=",
+  "success": true,
+  "projectFilePath": "D:\\MEGA\\Godot Projects\\godot-ecs\\Tests\\Benchmarks\\EntityCreationBench\\EntityCreationBench.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\nbrow\\.nuget\\packages\\godot.sourcegenerators\\4.5.0\\godot.sourcegenerators.4.5.0.nupkg.sha512",
+    "C:\\Users\\nbrow\\.nuget\\packages\\godotsharp\\4.5.0\\godotsharp.4.5.0.nupkg.sha512"
+  ],
+  "logs": []
+}

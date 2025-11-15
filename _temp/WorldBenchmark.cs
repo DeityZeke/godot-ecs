@@ -9,7 +9,6 @@ using UltraSim;
 using UltraSim.ECS.SIMD;
 using UltraSim.IO;
 using UltraSim.Server.ECS.Systems;
-using Client.ECS.StressTests;
 
 [GlobalClass]
 public partial class WorldBenchmark : Node, IHost
@@ -30,14 +29,6 @@ public partial class WorldBenchmark : Node, IHost
         SimdManager.Initialize(Runtime.Environment.SimdSupport);
         _world = new World(this);
 
-        // Register ChunkSystem for chunk assignment benchmark
-        if (RunChunkBenchmark)
-        {
-            _world.EnqueueSystemCreate<ChunkSystem>();
-            _world.EnqueueSystemEnable<ChunkSystem>();
-            _world.Tick(0.016); // Initialize systems
-        }
-
         RunBenchmark();
     }
 
@@ -45,21 +36,7 @@ public partial class WorldBenchmark : Node, IHost
     {
         if (RunChunkBenchmark)
         {
-            GD.Print($"[WorldBenchmark] Running ChunkAssignmentBenchmark (POST-MERGE)");
-            var benchmark = new ChunkAssignmentBenchmark(_world);
-            var results = benchmark.RunBenchmarks();
-
-            // Print summary to console
-            GD.Print("=================================================================");
-            GD.Print("  POST-MERGE BENCHMARK RESULTS");
-            GD.Print("=================================================================");
-            GD.Print($"Entity Creation: {results.BaselineCreationTimeMs:F2}ms ({results.BaselineCreationThroughput:F0} ent/s)");
-            GD.Print($"Movement Avg: {results.BaselineMovementAvgMs:F2}ms, Peak: {results.BaselineMovementPeakMs:F2}ms");
-            GD.Print("=================================================================");
-
-            // Exit after benchmark completes
-            GD.Print($"[WorldBenchmark] Benchmark complete. Exiting in 1 second...");
-            System.Threading.Thread.Sleep(1000); // Give output time to flush
+            GD.PushWarning("[WorldBenchmark] ChunkAssignmentBenchmark is unavailable (CommandBuffer dependency removed).");
             GetTree().Quit();
             return;
         }
