@@ -194,8 +194,8 @@ namespace UltraSim.ECS
         }
 
         /// <summary>
-        /// Compact the archetype by moving live entities from the end into dead slots.
-        /// This reduces memory fragmentation and improves cache coherency.
+        /// Compact the archetype by removing all dead slots.
+        /// This rebuilds the entity list to contain only live entities.
         /// Should be called periodically or when fragmentation is high.
         /// </summary>
         public void Compact()
@@ -203,68 +203,61 @@ namespace UltraSim.ECS
             if (_deadSlots.Count == 0)
                 return;
 
-            // Sort dead slots lowest to highest for efficient filling
-            _deadSlots.Sort();
-
-            int lastIndex = _entities.Count - 1;
-            int deadSlotIndex = 0;
-
-            // Fill dead slots from the end of the list
-            while (deadSlotIndex < _deadSlots.Count && lastIndex >= 0)
+            if (_liveCount == 0)
             {
-                int deadSlot = _deadSlots[deadSlotIndex];
-
-                // If dead slot is beyond current end, we're done
-                if (deadSlot >= lastIndex)
-                    break;
-
-                // Find the last live entity
-                while (lastIndex > deadSlot && _entities[lastIndex].Packed == DeadEntity.Packed)
-                {
-                    lastIndex--;
-                }
-
-                // If we've collapsed to the dead slot position, we're done
-                if (lastIndex <= deadSlot)
-                    break;
-
-                // Move the live entity from end into dead slot
-                var movedEntity = _entities[lastIndex];
-                _entities[deadSlot] = movedEntity;
-
-                // Move component data
-                for (int i = 0; i < _componentCount; i++)
-                {
-                    _lists[i].SwapLastIntoSlot(deadSlot, lastIndex);
-                }
-
-                // Update entity lookup to point to new slot
-                if (_world != null)
-                {
-                    _world.UpdateEntityLookup(movedEntity.Index, this, deadSlot);
-                }
-
-                // Mark old position as processed
-                _entities[lastIndex] = DeadEntity;
-                lastIndex--;
-                deadSlotIndex++;
-            }
-
-            // Remove all dead slots from the end
-            int newCount = lastIndex + 1;
-            while (newCount > 0 && _entities[newCount - 1].Packed == DeadEntity.Packed)
-            {
-                newCount--;
-            }
-
-            // Trim entity list and component lists
-            if (newCount < _entities.Count)
-            {
-                _entities.RemoveRange(newCount, _entities.Count - newCount);
+                // All entities are dead - clear everything
+                _entities.Clear();
+                _deadSlots.Clear();
 
                 for (int i = 0; i < _componentCount; i++)
                 {
-                    int toRemove = _lists[i].Count - newCount;
+                    int count = _lists[i].Count;
+                    for (int j = 0; j < count; j++)
+                    {
+                        _lists[i].RemoveLast();
+                    }
+                }
+                return;
+            }
+
+            // Build new compacted lists
+            int writeIndex = 0;
+
+            for (int readIndex = 0; readIndex < _entities.Count; readIndex++)
+            {
+                var entity = _entities[readIndex];
+
+                // Skip dead entities
+                if (entity.Packed == DeadEntity.Packed)
+                    continue;
+
+                // If we're not writing to the same position, copy data
+                if (writeIndex != readIndex)
+                {
+                    // Move entity
+                    _entities[writeIndex] = entity;
+
+                    // Move component data
+                    for (int i = 0; i < _componentCount; i++)
+                    {
+                        _lists[i].SwapLastIntoSlot(writeIndex, readIndex);
+                    }
+
+                    // Update entity lookup to new position
+                    _world?.UpdateEntityLookup(entity.Index, this, writeIndex);
+                }
+
+                writeIndex++;
+            }
+
+            // Trim excess entries
+            int toRemove = _entities.Count - writeIndex;
+            if (toRemove > 0)
+            {
+                _entities.RemoveRange(writeIndex, toRemove);
+
+                for (int i = 0; i < _componentCount; i++)
+                {
                     for (int j = 0; j < toRemove; j++)
                     {
                         _lists[i].RemoveLast();
