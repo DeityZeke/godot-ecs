@@ -321,56 +321,54 @@ namespace UltraSim.ECS
             }
 
             // PHASE 3: Actually destroy the entities
+            // Use multi-pass approach to handle stale lookups from swap-and-pop operations
             int destroyedCount = 0;
-            int failedCount = 0;
+            int passCount = 0;
+            int remainingToDestroy = queuedCount;
             var archetypeCounts = new Dictionary<int, int>();
 
-            foreach (var entity in _destroyedEntitiesCache)
+            while (remainingToDestroy > 0 && passCount < 100)  // Safety limit to prevent infinite loop
             {
-                if (!TryGetLookup(entity.Index, out var loc))
+                passCount++;
+                int destroyedThisPass = 0;
+
+                foreach (var entity in _destroyedEntitiesCache)
                 {
-                    failedCount++;
-                    if (failedCount <= 10)  // Only log first 10 to avoid spam
-                    {
-                        Logging.Log($"Entity {entity} has no lookup (already destroyed?)", LogSeverity.Warning);
-                    }
-                    continue;
-                }
+                    // Skip if already destroyed (no lookup)
+                    if (!TryGetLookup(entity.Index, out var loc))
+                        continue;
 
-                // Track which archetypes we're destroying from
-                if (!archetypeCounts.ContainsKey(loc.archetypeIdx))
-                    archetypeCounts[loc.archetypeIdx] = 0;
-                archetypeCounts[loc.archetypeIdx]++;
+                    // Get archetype and check if slot is valid
+                    var arch = _archetypes.GetArchetype(loc.archetypeIdx);
 
-                // Get archetype and validate slot is in bounds
-                var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+                    // Skip if lookup is out of bounds (will be valid in next pass as archetype shrinks)
+                    if (loc.slot >= arch.Count)
+                        continue;
 
-                // CRITICAL FIX: Lookup may be stale due to previous destroys in this batch
-                // If slot is out of bounds, entity was already removed (skip it)
-                if (loc.slot >= arch.Count)
-                {
-                    // Stale lookup - entity already removed by a previous destroy in this batch
-                    // Clear the stale lookup and continue
+                    // Track which archetypes we're destroying from (only on first successful destroy)
+                    if (!archetypeCounts.ContainsKey(loc.archetypeIdx))
+                        archetypeCounts[loc.archetypeIdx] = 0;
+                    archetypeCounts[loc.archetypeIdx]++;
+
+                    // Valid slot and entity - destroy it!
+                    arch.RemoveAtSwap(loc.slot, entity);
+                    _freeHandles.Push(entity.Packed + VersionIncrement);
+                    _entityVersions[(int)entity.Index]++;
+                    _packedVersions[(int)entity.Index] += VersionIncrement;
                     ClearLookup(entity.Index);
-                    failedCount++;
-                    continue;
+                    _liveEntityCount--;
+                    destroyedCount++;
+                    destroyedThisPass++;
                 }
 
-                int archCountBefore = arch.Count;
-                arch.RemoveAtSwap(loc.slot, entity);
-                int archCountAfter = arch.Count;
+                remainingToDestroy -= destroyedThisPass;
 
-                if (archCountAfter != archCountBefore - 1)
+                // If we made no progress this pass, stop (shouldn't happen but safety check)
+                if (destroyedThisPass == 0)
                 {
-                    Logging.Log($"[EntityManager] ARCHETYPE COUNT DIDN'T DECREASE! Before={archCountBefore}, After={archCountAfter}, ArchIdx={loc.archetypeIdx}", LogSeverity.Error);
+                    Logging.Log($"[EntityManager] Multi-pass destroy stalled! Destroyed {destroyedCount}/{queuedCount}, {remainingToDestroy} entities still have lookups but couldn't be destroyed", LogSeverity.Error);
+                    break;
                 }
-
-                _freeHandles.Push(entity.Packed + VersionIncrement);
-                _entityVersions[(int)entity.Index]++;
-                _packedVersions[(int)entity.Index] += VersionIncrement;
-                ClearLookup(entity.Index);
-                _liveEntityCount--;
-                destroyedCount++;
             }
 
             if (archetypeCounts.Count > 0 && queuedCount > 1000)
@@ -381,13 +379,14 @@ namespace UltraSim.ECS
                 }
             }
 
-            if (failedCount > 0)
+            // Log results
+            if (destroyedCount != queuedCount)
             {
-                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Queued: {queuedCount}, Destroyed: {destroyedCount}, FAILED (no lookup): {failedCount}", LogSeverity.Warning);
+                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Queued: {queuedCount}, Destroyed: {destroyedCount}, Failed: {queuedCount - destroyedCount}, Passes: {passCount}", LogSeverity.Warning);
             }
             else if (queuedCount > 1000)
             {
-                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Successfully destroyed {destroyedCount} entities", LogSeverity.Info);
+                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Successfully destroyed {destroyedCount} entities in {passCount} pass(es)", LogSeverity.Info);
             }
 
             // PHASE 4: Fire EntityDestroyed event (entities destroyed, components removed)
