@@ -94,6 +94,9 @@ namespace UltraSim.ECS
             // Phase 2: Component Operations
             _components.ProcessQueues();
 
+            // Phase 2.5: Compact archetypes to remove dead slots before systems run
+            _archetypes.CompactAll();
+
 #if DEBUG
             _archetypes.ValidateAll();
 #endif

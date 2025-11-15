@@ -228,6 +228,22 @@ namespace UltraSim.ECS
 
         #endregion
 
+        #region Compaction
+
+        /// <summary>
+        /// Compacts all archetypes by removing dead slots.
+        /// Should be called after entity destruction to ensure systems see compact arrays.
+        /// </summary>
+        public void CompactAll()
+        {
+            foreach (var arch in _archetypes)
+            {
+                arch.Compact();
+            }
+        }
+
+        #endregion
+
         #region Validation
 
         /// <summary>
