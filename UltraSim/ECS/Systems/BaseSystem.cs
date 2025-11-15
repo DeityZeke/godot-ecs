@@ -72,6 +72,13 @@ namespace UltraSim.ECS.Systems
     /// </summary>
     public abstract class BaseSystem
     {
+        /// <summary>
+        /// DEPRECATED: Do NOT use cached queries - they cause zombie archetype bugs.
+        /// Use world.QueryArchetypes(...) directly in Update() instead.
+        /// Cached queries never get invalidated when entities are destroyed,
+        /// causing systems to iterate empty archetypes forever.
+        /// </summary>
+        [Obsolete("Cached queries cause zombie archetype bugs. Use world.QueryArchetypes(...) directly in Update() instead.")]
         protected IEnumerable<Archetype>? _cachedQuery;
 
         public abstract int SystemId { get; }

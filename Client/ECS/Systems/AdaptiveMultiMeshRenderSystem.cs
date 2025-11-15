@@ -96,8 +96,6 @@ namespace Client.ECS.Systems
         {
             GD.Print("[AdaptiveMultiMeshRenderSystem] Initializing with FPS-adaptive scaling.");
 
-            _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible));
-
             // ZERO-ALLOCATION: Pre-allocate to MaxCapacity to avoid resize GC
             _transforms = new Transform3D[MaxCapacity];
             fpsHistory = new float[FPSHistorySize];
@@ -290,8 +288,11 @@ namespace Client.ECS.Systems
         {
             int entityCount = 0;
 
+            // Query archetypes dynamically to avoid stale cached queries
+            var archetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible));
+
             // Count total entities
-            foreach (var arch in _cachedQuery!)
+            foreach (var arch in archetypes)
                 entityCount += arch.Count;
 
             // Adjust target if entity count increased (but respect performance limit)
@@ -353,7 +354,7 @@ namespace Client.ECS.Systems
             // ZERO-ALLOCATION: Update transforms in local array, then batch to GPU
 
             // Update only the current batch
-            foreach (var arch in _cachedQuery!)
+            foreach (var arch in archetypes)
             {
                 if (!arch.TryGetComponentSpan<Position>(out var posSpan))
                     continue;

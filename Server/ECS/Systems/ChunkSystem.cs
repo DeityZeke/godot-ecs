@@ -157,7 +157,6 @@ namespace UltraSim.Server.ECS.Systems
         public override void OnInitialize(World world)
         {
             _world = world;
-            _cachedQuery = world.QueryArchetypes(typeof(Position));
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
 
             // Subscribe to World's entity batch created event for initial chunk assignment
