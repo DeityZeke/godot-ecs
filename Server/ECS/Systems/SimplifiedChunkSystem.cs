@@ -130,6 +130,11 @@ namespace UltraSim.Server.ECS.Systems
                     archetype.HasComponent(ChunkOwnerTypeId))
                 {
                     var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+
+                    // SAFETY: Bounds check in case of concurrent modification
+                    if (slot >= owners.Length)
+                        continue;
+
                     var owner = owners[slot];
                     _chunkManager.StopTracking(entity.Packed, owner.Location);
                     fastPathRemoved++;
@@ -239,6 +244,11 @@ namespace UltraSim.Server.ECS.Systems
                     continue;
 
                 var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+
+                // SAFETY: Bounds check in case of stale lookup
+                if (slot >= owners.Length)
+                    continue;
+
                 var owner = owners[slot];
 
                 // Track entity in chunk
@@ -292,9 +302,17 @@ namespace UltraSim.Server.ECS.Systems
                 }
 
                 var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                var oldOwner = owners[slot];
-
                 var positions = archetype.GetComponentSpan<Position>(PosTypeId);
+
+                // SAFETY: Slot might be stale if entity was recently destroyed/swapped
+                // Archetype may have shrunk due to batch destruction, making old lookups invalid
+                if (slot >= owners.Length || slot >= positions.Length)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var oldOwner = owners[slot];
                 var position = positions[slot];
 
                 // Calculate new chunk location
