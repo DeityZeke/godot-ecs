@@ -51,7 +51,7 @@ namespace Client.ECS.Systems
     {
         #region Settings
 
-        public sealed class Settings : SettingsManager
+        public sealed class Settings : SystemSettings
         {
             public IntSetting NearBubbleSize { get; private set; }
             public IntSetting MidRenderDistance { get; private set; }
@@ -92,7 +92,7 @@ namespace Client.ECS.Systems
         }
 
         public Settings SystemSettings { get; } = new();
-        public override SettingsManager? GetSettings() => SystemSettings;
+        public override SystemSettings? GetSettings() => SystemSettings;
 
         #endregion
 

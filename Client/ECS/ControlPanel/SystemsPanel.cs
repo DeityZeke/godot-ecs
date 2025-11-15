@@ -22,7 +22,7 @@ namespace Client.ECS.ControlPanel
     {
         private World _world;
         private SystemManager? _systemManager;
-        private Dictionary<SettingsManager, SystemEntryUI> _systemEntries = new();
+        private Dictionary<SystemSettings, SystemEntryUI> _systemEntries = new();
         private bool _showTimings = false;
 
         private VBoxContainer? _systemsContainer;
@@ -324,7 +324,7 @@ namespace Client.ECS.ControlPanel
             vbox.AddChild(_settingsContainer);
 
             // Generate settings UI in a 4-column grid (label, control, label, control)
-            if (_system.GetSettings() is SettingsManager settings)
+            if (_system.GetSettings() is SystemSettings settings)
             {
                 var settingsGrid = new GridContainer { Columns = 4 };
                 settingsGrid.AddThemeConstantOverride("h_separation", 16);

@@ -26,7 +26,7 @@ namespace UltraSim.ECS.Systems
 
         #region Settings
 
-        public sealed class Settings : SettingsManager
+        public sealed class Settings : SystemSettings
         {
             public FloatSetting GlobalSpeedMultiplier { get; private set; }
             public BoolSetting FreezeMovement { get; private set; }
@@ -41,9 +41,9 @@ namespace UltraSim.ECS.Systems
             }
         }
 
-        // INTERNAL CLASS SETTINGS, NOT SETTINGSMANAGER GENERIC
+        // INTERNAL CLASS SETTINGS, NOT SystemSettings GENERIC
         public Settings SystemSettings { get; } = new();
-        public override SettingsManager? GetSettings() => SystemSettings;
+        public override SystemSettings? GetSettings() => SystemSettings;
         //public override ISetting? GetSettings() => SystemSettings;
 
         #endregion

@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 
 using UltraSim.ECS;
 using UltraSim.ECS.Systems;
+using UltraSim.IO;
 
 namespace UltraSim
 {
@@ -23,9 +24,9 @@ namespace UltraSim
         // --- World Lifecycle ---
         public static event Action<World>? WorldStarted;
         public static event Action<World>? WorldInitialized;
-        public static event Action<World>? WorldEntitiesSpawned;
         public static event Action<World>? WorldSystemsUpdated;
         public static event Action? WorldSave;
+        public static event Action<IIOProfile>? WorldSaveRequested;
         public static event Action? WorldSaved;
         public static event Action? WorldLoad;
         public static event Action? WorldLoaded;
@@ -68,9 +69,9 @@ namespace UltraSim
 
         public static void InvokeWorldStarted(World w) => WorldStarted?.Invoke(w);
         public static void InvokeWorldInitialized(World w) => WorldInitialized?.Invoke(w);
-        public static void InvokeWorldEntitiesSpawned(World w) => WorldEntitiesSpawned?.Invoke(w);
         public static void InvokeWorldSystemsUpdated(World w) => WorldSystemsUpdated?.Invoke(w);
         public static void InvokeWorldSave() => WorldSave?.Invoke();
+        public static void InvokeWorldSaveRequested(IIOProfile profile) => WorldSaveRequested?.Invoke(profile);
         public static void InvokeWorldSaved() => WorldSaved?.Invoke();
         public static void InvokeWorldLoad() => WorldLoad?.Invoke();
         public static void InvokeWorldLoaded() => WorldLoaded?.Invoke();

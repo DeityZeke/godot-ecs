@@ -24,7 +24,7 @@ namespace UltraSim.ECS.Systems
     {
         #region Settings
 
-        public sealed class Settings : SettingsManager
+        public sealed class Settings : SystemSettings
         {
             public BoolSetting FreezePulsing { get; private set; }
 
@@ -36,7 +36,7 @@ namespace UltraSim.ECS.Systems
         }
 
         public Settings SystemSettings { get; } = new();
-        public override SettingsManager? GetSettings() => SystemSettings;
+        public override SystemSettings? GetSettings() => SystemSettings;
 
         #endregion
 

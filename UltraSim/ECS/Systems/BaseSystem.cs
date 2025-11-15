@@ -121,7 +121,7 @@ namespace UltraSim.ECS.Systems
         /// Return null if your system has no settings.
         /// </summary>
         //public virtual BaseSettings? GetSettings() => null;
-        public virtual SettingsManager? GetSettings() => null;
+        public virtual SystemSettings? GetSettings() => null;
         
         //public virtual ISetting? GetSettings() => null;
 
@@ -131,7 +131,7 @@ namespace UltraSim.ECS.Systems
         public void SaveSettings()
         {
             //if (GetSettings() is not BaseSettings settings)
-            if (GetSettings() is not SettingsManager settings)
+            if (GetSettings() is not SystemSettings settings)
                 return;
 
             var config = new ConfigFile();
@@ -154,7 +154,7 @@ namespace UltraSim.ECS.Systems
         public void LoadSettings()
         {
             //if (GetSettings() is not BaseSettings settings)
-            if (GetSettings() is not SettingsManager settings)
+            if (GetSettings() is not SystemSettings settings)
                 return;
 
             var path = World.Paths.GetSystemSettingsPath(Name);

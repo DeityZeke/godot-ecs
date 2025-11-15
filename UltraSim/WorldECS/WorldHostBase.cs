@@ -6,6 +6,7 @@ using UltraSim;
 using UltraSim.ECS;
 using UltraSim.ECS.SIMD;
 using UltraSim.ECS.Systems;
+using UltraSim.IO;
 
 namespace UltraSim.WorldECS
 {
@@ -72,6 +73,7 @@ namespace UltraSim.WorldECS
 
             // Create RuntimeContext with environment capture
             Runtime = new RuntimeContext(HostInfo, RuntimeProfile);
+            Runtime.InvokeMethod("Configure");
 
             UltraSim.Logging.Host = this;
 
@@ -87,12 +89,10 @@ namespace UltraSim.WorldECS
 
             // Subscribe to world events via EventSink
             EventSink.WorldInitialized += HandleWorldInitialized;
+            EventSink.WorldSaveRequested += HandleWorldSaveRequested;
 
             // Register systems
             RegisterSystems();
-
-            // Enable auto-save
-            _world.EnableAutoSave(AutoSaveInterval);
 
             // Initialize world (processes system queues)
             _world.Initialize();
@@ -107,6 +107,9 @@ namespace UltraSim.WorldECS
 
         public override void _Process(double delta)
         {
+            if (_world == null)
+                return;
+
             UltraSim.Logging.DrainToHost();
 
             BeforeWorldTick(delta);
@@ -144,6 +147,7 @@ namespace UltraSim.WorldECS
         public override void _ExitTree()
         {
             EventSink.WorldInitialized -= HandleWorldInitialized;
+            EventSink.WorldSaveRequested -= HandleWorldSaveRequested;
             base._ExitTree();
         }
 
@@ -198,6 +202,14 @@ namespace UltraSim.WorldECS
                 return;
 
             GD.Print($"{HostPrefix} World initialized.");
+        }
+
+        private void HandleWorldSaveRequested(IIOProfile profile)
+        {
+            if (_world == null)
+                return;
+
+            _world.Save(profile);
         }
 
         private void HandleWorldFrameProgress()

@@ -52,14 +52,14 @@ namespace UltraSim
         {
             _Scratch.Clear();
 
-            foreach (var asm in Assemblies.AsSpan())
+            foreach (var asm in Assemblies)
             {
-                foreach (var type in asm.GetTypes().AsSpan())
+                foreach (var type in asm.GetTypes())
                 {
                     if (!IsNamespaceAllowed(type))
                         continue;
 
-                    foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic).AsSpan())
+                    foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                     {
                         if (!method.Name.Equals(name, StringComparison.Ordinal))
                             continue;
@@ -75,7 +75,7 @@ namespace UltraSim
 
             _Scratch.Sort(new CallPriorityComparer());
 
-            foreach (var method in CollectionsMarshal.AsSpan(_Scratch))
+            foreach (var method in _Scratch)
             {
                 try { method.Invoke(null, null); }
                 catch (Exception ex)
@@ -89,7 +89,7 @@ namespace UltraSim
         {
             _Scratch.Clear();
 
-            foreach (var asm in Assemblies.AsSpan())
+            foreach (var asm in Assemblies)
             {
                 Type[] types;
                 try { types = asm.GetTypes(); }
@@ -98,12 +98,12 @@ namespace UltraSim
                     types = e.Types!;
                 }
 
-                foreach (var type in types.AsSpan())
+                foreach (var type in types)
                 {
                     if (type == null || !IsNamespaceAllowed(type))
                         continue;
 
-                    foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic).AsSpan())
+                    foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                     {
                         if (method.GetCustomAttribute<T>() == null)
                             continue;
@@ -119,7 +119,7 @@ namespace UltraSim
 
             _Scratch.Sort(new CallPriorityComparer());
 
-            foreach (var method in CollectionsMarshal.AsSpan(_Scratch))
+            foreach (var method in _Scratch)
             {
                 try { method.Invoke(null, null); }
                 catch (Exception ex)

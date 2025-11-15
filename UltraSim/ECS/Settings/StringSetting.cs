@@ -1,6 +1,6 @@
 
 using System;
-
+using System.Collections.Generic;
 using UltraSim.Configuration;
 
 namespace UltraSim.ECS.Settings
@@ -51,6 +51,45 @@ namespace UltraSim.ECS.Settings
         public override void Deserialize(ConfigFile config, string section)
         {
             Value = config.GetValue(section, Name, Value);
+        }
+    }
+
+    public interface IChoiceSetting
+    {
+        IReadOnlyList<string> GetOptions();
+    }
+
+    public sealed class ChoiceStringSetting : StringSetting, IChoiceSetting
+    {
+        private readonly Func<IReadOnlyList<string>> _optionsProvider;
+
+        public ChoiceStringSetting(string name, string value, string toolTip, Func<IReadOnlyList<string>> optionsProvider)
+            : base(name, value, toolTip)
+        {
+            _optionsProvider = optionsProvider ?? throw new ArgumentNullException(nameof(optionsProvider));
+        }
+
+        public IReadOnlyList<string> GetOptions()
+        {
+            var options = _optionsProvider.Invoke();
+            if (options == null || options.Count == 0)
+                return Array.Empty<string>();
+            return options;
+        }
+
+        public void EnsureValidSelection()
+        {
+            var options = GetOptions();
+            if (options.Count == 0)
+                return;
+
+            foreach (var option in options)
+            {
+                if (string.Equals(option, Value, StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+
+            Value = options[0];
         }
     }
 }

@@ -10,7 +10,7 @@ using UltraSim;
 
 namespace UltraSim.ECS.Settings
 {
-    public class SettingsManager
+    public class SystemSettings
     {
         private Dictionary<string, ISetting> _settings = new(32);
         private ISetting[]? _cachedSettingsArray;
@@ -65,6 +65,15 @@ namespace UltraSim.ECS.Settings
             int maxLength = 100, string tooltip = "")
         {
             var setting = new StringSetting(name, defaultValue, maxLength, tooltip);
+            Register(setting);
+            return setting;
+        }
+
+        protected ChoiceStringSetting RegisterChoice(string name, string defaultValue,
+            Func<IReadOnlyList<string>> optionsProvider, string tooltip = "")
+        {
+            var setting = new ChoiceStringSetting(name, defaultValue, tooltip, optionsProvider);
+            setting.EnsureValidSelection();
             Register(setting);
             return setting;
         }

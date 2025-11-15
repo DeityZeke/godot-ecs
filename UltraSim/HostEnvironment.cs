@@ -31,10 +31,10 @@ namespace UltraSim
         public string OSDescription { get; init; } = "";
         public Architecture OSArchitecture { get; init; }
         public long ProcessMemoryMB { get; init; }
+        public Func<long>? ProcessMemoryProvider { get; init; }
 
         public static HostEnvironment Capture()
         {
-            var process = Process.GetCurrentProcess();
 #if DEBUG || USE_DEBUG
             const bool debugBuild = true;
 #else
@@ -43,6 +43,7 @@ namespace UltraSim
 
             var totalMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1024 * 1024);
             var availableMemory = GC.GetTotalMemory(false) / (1024 * 1024);
+            var workingSetMb = GetDefaultProcessMemoryMB();
 
             return new HostEnvironment
             {
@@ -64,7 +65,8 @@ namespace UltraSim
                 IsDebugBuild = debugBuild,
                 OSDescription = RuntimeInformation.OSDescription,
                 OSArchitecture = RuntimeInformation.OSArchitecture,
-                ProcessMemoryMB = process.WorkingSet64 / (1024 * 1024)
+                ProcessMemoryMB = workingSetMb,
+                ProcessMemoryProvider = GetDefaultProcessMemoryMB
             };
         }
 
@@ -93,6 +95,36 @@ namespace UltraSim
             if (System.Runtime.Intrinsics.X86.Sse2.IsSupported) return SimdSupport.SSE2;
             if (System.Runtime.Intrinsics.X86.Sse.IsSupported) return SimdSupport.SSE;
             return SimdSupport.Scalar;
+        }
+
+        public static long GetDefaultProcessMemoryMB()
+        {
+            try
+            {
+                using var process = Process.GetCurrentProcess();
+                return process.WorkingSet64 / (1024 * 1024);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        public long GetProcessMemoryMB()
+        {
+            if (ProcessMemoryProvider != null)
+            {
+                try
+                {
+                    return ProcessMemoryProvider();
+                }
+                catch
+                {
+                    // Ignore provider failures and fall back to snapshot
+                }
+            }
+
+            return ProcessMemoryMB;
         }
     }
 

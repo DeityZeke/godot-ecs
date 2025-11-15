@@ -25,7 +25,7 @@ namespace UltraSim.Server.ECS.Systems
     {
         #region Settings
 
-        public sealed class Settings : SettingsManager
+        public sealed class Settings : SystemSettings
         {
             public BoolSetting UseDirtyAssignmentQueue { get; private set; }
             public BoolSetting EnableParallelAssignments { get; private set; }
@@ -106,7 +106,7 @@ namespace UltraSim.Server.ECS.Systems
         }
 
         public Settings SystemSettings { get; } = new();
-        public override SettingsManager? GetSettings() => SystemSettings;
+        public override SystemSettings? GetSettings() => SystemSettings;
 
         #endregion
 

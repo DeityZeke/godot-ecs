@@ -178,7 +178,7 @@ namespace UltraSim.ECS
             {
                 try
                 {
-                    _world.RemoveComponentFromEntityInternal(op.Entity, op.ComponentTypeId);
+                    ApplyComponentRemoval(op);
                 }
                 catch (Exception ex)
                 {
@@ -191,7 +191,7 @@ namespace UltraSim.ECS
             {
                 try
                 {
-                    _world.AddComponentToEntityInternal(op.Entity, op.ComponentTypeId, op.BoxedValue);
+                    ApplyComponentAddition(op);
                 }
                 catch (Exception ex)
                 {
@@ -266,6 +266,55 @@ namespace UltraSim.ECS
 
             public static ComponentAddOp Create(Entity entity, int componentTypeId, object boxedValue) =>
                 new(entity.Packed, componentTypeId, boxedValue);
+        }
+
+        private void ApplyComponentRemoval(ComponentRemoveOp op)
+        {
+            var entity = op.Entity;
+            if (!_world.IsEntityValid(entity))
+                return;
+
+            if (!_world.TryGetEntityLocation(entity, out var sourceArch, out var slot))
+                return;
+
+            if (!sourceArch.TryGetEntityAtSlot(slot, out var occupant) || occupant.Packed != entity.Packed)
+            {
+                slot = sourceArch.FindEntitySlot(entity);
+                if (slot < 0 || slot >= sourceArch.Count)
+                    return;
+            }
+
+            if (!sourceArch.HasComponent(op.ComponentTypeId))
+                return;
+
+            var newSig = sourceArch.Signature.Remove(op.ComponentTypeId);
+            var targetArch = _world.GetOrCreateArchetypeInternal(newSig);
+
+            sourceArch.MoveEntityTo(slot, targetArch);
+            _world.UpdateEntityLookup(entity.Index, targetArch, targetArch.Count - 1);
+        }
+
+        private void ApplyComponentAddition(ComponentAddOp op)
+        {
+            var entity = op.Entity;
+            if (!_world.IsEntityValid(entity))
+                return;
+
+            if (!_world.TryGetEntityLocation(entity, out var sourceArch, out var slot))
+                return;
+
+            if (!sourceArch.TryGetEntityAtSlot(slot, out var occupant) || occupant.Packed != entity.Packed)
+            {
+                slot = sourceArch.FindEntitySlot(entity);
+                if (slot < 0 || slot >= sourceArch.Count)
+                    return;
+            }
+
+            var newSig = sourceArch.Signature.Add(op.ComponentTypeId);
+            var targetArch = _world.GetOrCreateArchetypeInternal(newSig);
+
+            sourceArch.MoveEntityTo(slot, targetArch, op.BoxedValue);
+            _world.UpdateEntityLookup(entity.Index, targetArch, targetArch.Count - 1);
         }
 
         #endregion

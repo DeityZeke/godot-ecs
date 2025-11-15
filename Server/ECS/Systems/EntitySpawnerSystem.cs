@@ -25,7 +25,7 @@ namespace UltraSim.ECS.Systems
             Random
         }
 
-        public sealed class Settings : SettingsManager
+        public sealed class Settings : SystemSettings
         {
             public FloatSetting SpawnRadius { get; private set; }
             public FloatSetting MinSpeed { get; private set; }
@@ -65,8 +65,6 @@ namespace UltraSim.ECS.Systems
                 SpawnVisuals = RegisterEnum("Spawn Visual Mode", SpawnVisualMode.DynamicOnly,
                     tooltip: "Dynamic = mesh instances (sphere), Static = MultiMesh cubes, Random = mix per entity");
 
-                RegisterString("", ""); // Spacer
-
                 Spawn100 = RegisterButton("Spawn 100 Entities",
                     tooltip: "Spawn 100 entities with current settings");
 
@@ -81,8 +79,6 @@ namespace UltraSim.ECS.Systems
 
                 Spawn1000000 = RegisterButton("Spawn 1,000,000 Entities",
                     tooltip: "Spawn 1,000,000 entities with current settings");
-
-                RegisterString("", ""); // Spacer
 
                 ClearAll = RegisterButton("Clear All Entities",
                     tooltip: "Destroy all entities in the world");
@@ -102,7 +98,7 @@ namespace UltraSim.ECS.Systems
         }
 
         public Settings SystemSettings { get; } = new();
-        public override SettingsManager? GetSettings() => SystemSettings;
+        public override SystemSettings? GetSettings() => SystemSettings;
 
         #endregion
 
@@ -353,15 +349,17 @@ namespace UltraSim.ECS.Systems
                 allEntities.AddRange(archetype.GetEntityArray());
             }
 
-            // Destroy half randomly
-            int halfCount = allEntities.Count / 2;
+            // Destroy half randomly (Fisher-Yates partial shuffle to avoid O(n^2) removes)
+            int total = allEntities.Count;
+            int halfCount = total / 2;
             var random = new System.Random();
 
             for (int i = 0; i < halfCount; i++)
             {
-                int randomIndex = random.Next(allEntities.Count);
-                _world.EnqueueDestroyEntity(allEntities[randomIndex]);
-                allEntities.RemoveAt(randomIndex);
+                int swapIndex = random.Next(i, total);
+                // Bring chosen entity to the front range [0, halfCount)
+                (allEntities[i], allEntities[swapIndex]) = (allEntities[swapIndex], allEntities[i]);
+                _world.EnqueueDestroyEntity(allEntities[i]);
             }
 
             sw.Stop();

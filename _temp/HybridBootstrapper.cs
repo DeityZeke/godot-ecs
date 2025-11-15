@@ -51,7 +51,7 @@ public partial class HybridBootstrapper : WorldHostBase
             GpuName = RenderingServer.GetVideoAdapterName(),
             GpuVendor = RenderingServer.GetVideoAdapterVendor(),
             TotalVramMB = (long)(RenderingServer.GetRenderingInfo(RenderingServer.RenderingInfo.VideoMemUsed) / 1024 / 1024),
-            GraphicsAPI = $"Vulkan {RenderingServer.GetVideoAdapterApiVersion()}",
+            GraphicsAPI = $"Vulkan {RenderingServer.GetVideoAdapterApiVersion()}"
         };
     }
 
@@ -107,26 +107,29 @@ public partial class HybridBootstrapper : WorldHostBase
         }
     }
 
-    private void RegisterServerSystems(World world)
-    {
-        if (EnableChunkSystems)
+        private void RegisterServerSystems(World world)
         {
-            world.EnqueueSystemCreate<SimplifiedChunkSystem>();
-            world.EnqueueSystemEnable<SimplifiedChunkSystem>();
+            if (EnableChunkSystems)
+            {
+                world.EnqueueSystemCreate<SimplifiedChunkSystem>();
+                world.EnqueueSystemEnable<SimplifiedChunkSystem>();
+            }
+
+            world.EnqueueSystemCreate<EntitySpawnerSystem>();
+            world.EnqueueSystemEnable<EntitySpawnerSystem>();
+
+            world.EnqueueSystemCreate<OptimizedMovementSystem>();
+            world.EnqueueSystemEnable<OptimizedMovementSystem>();
+
+            if (EnablePulsingMovement)
+            {
+                world.EnqueueSystemCreate<OptimizedPulsingMovementSystem>();
+                world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
+            }
+
+            world.EnqueueSystemCreate<SaveSystem>();
+            world.EnqueueSystemEnable<SaveSystem>();
         }
-
-        world.EnqueueSystemCreate<EntitySpawnerSystem>();
-        world.EnqueueSystemEnable<EntitySpawnerSystem>();
-
-        world.EnqueueSystemCreate<OptimizedMovementSystem>();
-        world.EnqueueSystemEnable<OptimizedMovementSystem>();
-
-        if (EnablePulsingMovement)
-        {
-            world.EnqueueSystemCreate<OptimizedPulsingMovementSystem>();
-            world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
-        }
-    }
 
     private void RegisterClientSystems(World world)
     {

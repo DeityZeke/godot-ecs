@@ -26,8 +26,6 @@ namespace Client.ECS.ControlPanel
         private Label? _tickRateDataLabel;
         private Label? _nextSaveDataLabel;
         private Label? _memUsageDataLabel;
-        private SpinBox? _saveRateSpinBox;
-        private CheckBox? _autoSaveCheckBox;
 
         // === THROTTLED UPDATE SYSTEM ===
         private float _updateTimer = 0f;
@@ -87,30 +85,6 @@ namespace Client.ECS.ControlPanel
             AddContainerLabel(rightGrid, "Next Save:");
             _nextSaveDataLabel = AddContainerLabel(rightGrid, "N/A", hAlign: HorizontalAlignment.Right);
 
-            AddContainerLabel(rightGrid, "Auto Save:");
-            var autoSaveContainer = CreateHBox();
-            _autoSaveCheckBox = CreateCheckBox(onToggled: OnAutoSaveToggled);
-            _autoSaveCheckBox.FocusMode = FocusModeEnum.None;
-            autoSaveContainer.AddChild(_autoSaveCheckBox);
-
-            AddContainerLabel(autoSaveContainer, "Rate:", vAlign: VerticalAlignment.Center);
-
-            _saveRateSpinBox = new SpinBox
-            {
-                MinValue = 1f,
-                MaxValue = 600f,
-                Step = 1f,
-                Value = _world.AutoSaveInterval,
-                CustomMinimumSize = new Vector2(100, 0),
-                TooltipText = "Auto-save interval in seconds (1-600s)",
-                SizeFlagsVertical = SizeFlags.ShrinkCenter
-            };
-            _saveRateSpinBox.GetLineEdit().AddThemeConstantOverride("minimum_character_width", 0);
-            _saveRateSpinBox.ValueChanged += OnSaveRateChanged;
-            autoSaveContainer.AddChild(_saveRateSpinBox);
-
-            rightGrid.AddChild(autoSaveContainer);
-
             return mainHBox;
         }
 
@@ -133,7 +107,8 @@ public void Update(double delta)
         // Calculate both frame time (full Godot process) and tick rate (ECS simulation only)
         float frameTimeMs = avgDelta * 1000f;  // Full Godot frame time
         float ecsTickTimeMs = (float)_world.LastTickTimeMs; // ECS simulation only
-        ulong memoryMB = OS.GetStaticMemoryUsage() / (1024u * 1024u);
+        var hostEnv = _world.Host.Runtime.Environment;
+        long memoryMB = hostEnv.GetProcessMemoryMB();
 
         // UPDATE UI — TRUTH ONLY (cache counts to avoid multiple property accesses)
         int entityCount = _world.EntityCount;
@@ -147,12 +122,6 @@ public void Update(double delta)
         _tickRateDataLabel!.Text = ecsTickTimeMs.ToString("F3") + "ms";
 
         // Update SpinBox only if value changed (avoid feedback loop)
-        float autoSaveInterval = _world.AutoSaveInterval;
-        if (Math.Abs((float)_saveRateSpinBox!.Value - autoSaveInterval) > 0.01f)
-            _saveRateSpinBox.Value = autoSaveInterval;
-
-        _autoSaveCheckBox!.SetPressedNoSignal(_world.AutoSaveEnabled);
-
         // Update Last Save time
         var lastSaveTime = _world.LastSaveTime;
         if (lastSaveTime.HasValue)
@@ -189,23 +158,5 @@ public void Update(double delta)
         public void OnShow() { }
         public void OnHide() { }
 
-        private void OnAutoSaveToggled(bool enabled)
-        {
-            if (enabled)
-                _world.EnableAutoSave(_world.AutoSaveInterval);
-            else
-                _world.DisableAutoSave();
-
-            Logging.Log($"Auto-save {(enabled ? "enabled" : "disabled")}");
-        }
-
-        private void OnSaveRateChanged(double value)
-        {
-            float newInterval = (float)value;
-            _world.SetAutoSaveInterval(newInterval);
-            Logging.Log($"Auto-save interval changed to {newInterval:F0}s");
-        }
     }
 }
-
-

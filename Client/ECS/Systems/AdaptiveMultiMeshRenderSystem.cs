@@ -23,20 +23,11 @@ namespace Client.ECS.Systems
     {
         #region Settings
 
-        public sealed class Settings : SettingsManager
-        {
-            public StringSetting EmptySetting { get; private set; }
+        public sealed class Settings : SystemSettings { }
 
-            public Settings()
-            {
-                EmptySetting = RegisterString("", "",
-                    tooltip: "");
-            }
-        }
-
-        // INTERNAL CLASS SETTINGS, NOT SETTINGSMANAGER GENERIC
+        // INTERNAL CLASS SETTINGS, NOT SystemSettings GENERIC
         public Settings SystemSettings { get; } = new();
-        public override SettingsManager? GetSettings() => SystemSettings;
+        public override SystemSettings? GetSettings() => SystemSettings;
         //public override ISetting? GetSettings() => SystemSettings;
 
         #endregion

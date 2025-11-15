@@ -37,7 +37,7 @@ namespace Client
                 GpuName = RenderingServer.GetVideoAdapterName(),
                 GpuVendor = RenderingServer.GetVideoAdapterVendor(),
                 TotalVramMB = (long)(RenderingServer.GetRenderingInfo(RenderingServer.RenderingInfo.VideoMemUsed) / 1024 / 1024),
-                GraphicsAPI = $"Vulkan {RenderingServer.GetVideoAdapterApiVersion()}",
+                GraphicsAPI = $"Vulkan {RenderingServer.GetVideoAdapterApiVersion()}"
             };
         }
 
@@ -95,6 +95,9 @@ namespace Client
 
             world.EnqueueSystemCreate<BillboardEntityRenderSystem>();
             world.EnqueueSystemEnable<BillboardEntityRenderSystem>();
+
+            world.EnqueueSystemCreate<SaveSystem>();
+            world.EnqueueSystemEnable<SaveSystem>();
         }
 
         protected override void OnWorldFrameProgress(int frameIndex)

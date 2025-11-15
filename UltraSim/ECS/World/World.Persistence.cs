@@ -30,8 +30,7 @@ namespace UltraSim.ECS
         #region Paths
 
         /// <summary>
-        /// Path management for save files.
-        /// Uses PathManager for engine-independent path resolution.
+        /// Legacy path helpers for system settings/state files.
         /// </summary>
         public static class Paths
         {
@@ -75,11 +74,9 @@ namespace UltraSim.ECS
         #region Save
 
         /// <summary>
-        /// Saves the entire world state to a file.
-        /// Coordinates saves across all managers.
+        /// Saves the world using the specified IO profile.
         /// </summary>
-        /// <param name="filename">Filename relative to World save directory (e.g., "quicksave.sav")</param>
-        public void Save(string filename = "world.sav")
+        public void Save(IIOProfile profile, string name = "world")
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             
@@ -88,8 +85,13 @@ namespace UltraSim.ECS
             try
             {
                 Paths.EnsureDirectoriesExist();
-                
-                var savePath = Path.Combine(Paths.WorldDir, filename);
+
+                var worldDir = Path.Combine(profile.BasePath, "World");
+                Directory.CreateDirectory(worldDir);
+
+                var savePath = profile.GetFullPath(Path.Combine("World", name));
+                profile.EnsureDirectory(savePath);
+
                 var config = new ConfigFile();
 
                 // Save World's own state
@@ -125,6 +127,17 @@ namespace UltraSim.ECS
                 Logging.Log($"[World] âŒ Save failed with exception: {ex.Message}", LogSeverity.Error);
                 Logging.Log(ex.StackTrace ?? "(no stack trace)", LogSeverity.Error);
             }
+        }
+
+        /// <summary>
+        /// Saves the world using the host-provided IO profile.
+        /// </summary>
+        /// <param name="filename">Legacy filename (extension optional)</param>
+        public void Save(string filename = "world.sav")
+        {
+            var profile = GetIOProfile();
+            var name = Path.GetFileNameWithoutExtension(filename);
+            Save(profile, string.IsNullOrWhiteSpace(name) ? "world" : name);
         }
 
         /// <summary>
@@ -178,7 +191,10 @@ namespace UltraSim.ECS
             
             try
             {
-                var loadPath = Path.Combine(Paths.WorldDir, filename);
+                var profile = GetIOProfile();
+                var worldDir = Path.Combine(profile.BasePath, "World");
+                Directory.CreateDirectory(worldDir);
+                var loadPath = profile.GetFullPath(Path.Combine("World", Path.GetFileNameWithoutExtension(filename)));
                 
                 if (!File.Exists(loadPath))
                 {

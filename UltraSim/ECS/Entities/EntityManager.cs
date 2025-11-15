@@ -540,7 +540,7 @@ namespace UltraSim.ECS
 
             if (trackForEvent && _createdEntitiesCache.Count > 0)
             {
-                _world.FireEntityBatchCreated(_createdEntitiesCache);
+                EventSink.InvokeEntityBatchCreated(new EntityBatchCreatedEventArgs(_createdEntitiesCache));
             }
         }
 
@@ -598,7 +598,7 @@ namespace UltraSim.ECS
                 // Fire zero-allocation event: Passes List directly without ToArray()
                 if (_createdEntitiesCache.Count > 0)
                 {
-                    _world.FireEntityBatchCreated(_createdEntitiesCache);
+                    EventSink.InvokeEntityBatchCreated(new EntityBatchCreatedEventArgs(_createdEntitiesCache));
                 }
             }
         }

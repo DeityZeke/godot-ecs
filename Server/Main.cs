@@ -54,6 +54,9 @@ namespace Server
 
             world.EnqueueSystemCreate<OptimizedPulsingMovementSystem>();
             world.EnqueueSystemEnable<OptimizedPulsingMovementSystem>();
+
+            world.EnqueueSystemCreate<SaveSystem>();
+            world.EnqueueSystemEnable<SaveSystem>();
         }
     }
 }
