@@ -66,7 +66,6 @@ namespace UltraSim.ECS.Systems
 
         public override void OnInitialize(World world)
         {
-            _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(Velocity));
             var chunkSystem = world.Systems.GetSystem<SimplifiedChunkSystem>() as SimplifiedChunkSystem;
             _chunkManager = chunkSystem?.GetChunkManager();
 
@@ -91,7 +90,10 @@ namespace UltraSim.ECS.Systems
             if (speedMultiplier <= 0.0f)
                 return;
 
-            foreach (var arch in _cachedQuery!)
+            // Query archetypes dynamically each frame to avoid stale cached queries
+            var archetypes = world.QueryArchetypes(typeof(Position), typeof(Velocity));
+
+            foreach (var arch in archetypes)
             {
                 if (arch.Count == 0) continue;
 
@@ -114,6 +116,8 @@ namespace UltraSim.ECS.Systems
 
                 int count = Math.Min(posList.Count, velList.Count);
                 int numChunks = (count + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+                Logging.Log($"[OptimizedMovementSystem] Processing archetype: arch.Count={arch.Count}, posList.Count={posList.Count}, velList.Count={velList.Count}, calculated count={count}");
 
                 float adjustedDelta = (float)delta * speedMultiplier;
 
@@ -146,6 +150,9 @@ namespace UltraSim.ECS.Systems
 
                     for (int i = 0; i < count; i++)
                     {
+                        if (!world.IsEntityValid(entities[i]))
+                            continue;
+
                         ref readonly var owner = ref owners[i];
                         ref readonly var pos = ref posSpan[i];
 

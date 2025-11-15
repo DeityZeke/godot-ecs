@@ -58,7 +58,6 @@ namespace UltraSim.ECS.Systems
 
         public override void OnInitialize(World world)
         {
-            _cachedQuery = world.QueryArchetypes(typeof(Position), typeof(Velocity), typeof(PulseData));
             var chunkSystem = world.Systems.GetSystem<ChunkSystem>() as ChunkSystem;
             _chunkManager = chunkSystem?.GetChunkManager();
 #if USE_DEBUG
@@ -73,7 +72,10 @@ namespace UltraSim.ECS.Systems
 
             float deltaF = (float)delta;
 
-            foreach (var arch in _cachedQuery!)
+            // Query archetypes dynamically each frame to avoid stale cached queries
+            var archetypes = world.QueryArchetypes(typeof(Position), typeof(Velocity), typeof(PulseData));
+
+            foreach (var arch in archetypes)
             {
                 if (arch.Count == 0) continue;
                 if (arch.HasComponent(StaticRenderId))

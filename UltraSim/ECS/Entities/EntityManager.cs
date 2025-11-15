@@ -163,11 +163,13 @@ namespace UltraSim.ECS
         public void Destroy(Entity entity)
         {
             if (!TryGetLookup(entity.Index, out var loc))
+            {
+                Logging.Log($"Destroy failed: entity {entity} has no lookup", LogSeverity.Warning);
                 return;
+            }
 
             var arch = _archetypes.GetArchetype(loc.archetypeIdx);
-            
-            arch.RemoveAtSwap(loc.slot);
+            arch.RemoveAtSwap(loc.slot, entity);
             _freeHandles.Push(entity.Packed + VersionIncrement);
             _entityVersions[(int)entity.Index]++;
             _packedVersions[(int)entity.Index] += VersionIncrement;
@@ -258,6 +260,27 @@ namespace UltraSim.ECS
         }
 
         /// <summary>
+        /// Clears all pending entity creation queues.
+        /// Use this when you want to cancel all pending entity creations (e.g., when clearing the world).
+        /// </summary>
+        public void ClearCreationQueues()
+        {
+            int builderQueueCleared = 0;
+            int createQueueCleared = 0;
+
+            while (_createWithBuilderQueue.TryDequeue(out _))
+                builderQueueCleared++;
+
+            while (_createQueue.TryDequeue(out _))
+                createQueueCleared++;
+
+            if (builderQueueCleared > 0 || createQueueCleared > 0)
+            {
+                Logging.Log($"[EntityManager.ClearCreationQueues] Cleared {builderQueueCleared} builders and {createQueueCleared} simple creates from creation queues", LogSeverity.Info);
+            }
+        }
+
+        /// <summary>
         /// Processes all queued entity operations.
         /// Called during World.Tick() pipeline.
         /// </summary>
@@ -274,22 +297,105 @@ namespace UltraSim.ECS
 
         /// <summary>
         /// Processes queued entity destructions and fires batch events.
+        /// Fires EntityDestroyRequest BEFORE destruction (components accessible),
+        /// then fires EntityDestroyed AFTER destruction (components removed).
         /// </summary>
         private void ProcessEntityDestructionQueue()
         {
             _destroyedEntitiesCache.Clear();
 
+            // PHASE 1: Collect all entities to be destroyed (don't destroy yet!)
             while (_destroyQueue.TryDequeue(out var idx))
             {
                 var entity = CreateEntityHandle(idx);
                 _destroyedEntitiesCache.Add(entity);
-                Destroy(entity);
             }
 
-            // Fire EntityBatchDestroyed event if any entities were destroyed
+            int queuedCount = _destroyedEntitiesCache.Count;
+
+            // PHASE 2: Fire EntityDestroyRequest event (entities still alive, components accessible)
             if (_destroyedEntitiesCache.Count > 0)
             {
-                _world.FireEntityBatchDestroyed(_destroyedEntitiesCache);
+                var args = new EntityBatchDestroyRequestEventArgs(_destroyedEntitiesCache);
+                EventSink.InvokeEntityBatchDestroyRequest(args);
+            }
+
+            // PHASE 3: Actually destroy the entities
+            // Use multi-pass approach to handle stale lookups from swap-and-pop operations
+            int destroyedCount = 0;
+            int passCount = 0;
+            int remainingToDestroy = queuedCount;
+            var archetypeCounts = new Dictionary<int, int>();
+
+            while (remainingToDestroy > 0 && passCount < 100)  // Safety limit to prevent infinite loop
+            {
+                passCount++;
+                int destroyedThisPass = 0;
+
+                foreach (var entity in _destroyedEntitiesCache)
+                {
+                    // Skip if already destroyed (no lookup)
+                    if (!TryGetLookup(entity.Index, out var loc))
+                        continue;
+
+                    // Get archetype and check if slot is valid
+                    var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+
+                    // Skip if lookup is out of bounds (will be valid in next pass as archetype shrinks)
+                    if (loc.slot >= arch.Count)
+                        continue;
+
+                    // Try to destroy - RemoveAtSwap returns false if entity mismatch or other failure
+                    if (!arch.RemoveAtSwap(loc.slot, entity))
+                        continue;  // Failed (mismatch or bounds), will retry next pass
+
+                    // Removal succeeded - track archetype and do cleanup
+                    if (!archetypeCounts.ContainsKey(loc.archetypeIdx))
+                        archetypeCounts[loc.archetypeIdx] = 0;
+                    archetypeCounts[loc.archetypeIdx]++;
+
+                    _freeHandles.Push(entity.Packed + VersionIncrement);
+                    _entityVersions[(int)entity.Index]++;
+                    _packedVersions[(int)entity.Index] += VersionIncrement;
+                    ClearLookup(entity.Index);
+                    _liveEntityCount--;
+                    destroyedCount++;
+                    destroyedThisPass++;
+                }
+
+                remainingToDestroy -= destroyedThisPass;
+
+                // If we made no progress this pass, stop (shouldn't happen but safety check)
+                if (destroyedThisPass == 0)
+                {
+                    Logging.Log($"[EntityManager] Multi-pass destroy stalled! Destroyed {destroyedCount}/{queuedCount}, {remainingToDestroy} entities still have lookups but couldn't be destroyed", LogSeverity.Error);
+                    break;
+                }
+            }
+
+            if (archetypeCounts.Count > 0 && queuedCount > 1000)
+            {
+                foreach (var kvp in archetypeCounts)
+                {
+                    Logging.Log($"[EntityManager] Destroyed {kvp.Value} entities from archetype {kvp.Key}", LogSeverity.Info);
+                }
+            }
+
+            // Log results
+            if (destroyedCount != queuedCount)
+            {
+                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Queued: {queuedCount}, Destroyed: {destroyedCount}, Failed: {queuedCount - destroyedCount}, Passes: {passCount}", LogSeverity.Warning);
+            }
+            else if (queuedCount > 1000)
+            {
+                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Successfully destroyed {destroyedCount} entities in {passCount} pass(es)", LogSeverity.Info);
+            }
+
+            // PHASE 4: Fire EntityDestroyed event (entities destroyed, components removed)
+            if (_destroyedEntitiesCache.Count > 0)
+            {
+                var args = new EntityBatchDestroyedEventArgs(_destroyedEntitiesCache);
+                EventSink.InvokeEntityBatchDestroyed(args);
             }
         }
 

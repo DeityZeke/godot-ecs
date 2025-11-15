@@ -13,7 +13,6 @@ using UltraSim.ECS.Chunk;
 using UltraSim.ECS.Components;
 using UltraSim.ECS.Settings;
 using UltraSim.ECS.Systems;
-using UltraSim.ECS.Events;
 
 namespace UltraSim.Server.ECS.Systems
 {
@@ -158,7 +157,6 @@ namespace UltraSim.Server.ECS.Systems
         public override void OnInitialize(World world)
         {
             _world = world;
-            _cachedQuery = world.QueryArchetypes(typeof(Position));
             _chunkManager = new ChunkManager(chunkSizeXZ: 64, chunkSizeY: 32);
 
             // Subscribe to World's entity batch created event for initial chunk assignment

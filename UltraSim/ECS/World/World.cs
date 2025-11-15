@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 
 using UltraSim;
 using UltraSim.ECS.Systems;
-using UltraSim.ECS.Events;
 
 namespace UltraSim.ECS
 {
@@ -95,6 +94,9 @@ namespace UltraSim.ECS
             // Phase 2: Component Operations
             _components.ProcessQueues();
 
+            // Phase 2.5: Compact archetypes to remove dead slots before systems run
+            _archetypes.CompactAll();
+
 #if DEBUG
             _archetypes.ValidateAll();
 #endif
@@ -171,6 +173,13 @@ namespace UltraSim.ECS
         /// </example>
         public void EnqueueCreateEntity(EntityBuilder builder) =>
             _entities.EnqueueCreate(builder);
+
+        /// <summary>
+        /// Clears all pending entity creation queues.
+        /// Use this when clearing the world to prevent zombie entities from pending creations.
+        /// </summary>
+        public void ClearEntityCreationQueues() =>
+            _entities.ClearCreationQueues();
 
         // System enqueue APIs - delegate to SystemManager
         public void EnqueueSystemCreate<T>() where T : BaseSystem => _systems.EnqueueRegister<T>();

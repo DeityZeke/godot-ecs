@@ -7,7 +7,6 @@ using System.Linq;
 using Godot;
 using UltraSim;
 using UltraSim.ECS;
-using UltraSim.ECS.Events;
 using UltraSim.ECS.Components;
 using UltraSim.WorldECS;
 

@@ -13,6 +13,8 @@ namespace UltraSim.ECS
 
     public sealed class Archetype
     {
+        private World _world;
+
         // parallel arrays for compact storage and cache locality
         private int[] _typeIds;
         private IComponentList[] _lists;
@@ -27,12 +29,15 @@ namespace UltraSim.ECS
         private const int DefaultEntityCapacity = 1024;
 
         public ComponentSignature Signature { get; }
+
         public int Count => _entities.Count;
 
-        public Archetype() : this(new ComponentSignature(), DefaultEntityCapacity, DefaultComponentCapacity) { }
+        public Archetype(World world) : this(world, new ComponentSignature(), DefaultEntityCapacity, DefaultComponentCapacity) { }
 
-        public Archetype(ComponentSignature signature, int entityCapacity = DefaultEntityCapacity, int componentCapacity = DefaultComponentCapacity)
+        public Archetype(World world, ComponentSignature signature, int entityCapacity = DefaultEntityCapacity, int componentCapacity = DefaultComponentCapacity)
         {
+            _world = world;
+
             Signature = signature;
             _entities = new List<Entity>(entityCapacity);
 
@@ -65,6 +70,7 @@ namespace UltraSim.ECS
 
         public IEnumerable<string> DebugValidate()
         {
+            // Validate component list sizes match entity list
             for (int i = 0; i < _componentCount; i++)
             {
                 var list = _lists[i];
@@ -83,16 +89,16 @@ namespace UltraSim.ECS
 
         public int AddEntity(Entity e)
         {
-            int newIndex = _entities.Count;
+            int slot = _entities.Count;
             _entities.Add(e);
 
-            // expand each component list to accommodate the new slot
+            // Expand each component list to accommodate the new slot
             for (int i = 0; i < _componentCount; i++)
             {
                 _lists[i].AddDefault();
             }
 
-            return newIndex;
+            return slot;
         }
 
         public void MoveEntityTo(int slot, Archetype target, object? newComponent = null)
@@ -121,34 +127,56 @@ namespace UltraSim.ECS
                 target.SetComponentValueBoxed(newTypeId, newSlot, newComponent);
             }
 
-            RemoveAtSwap(slot);
+            RemoveAtSwap(slot, entity);
         }
 
-        public void RemoveAtSwap(int slot)
+        public bool RemoveAtSwap(int slot, Entity expectedEntity)
         {
             int last = _entities.Count - 1;
+            int countBefore = _entities.Count;
 
-            // Bounds check - slot may be invalid if entity already removed
             if (slot < 0 || slot > last)
-                return;
+            {
+                Logging.Log($"[Archetype.RemoveAtSwap] Slot {slot} out of bounds (Count={countBefore}, last={last}). Entity: {expectedEntity}", LogSeverity.Warning);
+                return false;
+            }
 
+            // CRITICAL: Validate we're destroying the RIGHT entity using Packed (index + version)
+            // This prevents destroying the wrong entity due to stale lookups during batch operations
+            var actualEntity = _entities[slot];
+            if (actualEntity.Packed != expectedEntity.Packed)
+            {
+                Logging.Log($"[Archetype.RemoveAtSwap] Entity mismatch at slot {slot}! Expected {expectedEntity}, found {actualEntity}. Ignoring to prevent destroying wrong entity.", LogSeverity.Warning);
+                return false;
+            }
+
+            // Swap-and-pop: move last entity into the removed slot
             if (slot != last)
             {
                 var movedEntity = _entities[last];
                 _entities[slot] = movedEntity;
 
-                // fast linear swap for each component list
                 for (int i = 0; i < _componentCount; i++)
                     _lists[i].SwapLastIntoSlot(slot, last);
 
-                World.Current?.UpdateEntityLookup(movedEntity.Index, this, slot);
+                // Update lookup for the entity that moved (using Packed for better tracking)
+                _world?.UpdateEntityLookup(movedEntity.Index, this, slot);
             }
 
-            // remove last element in each component list
+            // Remove the last element (original entity or already swapped)
             for (int i = 0; i < _componentCount; i++)
                 _lists[i].RemoveLast();
 
             _entities.RemoveAt(last);
+
+            int countAfter = _entities.Count;
+            if (countAfter != countBefore - 1)
+            {
+                Logging.Log($"[Archetype.RemoveAtSwap] BUG! Count didn't decrement! Before={countBefore}, After={countAfter}, Expected={countBefore-1}", LogSeverity.Error);
+                return false;
+            }
+
+            return true;
         }
 
         // Ensure a typed component list exists for this archetype
@@ -228,6 +256,9 @@ namespace UltraSim.ECS
             return true;
         }
 
-        public Entity[] GetEntityArray() => _entities.ToArray();
+        public Entity[] GetEntityArray()
+        {
+            return _entities.ToArray();
+        }
     }
 }

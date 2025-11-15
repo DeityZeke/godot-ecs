@@ -27,60 +27,12 @@ namespace UltraSim.ECS
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
             // Create empty archetype (archetype 0)
-            var emptyArch = new Archetype();
+            var emptyArch = new Archetype(_world);
             _archetypes.Add(emptyArch);
             _signatureCache[new ComponentSignatureKey(emptyArch.Signature)] = emptyArch;
         }
 
         #region Archetype Lookup
-
-
-        /*
-        /// <summary>
-        /// Gets or creates an archetype with the given signature.
-        /// Uses caching for O(1) lookup on repeated queries.
-        /// </summary>
-        public Archetype GetOrCreate(ComponentSignature signature)
-        {
-            // Check cache first
-            var key = new ComponentSignatureKey(signature);
-            if (_signatureCache.TryGetValue(key, out var cached))
-                return cached;
-
-            // Linear search through archetypes (rare case - archetype doesn't exist yet)
-            foreach (ref var arch in CollectionsMarshal.AsSpan(_archetypes))
-            {
-                if (arch.Signature.Equals(signature))
-                {
-                    _signatureCache[key] = arch;
-                    return arch;
-                }
-            }
-
-            // Create new archetype
-            var newArch = new Archetype(signature);
-
-            // Ensure component lists for all types in signature
-            foreach (var typeId in signature.GetIds())
-            {
-                if (typeId < 0 || typeId >= ComponentManager.TypeCount)
-                {
-                    Logging.Log($"[ArchetypeManager] Unknown component type id {typeId} in signature {signature}. Registered types: {ComponentManager.TypeCount}", LogSeverity.Error);
-                    throw new ArgumentOutOfRangeException(nameof(typeId), $"Invalid component type ID: {typeId} (signature={signature})");
-                }
-
-                var type = ComponentManager.GetComponentType(typeId);
-                var method = typeof(Archetype).GetMethod(nameof(Archetype.EnsureComponentList))
-                                              ?.MakeGenericMethod(type);
-                method?.Invoke(newArch, new object[] { typeId });
-            }
-
-            _archetypes.Add(newArch);
-            _signatureCache[key] = newArch;
-
-            return newArch;
-        }
-        */
 
         // CACHED DELEGATES: Type → Action<Archetype, int>
         private static readonly ConcurrentDictionary<Type, Action<Archetype, int>> _ensureComponentListDelegates = new();
@@ -109,7 +61,7 @@ namespace UltraSim.ECS
             }
 
             // 3. Create new archetype
-            var newArch = new Archetype(signature);
+            var newArch = new Archetype(_world, signature);
 
             // ENSURE COMPONENT LISTS — CACHED DELEGATES
             foreach (var typeId in signature.GetIds())
@@ -224,6 +176,19 @@ namespace UltraSim.ECS
                 // Removing a component (or just moving)
                 source.MoveEntityTo(sourceSlot, target);
             }
+        }
+
+        #endregion
+
+        #region Compaction
+
+        /// <summary>
+        /// No-op method for backward compatibility.
+        /// Archetype now uses immediate swap-and-pop removal (no deferred compaction needed).
+        /// </summary>
+        public void CompactAll()
+        {
+            // Immediate swap-and-pop keeps archetypes compact automatically
         }
 
         #endregion

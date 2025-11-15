@@ -159,6 +159,42 @@ namespace Server.ECS.Chunk
             return removed;
         }
 
+        /// <summary>
+        /// Remove all dead entities from chunks (cleanup pass for entities that couldn't be removed via fast path).
+        /// Uses HashSet for O(1) lookup - each chunk checks its entities against the set.
+        /// Only processes chunks that still have entities tracked.
+        /// Returns total number of entities removed.
+        /// </summary>
+        /// <remarks>
+        /// Performance: O(deadEntities.Length + totalTrackedEntities) instead of O(deadEntities.Length × chunks.Count)
+        /// Example: 132k dead + 437k tracked = 569k ops vs 132k × 5000 chunks = 660M ops (1000x faster!)
+        /// </remarks>
+        public int RemoveDeadEntities(ReadOnlySpan<UltraSim.ECS.Entity> deadEntities)
+        {
+            if (deadEntities.Length == 0)
+                return 0;
+
+            // Build HashSet of dead entity packed IDs - O(deadEntities.Length)
+            var deadSet = new HashSet<ulong>(deadEntities.Length);
+            for (int i = 0; i < deadEntities.Length; i++)
+            {
+                deadSet.Add(deadEntities[i].Packed);
+            }
+
+            // Each chunk checks its own entities against the set - O(totalTrackedEntities)
+            int totalRemoved = 0;
+            foreach (var chunk in _chunks.Values)
+            {
+                if (chunk.EntityCount == 0)
+                    continue;
+
+                int removed = chunk.RemoveIfInSet(deadSet);
+                totalRemoved += removed;
+            }
+
+            return totalRemoved;
+        }
+
         // === SPATIAL QUERIES ===
 
         /// <summary>
@@ -227,6 +263,19 @@ namespace Server.ECS.Chunk
         }
 
         // === STATISTICS ===
+
+        /// <summary>
+        /// Get the total number of entities currently tracked across all chunks.
+        /// </summary>
+        public int GetTotalTrackedEntities()
+        {
+            int totalEntities = 0;
+            foreach (var chunk in _chunks.Values)
+            {
+                totalEntities += chunk.EntityCount;
+            }
+            return totalEntities;
+        }
 
         public string GetStatistics()
         {
