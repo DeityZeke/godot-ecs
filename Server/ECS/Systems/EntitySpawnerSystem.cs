@@ -40,6 +40,9 @@ namespace UltraSim.ECS.Systems
             public ButtonSetting Spawn100000 { get; private set; }
             public ButtonSetting Spawn1000000 { get; private set; }
             public ButtonSetting ClearAll { get; private set; }
+            public ButtonSetting ClearFirst1000 { get; private set; }
+            public ButtonSetting ClearRandom1000 { get; private set; }
+            public ButtonSetting ClearHalf { get; private set; }
 
             public Settings()
             {
@@ -78,8 +81,19 @@ namespace UltraSim.ECS.Systems
                 Spawn1000000 = RegisterButton("Spawn 1,000,000 Entities",
                     tooltip: "Spawn 1,000,000 entities with current settings");
 
+                RegisterString("", ""); // Spacer
+
                 ClearAll = RegisterButton("Clear All Entities",
                     tooltip: "Destroy all entities in the world");
+
+                ClearFirst1000 = RegisterButton("Clear First 1,000",
+                    tooltip: "Destroy first 1,000 entities (tests sequential slot deletion)");
+
+                ClearRandom1000 = RegisterButton("Clear Random 1,000",
+                    tooltip: "Destroy 1,000 random entities (tests scattered slot deletion)");
+
+                ClearHalf = RegisterButton("Clear Half (50%)",
+                    tooltip: "Destroy 50% of entities randomly (stress tests multi-pass logic)");
             }
         }
 
@@ -111,6 +125,9 @@ namespace UltraSim.ECS.Systems
             SystemSettings.Spawn100000.Clicked += () => SpawnEntities(100000);
             SystemSettings.Spawn1000000.Clicked += () => SpawnEntities(1000000);
             SystemSettings.ClearAll.Clicked += ClearAllEntities;
+            SystemSettings.ClearFirst1000.Clicked += () => ClearFirstN(1000);
+            SystemSettings.ClearRandom1000.Clicked += () => ClearRandomN(1000);
+            SystemSettings.ClearHalf.Clicked += ClearHalf;
 
             Logging.Log($"[{Name}] Initialized with spawn radius {SystemSettings.SpawnRadius.Value}");
             Logging.Log($"[{Name}] Note: Entities will be assigned to chunks by ChunkSystem");
@@ -243,6 +260,107 @@ namespace UltraSim.ECS.Systems
 
             sw.Stop();
             Logging.Log($"[{Name}] Cleared {destroyed} spawned entities in {sw.Elapsed.TotalMilliseconds:F3}ms");
+        }
+
+        private void ClearFirstN(int count)
+        {
+            if (_world == null)
+            {
+                Logging.Log($"[{Name}] Cannot clear - world is null!", LogSeverity.Error);
+                return;
+            }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            int destroyed = 0;
+            int remaining = count;
+
+            // Only destroy entities spawned for rendering (RenderTag is added during Spawn)
+            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            foreach (var archetype in archetypes)
+            {
+                if (remaining <= 0) break;
+
+                var entities = archetype.GetEntityArray();
+                int toDestroy = System.Math.Min(remaining, entities.Length);
+
+                for (int i = 0; i < toDestroy; i++)
+                {
+                    _world.EnqueueDestroyEntity(entities[i]);
+                    destroyed++;
+                    remaining--;
+                }
+            }
+
+            sw.Stop();
+            Logging.Log($"[{Name}] Cleared first {destroyed} entities (sequential) in {sw.Elapsed.TotalMilliseconds:F3}ms");
+        }
+
+        private void ClearRandomN(int count)
+        {
+            if (_world == null)
+            {
+                Logging.Log($"[{Name}] Cannot clear - world is null!", LogSeverity.Error);
+                return;
+            }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // Collect all entities
+            var allEntities = new System.Collections.Generic.List<Entity>();
+            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            foreach (var archetype in archetypes)
+            {
+                allEntities.AddRange(archetype.GetEntityArray());
+            }
+
+            // Destroy random selection
+            int toDestroy = System.Math.Min(count, allEntities.Count);
+            var random = new System.Random();
+
+            for (int i = 0; i < toDestroy; i++)
+            {
+                // Pick random index from remaining entities
+                int randomIndex = random.Next(allEntities.Count);
+                _world.EnqueueDestroyEntity(allEntities[randomIndex]);
+                allEntities.RemoveAt(randomIndex);  // Remove from list to avoid duplicates
+            }
+
+            sw.Stop();
+            Logging.Log($"[{Name}] Cleared {toDestroy} random entities (scattered slots) in {sw.Elapsed.TotalMilliseconds:F3}ms");
+        }
+
+        private void ClearHalf()
+        {
+            if (_world == null)
+            {
+                Logging.Log($"[{Name}] Cannot clear - world is null!", LogSeverity.Error);
+                return;
+            }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // Collect all entities
+            var allEntities = new System.Collections.Generic.List<Entity>();
+            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            foreach (var archetype in archetypes)
+            {
+                allEntities.AddRange(archetype.GetEntityArray());
+            }
+
+            // Destroy half randomly
+            int halfCount = allEntities.Count / 2;
+            var random = new System.Random();
+
+            for (int i = 0; i < halfCount; i++)
+            {
+                int randomIndex = random.Next(allEntities.Count);
+                _world.EnqueueDestroyEntity(allEntities[randomIndex]);
+                allEntities.RemoveAt(randomIndex);
+            }
+
+            sw.Stop();
+            Logging.Log($"[{Name}] Cleared {halfCount} entities (50% random) in {sw.Elapsed.TotalMilliseconds:F3}ms");
         }
 
         private static bool ShouldSpawnStatic(SpawnVisualMode mode)
