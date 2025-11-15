@@ -174,6 +174,13 @@ namespace UltraSim.ECS
         public void EnqueueCreateEntity(EntityBuilder builder) =>
             _entities.EnqueueCreate(builder);
 
+        /// <summary>
+        /// Clears all pending entity creation queues.
+        /// Use this when clearing the world to prevent zombie entities from pending creations.
+        /// </summary>
+        public void ClearEntityCreationQueues() =>
+            _entities.ClearCreationQueues();
+
         // System enqueue APIs - delegate to SystemManager
         public void EnqueueSystemCreate<T>() where T : BaseSystem => _systems.EnqueueRegister<T>();
         public void EnqueueSystemDestroy<T>() where T : BaseSystem => _systems.EnqueueUnregister<T>();

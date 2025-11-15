@@ -169,9 +169,6 @@ namespace UltraSim.ECS
             }
 
             var arch = _archetypes.GetArchetype(loc.archetypeIdx);
-            
-            Logging.Log($"Destroying {entity}: arch slot={loc.slot}, arch.Count={arch.Count}");
-            
             arch.RemoveAtSwap(loc.slot);
             _freeHandles.Push(entity.Packed + VersionIncrement);
             _entityVersions[(int)entity.Index]++;
@@ -263,6 +260,27 @@ namespace UltraSim.ECS
         }
 
         /// <summary>
+        /// Clears all pending entity creation queues.
+        /// Use this when you want to cancel all pending entity creations (e.g., when clearing the world).
+        /// </summary>
+        public void ClearCreationQueues()
+        {
+            int builderQueueCleared = 0;
+            int createQueueCleared = 0;
+
+            while (_builderCreateQueue.TryDequeue(out _))
+                builderQueueCleared++;
+
+            while (_createQueue.TryDequeue(out _))
+                createQueueCleared++;
+
+            if (builderQueueCleared > 0 || createQueueCleared > 0)
+            {
+                Logging.Log($"[EntityManager.ClearCreationQueues] Cleared {builderQueueCleared} builders and {createQueueCleared} simple creates from creation queues", LogSeverity.Info);
+            }
+        }
+
+        /// <summary>
         /// Processes all queued entity operations.
         /// Called during World.Tick() pipeline.
         /// </summary>
@@ -293,6 +311,8 @@ namespace UltraSim.ECS
                 _destroyedEntitiesCache.Add(entity);
             }
 
+            int queuedCount = _destroyedEntitiesCache.Count;
+
             // PHASE 2: Fire EntityDestroyRequest event (entities still alive, components accessible)
             if (_destroyedEntitiesCache.Count > 0)
             {
@@ -301,9 +321,39 @@ namespace UltraSim.ECS
             }
 
             // PHASE 3: Actually destroy the entities
+            int destroyedCount = 0;
+            int failedCount = 0;
+
             foreach (var entity in _destroyedEntitiesCache)
             {
-                Destroy(entity);
+                if (!TryGetLookup(entity.Index, out var loc))
+                {
+                    failedCount++;
+                    if (failedCount <= 10)  // Only log first 10 to avoid spam
+                    {
+                        Logging.Log($"Entity {entity} has no lookup (already destroyed?)", LogSeverity.Warning);
+                    }
+                    continue;
+                }
+
+                // Destroy without checking lookup again (we already have it)
+                var arch = _archetypes.GetArchetype(loc.archetypeIdx);
+                arch.RemoveAtSwap(loc.slot);
+                _freeHandles.Push(entity.Packed + VersionIncrement);
+                _entityVersions[(int)entity.Index]++;
+                _packedVersions[(int)entity.Index] += VersionIncrement;
+                ClearLookup(entity.Index);
+                _liveEntityCount--;
+                destroyedCount++;
+            }
+
+            if (failedCount > 0)
+            {
+                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Queued: {queuedCount}, Destroyed: {destroyedCount}, FAILED (no lookup): {failedCount}", LogSeverity.Warning);
+            }
+            else if (queuedCount > 1000)
+            {
+                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Successfully destroyed {destroyedCount} entities", LogSeverity.Info);
             }
 
             // PHASE 4: Fire EntityDestroyed event (entities destroyed, components removed)

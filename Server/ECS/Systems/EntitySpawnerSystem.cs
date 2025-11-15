@@ -222,6 +222,11 @@ namespace UltraSim.ECS.Systems
             }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // CRITICAL: Clear pending entity creation queues FIRST to prevent zombie entities!
+            // Without this, entities still in the creation queue will be created AFTER destruction.
+            _world.ClearEntityCreationQueues();
+
             int destroyed = 0;
 
             // Only destroy entities spawned for rendering (RenderTag is added during Spawn)

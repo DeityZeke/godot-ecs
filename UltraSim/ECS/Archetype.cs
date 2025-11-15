@@ -203,9 +203,14 @@ namespace UltraSim.ECS
             if (_deadSlots.Count == 0)
                 return;
 
+            int beforeCount = _entities.Count;
+            int deadSlotCount = _deadSlots.Count;
+
             if (_liveCount == 0)
             {
                 // All entities are dead - clear everything
+                Logging.Log($"[Archetype.Compact] All {beforeCount} entities dead, clearing archetype", LogSeverity.Info);
+
                 _entities.Clear();
                 _deadSlots.Clear();
 
@@ -222,6 +227,7 @@ namespace UltraSim.ECS
 
             // Build new compacted lists
             int writeIndex = 0;
+            int deadFound = 0;
 
             for (int readIndex = 0; readIndex < _entities.Count; readIndex++)
             {
@@ -229,7 +235,10 @@ namespace UltraSim.ECS
 
                 // Skip dead entities
                 if (entity.Packed == DeadEntity.Packed)
+                {
+                    deadFound++;
                     continue;
+                }
 
                 // If we're not writing to the same position, copy data
                 if (writeIndex != readIndex)
@@ -267,6 +276,15 @@ namespace UltraSim.ECS
 
             // Clear dead slots list - all slots are now compact
             _deadSlots.Clear();
+
+            if (deadFound != deadSlotCount || writeIndex != _liveCount)
+            {
+                Logging.Log($"[Archetype.Compact] MISMATCH! Before: {beforeCount} entities, _deadSlots.Count={deadSlotCount}, _liveCount={_liveCount}. Found {deadFound} dead during scan, writeIndex={writeIndex}. After: {_entities.Count}", LogSeverity.Warning);
+            }
+            else if (beforeCount > 1000)
+            {
+                Logging.Log($"[Archetype.Compact] Large compaction: {beforeCount} -> {_entities.Count} ({deadFound} dead removed)", LogSeverity.Info);
+            }
         }
 
         // Ensure a typed component list exists for this archetype
