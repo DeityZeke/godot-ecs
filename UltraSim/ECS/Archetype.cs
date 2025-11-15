@@ -130,7 +130,7 @@ namespace UltraSim.ECS
             RemoveAtSwap(slot, entity);
         }
 
-        public void RemoveAtSwap(int slot, Entity expectedEntity)
+        public bool RemoveAtSwap(int slot, Entity expectedEntity)
         {
             int last = _entities.Count - 1;
             int countBefore = _entities.Count;
@@ -138,7 +138,7 @@ namespace UltraSim.ECS
             if (slot < 0 || slot > last)
             {
                 Logging.Log($"[Archetype.RemoveAtSwap] Slot {slot} out of bounds (Count={countBefore}, last={last}). Entity: {expectedEntity}", LogSeverity.Warning);
-                return;
+                return false;
             }
 
             // CRITICAL: Validate we're destroying the RIGHT entity using Packed (index + version)
@@ -147,7 +147,7 @@ namespace UltraSim.ECS
             if (actualEntity.Packed != expectedEntity.Packed)
             {
                 Logging.Log($"[Archetype.RemoveAtSwap] Entity mismatch at slot {slot}! Expected {expectedEntity}, found {actualEntity}. Ignoring to prevent destroying wrong entity.", LogSeverity.Warning);
-                return;
+                return false;
             }
 
             // Swap-and-pop: move last entity into the removed slot
@@ -173,7 +173,10 @@ namespace UltraSim.ECS
             if (countAfter != countBefore - 1)
             {
                 Logging.Log($"[Archetype.RemoveAtSwap] BUG! Count didn't decrement! Before={countBefore}, After={countAfter}, Expected={countBefore-1}", LogSeverity.Error);
+                return false;
             }
+
+            return true;
         }
 
         // Ensure a typed component list exists for this archetype

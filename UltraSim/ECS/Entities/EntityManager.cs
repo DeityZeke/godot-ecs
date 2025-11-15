@@ -345,13 +345,15 @@ namespace UltraSim.ECS
                     if (loc.slot >= arch.Count)
                         continue;
 
-                    // Track which archetypes we're destroying from (only on first successful destroy)
+                    // Try to destroy - RemoveAtSwap returns false if entity mismatch or other failure
+                    if (!arch.RemoveAtSwap(loc.slot, entity))
+                        continue;  // Failed (mismatch or bounds), will retry next pass
+
+                    // Removal succeeded - track archetype and do cleanup
                     if (!archetypeCounts.ContainsKey(loc.archetypeIdx))
                         archetypeCounts[loc.archetypeIdx] = 0;
                     archetypeCounts[loc.archetypeIdx]++;
 
-                    // Valid slot and entity - destroy it!
-                    arch.RemoveAtSwap(loc.slot, entity);
                     _freeHandles.Push(entity.Packed + VersionIncrement);
                     _entityVersions[(int)entity.Index]++;
                     _packedVersions[(int)entity.Index] += VersionIncrement;
