@@ -268,7 +268,7 @@ namespace UltraSim.ECS
             int builderQueueCleared = 0;
             int createQueueCleared = 0;
 
-            while (_builderCreateQueue.TryDequeue(out _))
+            while (_createWithBuilderQueue.TryDequeue(out _))
                 builderQueueCleared++;
 
             while (_createQueue.TryDequeue(out _))
