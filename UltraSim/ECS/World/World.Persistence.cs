@@ -183,7 +183,10 @@ namespace UltraSim.ECS
         /// Coordinates loads across all managers.
         /// </summary>
         /// <param name="filename">Filename relative to World save directory (e.g., "quicksave.sav")</param>
-        public void Load(string filename = "world.sav")
+        public void Load(string filename = "world.sav") =>
+            Load(GetIOProfile(), filename);
+
+        public void Load(IIOProfile profile, string filename = "world.sav")
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             
@@ -191,14 +194,13 @@ namespace UltraSim.ECS
             
             try
             {
-                var profile = GetIOProfile();
                 var worldDir = Path.Combine(profile.BasePath, "World");
                 Directory.CreateDirectory(worldDir);
                 var loadPath = profile.GetFullPath(Path.Combine("World", Path.GetFileNameWithoutExtension(filename)));
                 
                 if (!File.Exists(loadPath))
                 {
-                    Logging.Log($"[World] âŒ Save file not found: {loadPath}", LogSeverity.Error);
+                    Logging.Log($"[World] A?A??' Save file not found: {loadPath}", LogSeverity.Error);
                     return;
                 }
 
@@ -206,7 +208,7 @@ namespace UltraSim.ECS
                 var error = config.Load(loadPath);
                 if (error != Error.Ok)
                 {
-                    Logging.Log($"[World] âŒ Failed to load: {error}", LogSeverity.Error);
+                    Logging.Log($"[World] A?A??' Failed to load: {error}", LogSeverity.Error);
                     return;
                 }
 
@@ -222,7 +224,7 @@ namespace UltraSim.ECS
                 LoadAllSystemStates(config);
 
                 sw.Stop();
-                Logging.Log($"\nðŸ“‚ WORLD LOADED");
+                Logging.Log($"\nA??,??o??s WORLD LOADED");
                 Logging.Log($"   Path: {loadPath}");
                 Logging.Log($"   Time: {sw.Elapsed.TotalMilliseconds:F2}ms");
                 Logging.Log($"   Entities: {EntityCount}, Systems: {_systems.Count}");
@@ -231,11 +233,10 @@ namespace UltraSim.ECS
             }
             catch (Exception ex)
             {
-                Logging.Log($"[World] âŒ Load failed with exception: {ex.Message}", LogSeverity.Error);
+                Logging.Log($"[World] A?A??' Load failed with exception: {ex.Message}", LogSeverity.Error);
                 Logging.Log(ex.StackTrace ?? "(no stack trace)", LogSeverity.Error);
             }
         }
-
         /// <summary>
         /// Loads World's own state (not delegated to managers).
         /// </summary>
@@ -303,3 +304,5 @@ namespace UltraSim.ECS
         #endregion
     }
 }
+
+

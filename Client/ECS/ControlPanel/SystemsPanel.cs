@@ -394,8 +394,10 @@ namespace Client.ECS.ControlPanel
                             // Bind after adding to grid
                             settingUI.Bind();
 
-                            // Subscribe to setting value changes to show Apply button
-                            setting.ValueChanged += (_) => OnSettingChangedInternal(setting);
+                            // Subscribe to setting value changes (deferred to main thread)
+                            var capturedSetting = setting;
+                            var deferredCall = Callable.From(() => OnSettingChangedInternal(capturedSetting));
+                            setting.ValueChanged += (_) => deferredCall.CallDeferred();
 
                             settingCount++;
                         }
@@ -463,6 +465,9 @@ namespace Client.ECS.ControlPanel
 
         private void OnSettingChangedInternal(ISetting setting)
         {
+            if (setting is StringSetting stringSetting && !stringSetting.IsEditable)
+                return;
+
             _isDirty = true;
             if (_applyButton != null)
                 _applyButton.Visible = true;

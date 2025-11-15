@@ -46,13 +46,16 @@ namespace Client.ECS.Settings
                 _optionButton.ItemSelected += OnOptionSelected;
                 _container.AddChild(_optionButton);
             }
-            else if (((StringSetting)Setting).IsEditable)
+            else
             {
+                bool editable = ((StringSetting)Setting).IsEditable;
                 _lineEdit = new LineEdit
                 {
                     Text = Setting.Value?.ToString() ?? string.Empty,
                     SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                    TooltipText = Setting.Tooltip
+                    TooltipText = Setting.Tooltip,
+                    Editable = editable,
+                    FocusMode = editable ? Control.FocusModeEnum.All : Control.FocusModeEnum.None
                 };
                 _container.AddChild(_lineEdit);
             }
@@ -61,7 +64,7 @@ namespace Client.ECS.Settings
 
         public void Bind()
         {
-            if (_lineEdit != null)
+            if (_lineEdit != null && ((StringSetting)Setting).IsEditable)
             {
                 _lineEdit.TextChanged += (text) =>
                 {
@@ -76,13 +79,24 @@ namespace Client.ECS.Settings
                 try
                 {
                     string newVal = value?.ToString() ?? string.Empty;
-                    if (_lineEdit != null && _lineEdit.Text != newVal)
-                        _lineEdit.Text = newVal;
+                    if (_lineEdit != null)
+                        SetLineEditText(newVal);
                     if (_optionButton != null && _choiceSetting != null)
                         UpdateOptionSelection(newVal);
                 }
                 finally { _updatingUI = false; }
             };
+        }
+
+        private void SetLineEditText(string text)
+        {
+            if (_lineEdit == null)
+                return;
+
+            if (_lineEdit.IsInsideTree())
+                _lineEdit.SetDeferred(LineEdit.PropertyName.Text, text);
+            else
+                _lineEdit.Text = text;
         }
 
         private void PopulateOptions()
@@ -104,11 +118,11 @@ namespace Client.ECS.Settings
 
             if (selectedIndex >= 0)
             {
-                _optionButton.Select(selectedIndex);
+                SelectOption(selectedIndex);
             }
             else if (options.Count > 0)
             {
-                _optionButton.Select(0);
+                SelectOption(0);
                 Setting.Value = options[0];
             }
         }
@@ -124,14 +138,14 @@ namespace Client.ECS.Settings
                 if (string.Equals(options[i], value, StringComparison.OrdinalIgnoreCase))
                 {
                     if (_optionButton.Selected != i)
-                        _optionButton.Select(i);
+                        SelectOption(i);
                     return;
                 }
             }
 
             if (options.Count > 0 && _optionButton.Selected != 0)
             {
-                _optionButton.Select(0);
+                SelectOption(0);
             }
         }
 
@@ -154,6 +168,17 @@ namespace Client.ECS.Settings
                     _updatingUI = false;
                 }
             }
+        }
+
+        private void SelectOption(int index)
+        {
+            if (_optionButton == null)
+                return;
+
+            if (_optionButton.IsInsideTree())
+                _optionButton.CallDeferred(OptionButton.MethodName.Select, index);
+            else
+                _optionButton.Select(index);
         }
     }
 }

@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.IO;
 using Godot;
 using Client.ECS.ControlPanel;
 using UltraSim;
@@ -26,6 +27,7 @@ namespace UltraSim.WorldECS
         private int _frameCount = 0;
         private int _worldEndFrameCounter = 0;
         private bool _controlPanelCreated = false;
+        private bool _initialLoadTriggered = false;
 
         protected HostEnvironment HostInfo { get; private set; } = null!;
 
@@ -196,6 +198,29 @@ namespace UltraSim.WorldECS
             frame.CallDeferred(MethodName.AddChild, _controlPanel);
         }
 
+        private void TryAutoLoadWorld()
+        {
+            if (_world == null)
+                return;
+
+            var system = _world.Systems.GetSystem<SaveSystem>() as SaveSystem;
+            if (system == null || !system.IsEnabled)
+                return;
+
+            var profile = system.ResolveActiveProfile(out var profileName);
+            var filename = system.DefaultSaveFileName;
+            var loadPath = profile.GetFullPath(Path.Combine("World", Path.GetFileNameWithoutExtension(filename)));
+
+            if (!File.Exists(loadPath))
+            {
+                Logging.Log($"[WorldHost] No save file found for profile '{profileName}' (expected at {loadPath})");
+                return;
+            }
+
+            Logging.Log($"[WorldHost] Auto-loading world from '{loadPath}' using profile '{profileName}'");
+            _world.Load(profile, filename);
+        }
+
         private void HandleWorldInitialized(World world)
         {
             if (!ReferenceEquals(world, _world))
@@ -215,6 +240,12 @@ namespace UltraSim.WorldECS
         private void HandleWorldFrameProgress()
         {
             _worldEndFrameCounter++;
+
+            if (!_initialLoadTriggered && _worldEndFrameCounter >= 1)
+            {
+                TryAutoLoadWorld();
+                _initialLoadTriggered = true;
+            }
 
             if (EnableControlPanelUI && !_controlPanelCreated && _worldEndFrameCounter >= 1)
             {

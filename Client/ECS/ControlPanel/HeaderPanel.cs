@@ -20,11 +20,9 @@ namespace Client.ECS.ControlPanel
         // Stats labels (data values)
         private Label? _entitiesDataLabel;
         private Label? _archetypesDataLabel;
-        private Label? _lastSaveDataLabel;
         private Label? _fpsDataLabel;
         private Label? _frameTimeDataLabel;
         private Label? _tickRateDataLabel;
-        private Label? _nextSaveDataLabel;
         private Label? _memUsageDataLabel;
 
         // === THROTTLED UPDATE SYSTEM ===
@@ -79,12 +77,6 @@ namespace Client.ECS.ControlPanel
             rightGrid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             mainHBox.AddChild(rightGrid);
 
-            AddContainerLabel(rightGrid, "Last Save:");
-            _lastSaveDataLabel = AddContainerLabel(rightGrid, "Never", hAlign: HorizontalAlignment.Right);
-
-            AddContainerLabel(rightGrid, "Next Save:");
-            _nextSaveDataLabel = AddContainerLabel(rightGrid, "N/A", hAlign: HorizontalAlignment.Right);
-
             return mainHBox;
         }
 
@@ -122,30 +114,6 @@ public void Update(double delta)
         _tickRateDataLabel!.Text = ecsTickTimeMs.ToString("F3") + "ms";
 
         // Update SpinBox only if value changed (avoid feedback loop)
-        // Update Last Save time
-        var lastSaveTime = _world.LastSaveTime;
-        if (lastSaveTime.HasValue)
-        {
-            var localTime = lastSaveTime.Value.ToLocalTime();
-            _lastSaveDataLabel!.Text = localTime.ToString("HH:mm:ss");
-        }
-        else
-        {
-            _lastSaveDataLabel!.Text = "Never";
-        }
-
-        // Update Next Save time (optimize: combine GetNextSaveTime and GetTimeUntilNextSave calls)
-        var timeRemaining = _world.GetTimeUntilNextSave();
-        if (timeRemaining.HasValue)
-        {
-            int seconds = (int)timeRemaining.Value;
-            _nextSaveDataLabel!.Text = seconds.ToString() + "s";
-        }
-        else
-        {
-            _nextSaveDataLabel!.Text = "N/A";
-        }
-
         // DEBUG: Print truth
         GD.Print($"[UI] FPS: {simFps:F1} | Frame: {frameTimeMs:F2}ms | Tick: {ecsTickTimeMs:F3}ms | Entities: {entityCount:N0}");
 
