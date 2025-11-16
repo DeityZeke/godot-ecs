@@ -274,64 +274,67 @@ namespace UltraSim.Server.ECS.Systems
             int processed = 0;
             int skipped = 0;
 
-            // Snapshot the dictionary (thread-safe iteration while events may still fire)
-            foreach (var kvp in _entityMovedMap.ToArray())
+            using (var enumerator = _entityMovedMap.GetEnumerator())
             {
-                // Remove from map immediately
-                _entityMovedMap.TryRemove(kvp.Key, out _);
-
-                var entity = kvp.Value;
-
-                // Double-check validity (entity might have been destroyed between enqueue and processing)
-                if (!_world!.IsEntityValid(entity))
+                while (enumerator.MoveNext())
                 {
-                    skipped++;
-                    continue;
+                    var kvp = enumerator.Current;
+                    // Remove from map immediately
+                    _entityMovedMap.TryRemove(kvp.Key, out _);
+
+                    var entity = kvp.Value;
+
+                    // Double-check validity (entity might have been destroyed between enqueue and processing)
+                    if (!_world!.IsEntityValid(entity))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    if (!archetype.HasComponent(ChunkOwnerTypeId) || !archetype.HasComponent(PosTypeId))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
+                    var positions = archetype.GetComponentSpan<Position>(PosTypeId);
+
+                    // SAFETY: Slot might be stale if entity was recently destroyed/swapped
+                    // Archetype may have shrunk due to batch destruction, making old lookups invalid
+                    if (slot >= owners.Length || slot >= positions.Length)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var oldOwner = owners[slot];
+                    var position = positions[slot];
+
+                    // Calculate new chunk location
+                    var newChunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
+
+                    // Still in same chunk?
+                    if (oldOwner.Location.Equals(newChunkLoc))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    // Move tracking
+                    _chunkManager.MoveEntity(entity.Packed, oldOwner.Location, newChunkLoc);
+
+                    // Update ChunkOwner component VALUE using deferred queue (thread-safe!)
+                    _world!.EnqueueComponentAdd<ChunkOwner>(entity, ChunkOwnerTypeId, new ChunkOwner(Entity.Invalid, newChunkLoc));
+
+                    processed++;
                 }
-
-                if (!_world.TryGetEntityLocation(entity, out var archetype, out var slot))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                if (!archetype.HasComponent(ChunkOwnerTypeId) || !archetype.HasComponent(PosTypeId))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                var owners = archetype.GetComponentSpan<ChunkOwner>(ChunkOwnerTypeId);
-                var positions = archetype.GetComponentSpan<Position>(PosTypeId);
-
-                // SAFETY: Slot might be stale if entity was recently destroyed/swapped
-                // Archetype may have shrunk due to batch destruction, making old lookups invalid
-                if (slot >= owners.Length || slot >= positions.Length)
-                {
-                    skipped++;
-                    continue;
-                }
-
-                var oldOwner = owners[slot];
-                var position = positions[slot];
-
-                // Calculate new chunk location
-                var newChunkLoc = _chunkManager!.WorldToChunk(position.X, position.Y, position.Z);
-
-                // Still in same chunk?
-                if (oldOwner.Location.Equals(newChunkLoc))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                // Move tracking
-                _chunkManager.MoveEntity(entity.Packed, oldOwner.Location, newChunkLoc);
-
-                // Update ChunkOwner component VALUE using deferred queue (thread-safe!)
-                _world!.EnqueueComponentAdd(entity, ChunkOwnerTypeId, new ChunkOwner(Entity.Invalid, newChunkLoc));
-
-                processed++;
             }
 
             if ((processed > 0 || skipped > 0) && SystemSettings.EnableDebugLogs.Value)

@@ -73,7 +73,7 @@ namespace UltraSim.ECS.Systems
             float deltaF = (float)delta;
 
             // Query archetypes dynamically each frame to avoid stale cached queries
-            var archetypes = world.QueryArchetypes(typeof(Position), typeof(Velocity), typeof(PulseData));
+            using var archetypes = world.QueryArchetypes(typeof(Position), typeof(Velocity), typeof(PulseData));
 
             foreach (var arch in archetypes)
             {
@@ -114,7 +114,7 @@ namespace UltraSim.ECS.Systems
 
                     if (_chunkManager != null)
                     {
-                        var entities = arch.GetEntityArray();
+                        var entities = arch.GetEntitySpan();
                         for (int i = 0; i < posSlice.Length; i++)
                         {
                             var entity = entities[start + i];

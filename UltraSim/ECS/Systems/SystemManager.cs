@@ -20,12 +20,14 @@ namespace UltraSim.ECS.Systems
         private readonly List<BaseSystem> _systems = new(32);
         private readonly Dictionary<Type, BaseSystem> _systemMap = new();
         private List<List<BaseSystem>> _cachedBatches = new();
+        private static readonly ConcurrentDictionary<Type, RequireSystemAttribute[]> _requireCache = new();
 
-        // Deferred operation queues (Type, retry count)
-        private readonly ConcurrentDictionary<Type, int> _registerQueue = new();
-        private readonly ConcurrentDictionary<Type, int> _unregisterQueue = new();
-        private readonly ConcurrentDictionary<Type, int> _enableQueue = new();
-        private readonly ConcurrentDictionary<Type, int> _disableQueue = new();
+        // Deferred operation queues
+        private readonly ConcurrentQueue<Type> _registerQueue = new();
+        private readonly ConcurrentQueue<Type> _unregisterQueue = new();
+        private readonly ConcurrentQueue<Type> _disableQueue = new();
+        private readonly ConcurrentQueue<QueuedEnableRequest> _enableQueue = new();
+        private readonly ConcurrentBag<HashSet<Type>> _typeSetPool = new();
 
         private const int MaxRetryAttempts = 3;
 
@@ -38,19 +40,23 @@ namespace UltraSim.ECS.Systems
             _world = world ?? throw new ArgumentNullException(nameof(world));
         }
 
+        private static RequireSystemAttribute[] GetRequiredSystemAttributes(Type type) =>
+            _requireCache.GetOrAdd(type, static t =>
+                (RequireSystemAttribute[])t.GetCustomAttributes(typeof(RequireSystemAttribute), inherit: true));
+
         #region Deferred Registration API
 
         public void EnqueueRegister<T>() where T : BaseSystem => EnqueueRegister(typeof(T));
-        public void EnqueueRegister(Type type) => _registerQueue.TryAdd(type, 0);
+        public void EnqueueRegister(Type type) => _registerQueue.Enqueue(type);
 
         public void EnqueueUnregister<T>() where T : BaseSystem => EnqueueUnregister(typeof(T));
-        public void EnqueueUnregister(Type type) => _unregisterQueue.TryAdd(type, 0);
+        public void EnqueueUnregister(Type type) => _unregisterQueue.Enqueue(type);
 
         public void EnqueueEnable<T>() where T : BaseSystem => EnqueueEnable(typeof(T));
-        public void EnqueueEnable(Type type) => _enableQueue.TryAdd(type, 0);
+        public void EnqueueEnable(Type type) => _enableQueue.Enqueue(new QueuedEnableRequest(type, 0));
 
         public void EnqueueDisable<T>() where T : BaseSystem => EnqueueDisable(typeof(T));
-        public void EnqueueDisable(Type type) => _disableQueue.TryAdd(type, 0);
+        public void EnqueueDisable(Type type) => _disableQueue.Enqueue(type);
 
         #endregion
 
@@ -199,91 +205,150 @@ namespace UltraSim.ECS.Systems
 
         private void ProcessRegisterQueue()
         {
-            foreach (var (type, _) in _registerQueue)
+            if (_registerQueue.IsEmpty)
+                return;
+
+            var seen = RentTypeSet();
+            try
             {
-                try
+                while (_registerQueue.TryDequeue(out var type))
                 {
-                    Register(type);
-                    _registerQueue.TryRemove(type, out _);
+                    if (!seen.Add(type))
+                        continue;
+
+                    try
+                    {
+                        Register(type);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log($"[SystemManager] Error registering system {type.Name}: {ex}", LogSeverity.Error);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logging.Log($"[SystemManager] Error registering system {type.Name}: {ex}", LogSeverity.Error);
-                    _registerQueue.TryRemove(type, out _);
-                }
+            }
+            finally
+            {
+                ReturnTypeSet(seen);
             }
         }
 
         private void ProcessUnregisterQueue()
         {
-            foreach (var (type, _) in _unregisterQueue)
+            if (_unregisterQueue.IsEmpty)
+                return;
+
+            var seen = RentTypeSet();
+            try
             {
-                try
+                while (_unregisterQueue.TryDequeue(out var type))
                 {
-                    Unregister(type);
-                    _unregisterQueue.TryRemove(type, out _);
+                    if (!seen.Add(type))
+                        continue;
+
+                    try
+                    {
+                        Unregister(type);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log($"[SystemManager] Error unregistering system {type.Name}: {ex}", LogSeverity.Error);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logging.Log($"[SystemManager] Error unregistering system {type.Name}: {ex}", LogSeverity.Error);
-                    _unregisterQueue.TryRemove(type, out _);
-                }
+            }
+            finally
+            {
+                ReturnTypeSet(seen);
             }
         }
 
         private void ProcessEnableQueue()
         {
-            foreach (var (type, attempts) in _enableQueue)
+            if (_enableQueue.IsEmpty)
+                return;
+
+            var seen = RentTypeSet();
+            var retryBuffer = new List<QueuedEnableRequest>();
+
+            try
             {
-                try
+                while (_enableQueue.TryDequeue(out var request))
                 {
-                    if (_systemMap.TryGetValue(type, out var system))
+                    if (!seen.Add(request.Type))
+                        continue;
+
+                    try
                     {
-                        EnableSystem(system);
-                        _enableQueue.TryRemove(type, out _);
-                    }
-                    else
-                    {
-                        if (attempts + 1 >= MaxRetryAttempts)
+                        if (_systemMap.TryGetValue(request.Type, out var system))
                         {
-                            _enableQueue.TryRemove(type, out _);
-                            Logging.Log($"[SystemManager] Dropping enable request for {type.Name} after {attempts + 1} failed attempts", LogSeverity.Warning);
+                            EnableSystem(system);
                         }
                         else
                         {
-                            _enableQueue[type] = attempts + 1;
+                            var nextAttempt = request.Attempts + 1;
+                            if (nextAttempt >= MaxRetryAttempts)
+                            {
+                                Logging.Log($"[SystemManager] Dropping enable request for {request.Type.Name} after {nextAttempt} failed attempts", LogSeverity.Warning);
+                            }
+                            else
+                            {
+                                retryBuffer.Add(new QueuedEnableRequest(request.Type, nextAttempt));
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Logging.Log($"[SystemManager] Error enabling system {request.Type.Name}: {ex}", LogSeverity.Error);
+                    }
                 }
-                catch (Exception ex)
+            }
+            finally
+            {
+                ReturnTypeSet(seen);
+            }
+
+            if (retryBuffer.Count > 0)
+            {
+                var retrySpan = CollectionsMarshal.AsSpan(retryBuffer);
+                foreach (ref readonly var retry in retrySpan)
                 {
-                    Logging.Log($"[SystemManager] Error enabling system {type.Name}: {ex}", LogSeverity.Error);
-                    _enableQueue.TryRemove(type, out _);
+                    _enableQueue.Enqueue(retry);
                 }
             }
         }
 
         private void ProcessDisableQueue()
         {
-            foreach (var (type, attempts) in _disableQueue)
+            if (_disableQueue.IsEmpty)
+                return;
+
+            var seen = RentTypeSet();
+            try
             {
-                try
+                while (_disableQueue.TryDequeue(out var type))
                 {
-                    if (_systemMap.TryGetValue(type, out var system))
+                    if (!seen.Add(type))
+                        continue;
+
+                    try
                     {
-                        DisableSystem(system);
-                        _disableQueue.TryRemove(type, out _);
+                        if (_systemMap.TryGetValue(type, out var system))
+                        {
+                            DisableSystem(system);
+                        }
+                        else
+                        {
+                            // System already unregistered
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        _disableQueue.TryRemove(type, out _);
+                        Logging.Log($"[SystemManager] Error disabling system {type.Name}: {ex}", LogSeverity.Error);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logging.Log($"[SystemManager] Error disabling system {type.Name}: {ex}", LogSeverity.Error);
-                    _disableQueue.TryRemove(type, out _);
-                }
+            }
+            finally
+            {
+                ReturnTypeSet(seen);
             }
         }
 
@@ -380,8 +445,7 @@ namespace UltraSim.ECS.Systems
             bool hasDependencies = false;
             foreach (var system in systems)
             {
-                var requires = system.GetType().GetCustomAttributes(typeof(RequireSystemAttribute), inherit: true);
-                if (((object[])requires).Length > 0)
+                if (GetRequiredSystemAttributes(system.GetType()).Length > 0)
                 {
                     hasDependencies = true;
                     break;
@@ -402,8 +466,8 @@ namespace UltraSim.ECS.Systems
             {
                 dependencies[system] = new List<BaseSystem>();
 
-                var requires = system.GetType().GetCustomAttributes(typeof(RequireSystemAttribute), inherit: true);
-                foreach (RequireSystemAttribute req in requires)
+                var requires = GetRequiredSystemAttributes(system.GetType());
+                foreach (var req in requires)
                 {
                     var depType = Type.GetType(req.RequiredSystem);
                     if (depType != null && _systemMap.TryGetValue(depType, out var depSystem))
@@ -523,5 +587,24 @@ namespace UltraSim.ECS.Systems
         }
 
         #endregion
+
+        private readonly record struct QueuedEnableRequest(Type Type, int Attempts);
+
+        private HashSet<Type> RentTypeSet()
+        {
+            if (_typeSetPool.TryTake(out var set))
+            {
+                set.Clear();
+                return set;
+            }
+
+            return new HashSet<Type>();
+        }
+
+        private void ReturnTypeSet(HashSet<Type> set)
+        {
+            set.Clear();
+            _typeSetPool.Add(set);
+        }
     }
 }

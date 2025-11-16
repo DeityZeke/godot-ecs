@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
@@ -41,13 +42,13 @@ namespace UltraSim.ECS
         private readonly ConcurrentQueue<Entity> _destroyQueue = new();
         private readonly ConcurrentQueue<Action<Entity>> _createQueue = new();
         private readonly ConcurrentQueue<EntityBuilder> _createWithBuilderQueue = new();
+        private static readonly Action<Entity> EmptyBuilderAction = static _ => { };
 
         // Reusable list for batch entity creation (V8 optimization)
         private readonly List<Entity> _createdEntitiesCache = new(1000);
 
         // Reusable list for batch entity destruction (V8 optimization, mirrors creation pattern)
         private readonly List<Entity> _destroyedEntitiesCache = new(1000);
-        private byte[] _destroyProcessedFlags = Array.Empty<byte>();
 
         // Reusable list for draining EntityBuilder queue (zero-allocation)
         private readonly List<EntityBuilder> _builderBatchCache = new(1000);
@@ -58,7 +59,8 @@ namespace UltraSim.ECS
         // Signature cache for EntityBuilder queue (avoids rebuilding identical signatures)
         // Key: Hash of TypeId pattern, Value: Cached ComponentSignature
         // Dramatically speeds up batches with many entities sharing the same components
-        private readonly Dictionary<int, List<SignatureCacheEntry>> _signatureCache = new();
+        private Dictionary<int, List<SignatureCacheEntry>> _signatureCache = new();
+        private const int SignatureCacheResetThreshold = 4096;
 
         public int EntityCount => _liveEntityCount;
 
@@ -76,28 +78,7 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Entity Create()
         {
-            uint idx;
-            ulong packed;
-            if (_freeHandles.Count > 0)
-            {
-                // Reuse a recycled handle - cached packed version already incremented once
-                packed = _freeHandles.Pop();
-                idx = (uint)packed;
-                _entityVersions[(int)idx]++;
-                _packedVersions[(int)idx] += VersionIncrement;
-                packed += VersionIncrement;
-            }
-            else
-            {
-                // Allocate a new index - add version 1 to the list
-                idx = _nextEntityIndex++;
-                _entityVersions.Add(1); // First version is 1, not 0
-                _packedVersions.Add(VersionIncrement);
-                packed = VersionIncrement | idx;
-            }
-
-            EnsureLookupCapacity(idx);
-            var entity = new Entity(packed);
+            var (entity, idx) = AllocateEntityHandle();
 
             // Get empty archetype from ArchetypeManager
             var baseArch = _archetypes.GetEmptyArchetype();
@@ -115,29 +96,7 @@ namespace UltraSim.ECS
         /// </summary>
         public Entity CreateWithSignature(ComponentSignature signature)
         {
-            // Allocate entity ID
-            uint idx;
-            ulong packed;
-            if (_freeHandles.Count > 0)
-            {
-                // Reuse a recycled handle - cached packed version already incremented once
-                packed = _freeHandles.Pop();
-                idx = (uint)packed;
-                _entityVersions[(int)idx]++;
-                _packedVersions[(int)idx] += VersionIncrement;
-                packed += VersionIncrement;
-            }
-            else
-            {
-                // Allocate a new index - add version 1 to the list at position idx
-                idx = _nextEntityIndex++;
-                _entityVersions.Add(1); // First version is 1, not 0
-                _packedVersions.Add(VersionIncrement);
-                packed = VersionIncrement | idx;
-            }
-
-            EnsureLookupCapacity(idx);
-            var entity = new Entity(packed);
+            var (entity, idx) = AllocateEntityHandle();
 
             // Get or create archetype from ArchetypeManager
             var archetype = _archetypes.GetOrCreate(signature);
@@ -246,7 +205,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void EnqueueCreate(Action<Entity>? builder = null)
         {
-            _createQueue.Enqueue(builder ?? (_ => { }));
+            _createQueue.Enqueue(builder ?? EmptyBuilderAction);
         }
 
         /// <summary>
@@ -288,8 +247,7 @@ namespace UltraSim.ECS
         /// </summary>
         public void ProcessQueues()
         {
-            // Clear signature cache from previous frame (prevent unbounded growth)
-            _signatureCache.Clear();
+            ResetSignatureCache();
 
             // Process in order: destroy first, then create (prevents use-after-free issues)
             ProcessEntityDestructionQueue();
@@ -316,125 +274,133 @@ namespace UltraSim.ECS
             if (queuedCount == 0)
                 return;
 
-            EnsureDestroyFlagCapacity(queuedCount);
-            Array.Clear(_destroyProcessedFlags, 0, queuedCount);
+            var flagBuffer = ArrayPool<byte>.Shared.Rent(queuedCount);
 
-            // PHASE 2: Fire EntityDestroyRequest event (entities still alive, components accessible)
-            var requestArgs = new EntityBatchDestroyRequestEventArgs(_destroyedEntitiesCache);
-            EventSink.InvokeEntityBatchDestroyRequest(requestArgs);
-
-            // PHASE 3: Actually destroy the entities
-            // Use multi-pass approach to handle stale lookups from swap-and-pop operations
-            int destroyedCount = 0;
-            int passCount = 0;
-            int remainingToDestroy = queuedCount;
-            var archetypeCounts = new Dictionary<int, int>();
-            var flags = _destroyProcessedFlags;
-
-            while (remainingToDestroy > 0 && passCount < 100)  // Safety limit to prevent infinite loop
+            try
             {
-                passCount++;
-                int destroyedThisPass = 0;
+                var flags = flagBuffer.AsSpan(0, queuedCount);
+                flags.Clear();
 
-                for (int i = 0; i < _destroyedEntitiesCache.Count; i++)
+                // PHASE 2: Fire EntityDestroyRequest event (entities still alive, components accessible)
+                var requestArgs = new EntityBatchDestroyRequestEventArgs(_destroyedEntitiesCache);
+                EventSink.InvokeEntityBatchDestroyRequest(requestArgs);
+
+                // PHASE 3: Actually destroy the entities
+                // Use multi-pass approach to handle stale lookups from swap-and-pop operations
+                int destroyedCount = 0;
+                int passCount = 0;
+                int remainingToDestroy = queuedCount;
+                var archetypeCounts = new Dictionary<int, int>();
+
+                while (remainingToDestroy > 0 && passCount < 100)  // Safety limit to prevent infinite loop
                 {
-                    if (flags[i] != 0)
-                        continue;
+                    passCount++;
+                    int destroyedThisPass = 0;
 
-                    var entity = _destroyedEntitiesCache[i];
-
-                    if (!entity.IsValid || !IsAlive(entity))
+                    for (int i = 0; i < _destroyedEntitiesCache.Count; i++)
                     {
-                        flags[i] = 1;
-                        destroyedCount++;
-                        destroyedThisPass++;
-                        continue;
-                    }
+                        if (flags[i] != 0)
+                            continue;
 
-                    if (!TryGetLocation(entity, out var archetype, out var slot))
-                    {
-                        flags[i] = 1;
-                        destroyedCount++;
-                        destroyedThisPass++;
-                        continue;
-                    }
+                        var entity = _destroyedEntitiesCache[i];
 
-                    // Resolve slot if lookup became stale due to swap cascades
-                    if (slot >= archetype.Count)
-                    {
-                        slot = archetype.FindEntitySlot(entity);
-                        if (slot < 0)
+                        if (!entity.IsValid || !IsAlive(entity))
                         {
-                            // Entity not found anymore - treat as processed
                             flags[i] = 1;
                             destroyedCount++;
                             destroyedThisPass++;
                             continue;
                         }
-                    }
 
-                    if (!archetype.RemoveAtSwap(slot, entity))
-                    {
-                        // Retry by searching for the entity's current slot (it may have moved again)
-                        slot = archetype.FindEntitySlot(entity);
-                        if (slot < 0 || !archetype.RemoveAtSwap(slot, entity))
+                        if (!TryGetLocation(entity, out var archetype, out var slot))
                         {
-                            // Could not destroy this pass; try again next loop
+                            flags[i] = 1;
+                            destroyedCount++;
+                            destroyedThisPass++;
                             continue;
                         }
+
+                        // Resolve slot if lookup became stale due to swap cascades
+                        if (slot >= archetype.Count)
+                        {
+                            slot = archetype.FindEntitySlot(entity);
+                            if (slot < 0)
+                            {
+                                // Entity not found anymore - treat as processed
+                                flags[i] = 1;
+                                destroyedCount++;
+                                destroyedThisPass++;
+                                continue;
+                            }
+                        }
+
+                        if (!archetype.RemoveAtSwap(slot, entity))
+                        {
+                            // Retry by searching for the entity's current slot (it may have moved again)
+                            slot = archetype.FindEntitySlot(entity);
+                            if (slot < 0 || !archetype.RemoveAtSwap(slot, entity))
+                            {
+                                // Could not destroy this pass; try again next loop
+                                continue;
+                            }
+                        }
+
+                        var archIndex = _archetypes.GetArchetypeIndex(archetype);
+                        if (archIndex >= 0)
+                        {
+                            if (!archetypeCounts.ContainsKey(archIndex))
+                                archetypeCounts[archIndex] = 0;
+                            archetypeCounts[archIndex]++;
+                        }
+
+                        _freeHandles.Push(entity.Packed + VersionIncrement);
+                        _entityVersions[(int)entity.Index]++;
+                        _packedVersions[(int)entity.Index] += VersionIncrement;
+                        ClearLookup(entity.Index);
+                        _liveEntityCount--;
+                        flags[i] = 1;
+                        destroyedCount++;
+                        destroyedThisPass++;
                     }
 
-                    var archIndex = _archetypes.GetArchetypeIndex(archetype);
-                    if (archIndex >= 0)
+                    remainingToDestroy = queuedCount - destroyedCount;
+
+                    // If we made no progress this pass, stop (shouldn't happen but safety check)
+                    if (destroyedThisPass == 0)
                     {
-                        if (!archetypeCounts.ContainsKey(archIndex))
-                            archetypeCounts[archIndex] = 0;
-                        archetypeCounts[archIndex]++;
+                        Logging.Log($"[EntityManager] Multi-pass destroy stalled! Destroyed {destroyedCount}/{queuedCount}, {remainingToDestroy} entities still have lookups but couldn't be destroyed", LogSeverity.Error);
+                        break;
                     }
-
-                    _freeHandles.Push(entity.Packed + VersionIncrement);
-                    _entityVersions[(int)entity.Index]++;
-                    _packedVersions[(int)entity.Index] += VersionIncrement;
-                    ClearLookup(entity.Index);
-                    _liveEntityCount--;
-                    flags[i] = 1;
-                    destroyedCount++;
-                    destroyedThisPass++;
                 }
 
-                remainingToDestroy = queuedCount - destroyedCount;
-
-                // If we made no progress this pass, stop (shouldn't happen but safety check)
-                if (destroyedThisPass == 0)
+                if (archetypeCounts.Count > 0 && queuedCount > 1000)
                 {
-                    Logging.Log($"[EntityManager] Multi-pass destroy stalled! Destroyed {destroyedCount}/{queuedCount}, {remainingToDestroy} entities still have lookups but couldn't be destroyed", LogSeverity.Error);
-                    break;
+                    foreach (var kvp in archetypeCounts)
+                    {
+                        Logging.Log($"[EntityManager] Destroyed {kvp.Value} entities from archetype {kvp.Key}", LogSeverity.Info);
+                    }
                 }
-            }
 
-            if (archetypeCounts.Count > 0 && queuedCount > 1000)
-            {
-                foreach (var kvp in archetypeCounts)
+                // Log results
+                if (destroyedCount != queuedCount)
                 {
-                    Logging.Log($"[EntityManager] Destroyed {kvp.Value} entities from archetype {kvp.Key}", LogSeverity.Info);
+                    Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Queued: {queuedCount}, Destroyed: {destroyedCount}, Failed: {queuedCount - destroyedCount}, Passes: {passCount}", LogSeverity.Warning);
+                }
+                else if (queuedCount > 1000)
+                {
+                    Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Successfully destroyed {destroyedCount} entities in {passCount} pass(es)", LogSeverity.Info);
+                }
+
+                // PHASE 4: Fire EntityDestroyed event (entities destroyed, components removed)
+                if (_destroyedEntitiesCache.Count > 0)
+                {
+                    var args = new EntityBatchDestroyedEventArgs(_destroyedEntitiesCache);
+                    EventSink.InvokeEntityBatchDestroyed(args);
                 }
             }
-
-            // Log results
-            if (destroyedCount != queuedCount)
+            finally
             {
-                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Queued: {queuedCount}, Destroyed: {destroyedCount}, Failed: {queuedCount - destroyedCount}, Passes: {passCount}", LogSeverity.Warning);
-            }
-            else if (queuedCount > 1000)
-            {
-                Logging.Log($"[EntityManager.ProcessEntityDestructionQueue] Successfully destroyed {destroyedCount} entities in {passCount} pass(es)", LogSeverity.Info);
-            }
-
-            // PHASE 4: Fire EntityDestroyed event (entities destroyed, components removed)
-            if (_destroyedEntitiesCache.Count > 0)
-            {
-                var args = new EntityBatchDestroyedEventArgs(_destroyedEntitiesCache);
-                EventSink.InvokeEntityBatchDestroyed(args);
+                ArrayPool<byte>.Shared.Return(flagBuffer);
             }
         }
 
@@ -674,19 +640,6 @@ namespace UltraSim.ECS
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnsureDestroyFlagCapacity(int count)
-        {
-            if (_destroyProcessedFlags.Length >= count)
-                return;
-
-            int newSize = _destroyProcessedFlags.Length == 0 ? 128 : _destroyProcessedFlags.Length * 2;
-            if (newSize < count)
-                newSize = count;
-
-            Array.Resize(ref _destroyProcessedFlags, newSize);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetLookup(uint idx, int archetypeIdx, int slot)
         {
             _entityArchetypeIndices[(int)idx] = archetypeIdx;
@@ -734,6 +687,33 @@ namespace UltraSim.ECS
             return new Entity(packed);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private (Entity entity, uint index) AllocateEntityHandle()
+        {
+            uint idx;
+            ulong packed;
+            if (_freeHandles.Count > 0)
+            {
+                // Reuse a recycled handle - cached packed version already incremented once
+                packed = _freeHandles.Pop();
+                idx = (uint)packed;
+                _entityVersions[(int)idx]++;
+                _packedVersions[(int)idx] += VersionIncrement;
+                packed += VersionIncrement;
+            }
+            else
+            {
+                // Allocate a new index - add version 1 to the list
+                idx = _nextEntityIndex++;
+                _entityVersions.Add(1); // First version is 1, not 0
+                _packedVersions.Add(VersionIncrement);
+                packed = VersionIncrement | idx;
+            }
+
+            EnsureLookupCapacity(idx);
+            return (new Entity(packed), idx);
+        }
+
         /// <summary>
         /// Gets a pooled List for EntityBuilder or creates a new one.
         /// </summary>
@@ -766,6 +746,14 @@ namespace UltraSim.ECS
         /// Uses FNV-1a hash algorithm for speed and good distribution.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ResetSignatureCache()
+        {
+            if (_signatureCache.Count > SignatureCacheResetThreshold)
+                _signatureCache = new Dictionary<int, List<SignatureCacheEntry>>(64);
+            else
+                _signatureCache.Clear();
+        }
+
         private static int ComputeTypeIdHash(ReadOnlySpan<int> typeIds)
         {
             const uint FNV_OFFSET_BASIS = 2166136261;

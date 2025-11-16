@@ -279,12 +279,14 @@ namespace Client.ECS.Systems
         {
             int entityCount = 0;
 
-            // Query archetypes dynamically to avoid stale cached queries
-            var archetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible));
+            using var archetypes = world.QueryArchetypes(typeof(Position), typeof(RenderTag), typeof(Visible));
+            var archetypeSpan = archetypes.AsSpan();
 
-            // Count total entities
-            foreach (var arch in archetypes)
+            for (int a = 0; a < archetypeSpan.Length; a++)
+            {
+                ref readonly var arch = ref archetypeSpan[a];
                 entityCount += arch.Count;
+            }
 
             // Adjust target if entity count increased (but respect performance limit)
             if (entityCount > targetVisualCapacity && !performanceLimited)
@@ -345,8 +347,9 @@ namespace Client.ECS.Systems
             // ZERO-ALLOCATION: Update transforms in local array, then batch to GPU
 
             // Update only the current batch
-            foreach (var arch in archetypes)
+            for (int a = 0; a < archetypeSpan.Length; a++)
             {
+                ref readonly var arch = ref archetypeSpan[a];
                 if (!arch.TryGetComponentSpan<Position>(out var posSpan))
                     continue;
 

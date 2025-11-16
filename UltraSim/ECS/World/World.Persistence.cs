@@ -6,6 +6,7 @@ using System.IO;
 using UltraSim;
 using UltraSim.IO;
 using UltraSim.Configuration;
+using UltraSim.ECS.Systems;
 
 namespace UltraSim.ECS
 {
@@ -104,7 +105,7 @@ namespace UltraSim.ECS
 
                 // Save all systems (settings + state)
                 _systems.SaveAllSettings();
-                SaveAllSystemStates(config);
+                SaveAllSystemStates(config, profile);
 
                 // Write to disk
                 var error = config.Save(savePath);
@@ -159,15 +160,16 @@ namespace UltraSim.ECS
         /// <summary>
         /// Saves all system states by calling Serialize() on each system.
         /// </summary>
-        private void SaveAllSystemStates(ConfigFile config)
+        private void SaveAllSystemStates(ConfigFile config, IIOProfile profile)
         {
             var allSystems = _systems.GetAllSystems();
             int statesSaved = 0;
 
             foreach (var system in allSystems)
             {
-                // Call system's Serialize() method to save game state
-                system.Serialize();
+                var relativePath = Path.Combine("World", "Systems", system.Name);
+                var context = new SystemSaveContext(profile, relativePath);
+                system.Serialize(context);
                 statesSaved++;
             }
 
@@ -221,7 +223,7 @@ namespace UltraSim.ECS
                 // _archetypes.Load(config, "Archetypes");
 
                 // Load all system states
-                LoadAllSystemStates(config);
+                LoadAllSystemStates(config, profile);
 
                 sw.Stop();
                 Logging.Log($"\nA??,??o??s WORLD LOADED");
@@ -269,7 +271,7 @@ namespace UltraSim.ECS
         /// <summary>
         /// Loads all system states by calling Deserialize() on each system.
         /// </summary>
-        private void LoadAllSystemStates(ConfigFile config)
+        private void LoadAllSystemStates(ConfigFile config, IIOProfile profile)
         {
             var allSystems = _systems.GetAllSystems();
             int statesLoaded = 0;
@@ -280,7 +282,9 @@ namespace UltraSim.ECS
                 system.LoadSettings();
                 
                 // Then call system's Deserialize() method to load game state
-                system.Deserialize();
+                var relativePath = Path.Combine("World", "Systems", system.Name);
+                var context = new SystemLoadContext(profile, relativePath);
+                system.Deserialize(context);
                 statesLoaded++;
             }
 

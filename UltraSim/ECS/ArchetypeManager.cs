@@ -20,6 +20,7 @@ namespace UltraSim.ECS
         private readonly World _world;
         private readonly List<Archetype> _archetypes = new();
         private readonly Dictionary<ComponentSignatureKey, Archetype> _signatureCache = new();
+        private readonly Dictionary<Archetype, int> _archetypeIndexCache = new();
 
         public int ArchetypeCount => _archetypes.Count;
 
@@ -28,8 +29,38 @@ namespace UltraSim.ECS
             _world = world ?? throw new ArgumentNullException(nameof(world));
             // Create empty archetype (archetype 0)
             var emptyArch = new Archetype(_world);
-            _archetypes.Add(emptyArch);
-            _signatureCache[new ComponentSignatureKey(emptyArch.Signature)] = emptyArch;
+            RegisterArchetype(emptyArch);
+        }
+
+        private readonly Stack<List<Archetype>> _queryListPool = new();
+
+        public readonly struct QueryResult : IDisposable, IEnumerable<Archetype>
+        {
+            private readonly ArchetypeManager _owner;
+            private readonly List<Archetype> _list;
+
+            internal QueryResult(ArchetypeManager owner, List<Archetype> list)
+            {
+                _owner = owner;
+                _list = list;
+            }
+
+            public ReadOnlySpan<Archetype> AsSpan() => CollectionsMarshal.AsSpan(_list);
+
+            public void Dispose()
+            {
+                _owner.ReturnQueryList(_list);
+            }
+
+            public List<Archetype>.Enumerator GetEnumerator() => _list.GetEnumerator();
+
+            IEnumerator<Archetype> IEnumerable<Archetype>.GetEnumerator() => _list.GetEnumerator();
+
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => _list.GetEnumerator();
+
+            public int Count => _list.Count;
+
+            public Archetype this[int index] => _list[index];
         }
 
         #region Archetype Lookup
@@ -95,7 +126,7 @@ namespace UltraSim.ECS
                 ensureAction(newArch, typeId);
             }
 
-            _archetypes.Add(newArch);
+            RegisterArchetype(newArch);
             _signatureCache[key] = newArch;
 
             return newArch;
@@ -117,7 +148,16 @@ namespace UltraSim.ECS
         /// Gets the index of an archetype.
         /// Used by EntityManager to store entity locations.
         /// </summary>
-        public int GetArchetypeIndex(Archetype archetype) => _archetypes.IndexOf(archetype);
+        public int GetArchetypeIndex(Archetype archetype)
+        {
+            if (_archetypeIndexCache.TryGetValue(archetype, out var index))
+                return index;
+
+            int fallback = _archetypes.IndexOf(archetype);
+            if (fallback >= 0)
+                _archetypeIndexCache[archetype] = fallback;
+            return fallback;
+        }
 
         /// <summary>
         /// Returns all archetypes (read-only).
@@ -126,19 +166,53 @@ namespace UltraSim.ECS
 
         #endregion
 
+        private List<Archetype> RentQueryList()
+        {
+            lock (_queryListPool)
+            {
+                if (_queryListPool.Count > 0)
+                {
+                    var list = _queryListPool.Pop();
+                    list.Clear();
+                    return list;
+                }
+            }
+
+            return new List<Archetype>(16);
+        }
+
+        private void ReturnQueryList(List<Archetype> list)
+        {
+            list.Clear();
+            lock (_queryListPool)
+            {
+                _queryListPool.Push(list);
+            }
+        }
+
+        private void RegisterArchetype(Archetype archetype)
+        {
+            int index = _archetypes.Count;
+            _archetypes.Add(archetype);
+            _archetypeIndexCache[archetype] = index;
+        }
+
         #region Queries
 
         /// <summary>
         /// Queries for archetypes matching the given component types.
-        /// Returns an enumerable for efficient iteration.
+        /// Returns a pooled result that must be disposed.
         /// </summary>
-        public IEnumerable<Archetype> Query(params Type[] componentTypes)
+        public QueryResult Query(params Type[] componentTypes)
         {
-            foreach (var arch in _archetypes)
+            var list = RentQueryList();
+            foreach (ref var arch in CollectionsMarshal.AsSpan(_archetypes))
             {
                 if (arch.Matches(componentTypes))
-                    yield return arch;
+                    list.Add(arch);
             }
+
+            return new QueryResult(this, list);
         }
 
         /// <summary>

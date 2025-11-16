@@ -102,7 +102,7 @@ namespace UltraSim.ECS
             return slot;
         }
 
-        public void MoveEntityTo(int slot, Archetype target, object? newComponent = null)
+        public int MoveEntityTo(int slot, Archetype target, object? newComponent = null)
         {
             if (slot < 0 || slot >= _entities.Count)
                 throw new InvalidOperationException($"Invalid slot {slot} for archetype with {_entities.Count} entities.");
@@ -110,15 +110,15 @@ namespace UltraSim.ECS
             var entity = _entities[slot];
             int newSlot = target.AddEntity(entity);
 
-            // copy shared components using linear iteration (no enumerator)
             for (int i = 0; i < _componentCount; i++)
             {
                 int typeId = _typeIds[i];
-                if (!target.Signature.Contains(typeId)) continue;
+                if (!target.TryGetIndex(typeId, out int targetIdx))
+                    continue;
 
-                var list = _lists[i];
-                var value = list.GetValueBoxed(slot);
-                target.SetComponentValueBoxed(typeId, newSlot, value!);
+                var sourceList = _lists[i];
+                var targetList = target._lists[targetIdx];
+                sourceList.CopyValueTo(slot, targetList, newSlot);
             }
 
             // set new component if provided
@@ -129,6 +129,7 @@ namespace UltraSim.ECS
             }
 
             RemoveAtSwap(slot, entity);
+            return newSlot;
         }
 
         public bool RemoveAtSwap(int slot, Entity expectedEntity)
@@ -202,15 +203,6 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasComponent(int id) => Signature.Contains(id);
 
-        public void SetComponentValue<T>(int componentTypeId, int slot, T value) where T : struct
-        {
-            EnsureComponentList<T>(componentTypeId);
-            if (!TryGetIndex(componentTypeId, out int idx))
-                throw new InvalidOperationException($"Component {componentTypeId} not found after EnsureComponentList.");
-            var list = (ComponentList<T>)_lists[idx];
-            list.AddAtSlot(slot, value);
-        }
-
         public void SetComponentValueBoxed(int componentTypeId, int slot, object value)
         {
             if (!TryGetIndex(componentTypeId, out int idx))
@@ -218,6 +210,23 @@ namespace UltraSim.ECS
             if (slot >= _entities.Count)
                 throw new InvalidOperationException($"Invalid slot {slot}, entityCount={_entities.Count}");
             _lists[idx].SetValueBoxed(slot, value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetComponentValue<T>(int componentTypeId, int slot, T value)
+        {
+            if (!TryGetIndex(componentTypeId, out int idx))
+                throw new InvalidOperationException($"Component {componentTypeId} not found in archetype.");
+            if (slot >= _entities.Count)
+                throw new InvalidOperationException($"Invalid slot {slot}, entityCount={_entities.Count}");
+
+            if (_lists[idx] is ComponentList<T> typed)
+            {
+                typed.AddAtSlot(slot, value);
+                return;
+            }
+
+            throw new InvalidOperationException($"Component list for id {componentTypeId} is not of expected type {typeof(T).Name}.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -234,15 +243,13 @@ namespace UltraSim.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetComponentSpan<T>(out Span<T> span)
         {
-            // fast linear search for typed list
-            for (int i = 0; i < _componentCount; i++)
+            int typeId = ComponentManager.GetTypeId(typeof(T));
+            if (TryGetIndex(typeId, out int idx) && _lists[idx] is ComponentList<T> typed)
             {
-                if (_lists[i] is ComponentList<T> typed)
-                {
-                    span = typed.AsSpan();
-                    return true;
-                }
+                span = typed.AsSpan();
+                return true;
             }
+
             span = default;
             return false;
         }
@@ -257,10 +264,7 @@ namespace UltraSim.ECS
             return true;
         }
 
-        public Entity[] GetEntityArray()
-        {
-            return _entities.ToArray();
-        }
+        public ReadOnlySpan<Entity> GetEntitySpan() => CollectionsMarshal.AsSpan(_entities);
 
         /// <summary>
         /// Finds the slot index for the specified entity within this archetype.

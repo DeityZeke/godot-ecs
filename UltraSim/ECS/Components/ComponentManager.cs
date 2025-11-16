@@ -18,7 +18,7 @@ namespace UltraSim.ECS
     {
         #region Component Type Registry (Shared)
 
-        private static readonly ConcurrentDictionary<Type, int> _typeToId = new();
+        private static readonly Dictionary<Type, int> _typeToId = new();
         private static readonly List<Type> _idToType = new();
         private static readonly object _typeLock = new();
         private static ComponentManager? _sharedInstance;
@@ -32,12 +32,9 @@ namespace UltraSim.ECS
         public static int RegisterType<T>()
         {
             var t = typeof(T);
-            if (_typeToId.TryGetValue(t, out var id))
-                return id;
-
             lock (_typeLock)
             {
-                if (_typeToId.TryGetValue(t, out id))
+                if (_typeToId.TryGetValue(t, out var id))
                     return id;
 
                 id = _idToType.Count;
@@ -52,12 +49,9 @@ namespace UltraSim.ECS
         /// </summary>
         public static int GetTypeId(Type t)
         {
-            if (_typeToId.TryGetValue(t, out var id))
-                return id;
-
             lock (_typeLock)
             {
-                if (_typeToId.TryGetValue(t, out id))
+                if (_typeToId.TryGetValue(t, out var id))
                     return id;
 
                 id = _idToType.Count;
@@ -133,6 +127,9 @@ namespace UltraSim.ECS
         // Deferred component operation queues
         private readonly ConcurrentQueue<ComponentRemoveOp> _removeQueue = new();
         private readonly ConcurrentQueue<ComponentAddOp> _addQueue = new();
+        private readonly ConcurrentDictionary<int, IComponentAddQueue> _typedAddQueues = new();
+        private readonly ConcurrentQueue<int> _typedAddDirtyIds = new();
+        private readonly ConcurrentDictionary<int, byte> _typedAddDirtyFlags = new();
 
         #endregion
 
@@ -155,6 +152,26 @@ namespace UltraSim.ECS
         public void EnqueueAdd(Entity entity, int componentTypeId, object boxedValue)
         {
             _addQueue.Enqueue(ComponentAddOp.Create(entity, componentTypeId, boxedValue));
+        }
+
+        /// <summary>
+        /// Enqueues a strongly-typed component addition to avoid boxing costs.
+        /// Falls back to boxed path if the component type was registered differently.
+        /// </summary>
+        public void EnqueueAdd<T>(Entity entity, int componentTypeId, T value)
+        {
+            var queue = _typedAddQueues.GetOrAdd(componentTypeId, static id => new ComponentAddQueue<T>(id));
+            if (queue is ComponentAddQueue<T> typedQueue)
+            {
+                typedQueue.Enqueue(entity, value);
+                if (_typedAddDirtyFlags.TryAdd(componentTypeId, 0))
+                    _typedAddDirtyIds.Enqueue(componentTypeId);
+            }
+            else
+            {
+                // Type mismatch (should not happen) - fall back to boxed path
+                _addQueue.Enqueue(ComponentAddOp.Create(entity, componentTypeId, value!));
+            }
         }
 
         /// <summary>
@@ -196,6 +213,22 @@ namespace UltraSim.ECS
                 catch (Exception ex)
                 {
                     Logging.Log($"[ComponentManager] Error adding component: {ex}", LogSeverity.Error);
+                }
+            }
+
+            while (_typedAddDirtyIds.TryDequeue(out var typeId))
+            {
+                _typedAddDirtyFlags.TryRemove(typeId, out _);
+                if (!_typedAddQueues.TryGetValue(typeId, out var queue))
+                    continue;
+
+                try
+                {
+                    queue.Drain(this);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log($"[ComponentManager] Error adding component (typed queue {typeId}): {ex}", LogSeverity.Error);
                 }
             }
         }
@@ -290,8 +323,56 @@ namespace UltraSim.ECS
             var newSig = sourceArch.Signature.Remove(op.ComponentTypeId);
             var targetArch = _world.GetOrCreateArchetypeInternal(newSig);
 
-            sourceArch.MoveEntityTo(slot, targetArch);
-            _world.UpdateEntityLookup(entity.Index, targetArch, targetArch.Count - 1);
+            int newSlot = sourceArch.MoveEntityTo(slot, targetArch);
+            _world.UpdateEntityLookup(entity.Index, targetArch, newSlot);
+        }
+
+        private readonly struct ComponentAddOp<T>
+        {
+            private readonly ulong _entityPacked;
+            public readonly int ComponentTypeId;
+            public readonly T Value;
+
+            private ComponentAddOp(ulong entityPacked, int componentTypeId, T value)
+            {
+                _entityPacked = entityPacked;
+                ComponentTypeId = componentTypeId;
+                Value = value;
+            }
+
+            public Entity Entity => new(_entityPacked);
+
+            public static ComponentAddOp<T> Create(Entity entity, int componentTypeId, T value) =>
+                new(entity.Packed, componentTypeId, value);
+        }
+
+        private interface IComponentAddQueue
+        {
+            void Drain(ComponentManager manager);
+        }
+
+        private sealed class ComponentAddQueue<T> : IComponentAddQueue
+        {
+            private readonly int _componentTypeId;
+            private readonly ConcurrentQueue<ComponentAddOp<T>> _queue = new();
+
+            public ComponentAddQueue(int componentTypeId)
+            {
+                _componentTypeId = componentTypeId;
+            }
+
+            public void Enqueue(Entity entity, T value)
+            {
+                _queue.Enqueue(ComponentAddOp<T>.Create(entity, _componentTypeId, value));
+            }
+
+            public void Drain(ComponentManager manager)
+            {
+                while (_queue.TryDequeue(out var op))
+                {
+                    manager.ApplyComponentAddition(op);
+                }
+            }
         }
 
         private void ApplyComponentAddition(ComponentAddOp op)
@@ -313,8 +394,44 @@ namespace UltraSim.ECS
             var newSig = sourceArch.Signature.Add(op.ComponentTypeId);
             var targetArch = _world.GetOrCreateArchetypeInternal(newSig);
 
-            sourceArch.MoveEntityTo(slot, targetArch, op.BoxedValue);
-            _world.UpdateEntityLookup(entity.Index, targetArch, targetArch.Count - 1);
+            if (ReferenceEquals(targetArch, sourceArch))
+            {
+                sourceArch.SetComponentValueBoxed(op.ComponentTypeId, slot, op.BoxedValue);
+                return;
+            }
+
+            int newSlot = sourceArch.MoveEntityTo(slot, targetArch, op.BoxedValue);
+            _world.UpdateEntityLookup(entity.Index, targetArch, newSlot);
+        }
+
+        private void ApplyComponentAddition<T>(ComponentAddOp<T> op)
+        {
+            var entity = op.Entity;
+            if (!_world.IsEntityValid(entity))
+                return;
+
+            if (!_world.TryGetEntityLocation(entity, out var sourceArch, out var slot))
+                return;
+
+            if (!sourceArch.TryGetEntityAtSlot(slot, out var occupant) || occupant.Packed != entity.Packed)
+            {
+                slot = sourceArch.FindEntitySlot(entity);
+                if (slot < 0 || slot >= sourceArch.Count)
+                    return;
+            }
+
+            var newSig = sourceArch.Signature.Add(op.ComponentTypeId);
+            var targetArch = _world.GetOrCreateArchetypeInternal(newSig);
+
+            if (ReferenceEquals(targetArch, sourceArch))
+            {
+                sourceArch.SetComponentValue(op.ComponentTypeId, slot, op.Value);
+                return;
+            }
+
+            int newSlot = sourceArch.MoveEntityTo(slot, targetArch);
+            targetArch.SetComponentValue(op.ComponentTypeId, newSlot, op.Value);
+            _world.UpdateEntityLookup(entity.Index, targetArch, newSlot);
         }
 
         #endregion

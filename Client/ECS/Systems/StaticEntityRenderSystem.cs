@@ -298,7 +298,7 @@ namespace Client.ECS.Systems
 
             foreach (var zoneTagType in zoneTagTypes)
             {
-                var archetypes = world.QueryArchetypes(zoneTagType);
+                using var archetypes = world.QueryArchetypes(zoneTagType);
 
                 foreach (var archetype in archetypes)
                 {

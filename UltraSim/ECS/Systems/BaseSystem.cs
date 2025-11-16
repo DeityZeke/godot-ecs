@@ -266,12 +266,12 @@ namespace UltraSim.ECS.Systems
         /// <summary>
         /// Optional serialization support.
         /// </summary>
-        public virtual void Serialize() { }
+        public virtual void Serialize(SystemSaveContext context) { }
 
         /// <summary>
         /// Optional deserialization support.
         /// </summary>
-        public virtual void Deserialize() { }
+        public virtual void Deserialize(SystemLoadContext context) { }
 
 #if USE_DEBUG
         /// <summary>

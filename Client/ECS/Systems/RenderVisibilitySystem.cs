@@ -143,7 +143,7 @@ namespace Client.ECS.Systems
 
             for (int t = 0; t < zoneTagTypesSpan.Length; t++)
             {
-                var archetypes = world.QueryArchetypes(zoneTagTypesSpan[t]);
+                using var archetypes = world.QueryArchetypes(zoneTagTypesSpan[t]);
 
                 foreach (var archetype in archetypes)
                 {
@@ -172,8 +172,9 @@ namespace Client.ECS.Systems
 
             for (int t = 0; t < zoneTagTypesSpan.Length; t++)
             {
-                var archetypes = world.QueryArchetypes(zoneTagTypesSpan[t]);
-                allArchetypes.AddRange(archetypes);
+                using var archetypes = world.QueryArchetypes(zoneTagTypesSpan[t]);
+                foreach (var arch in archetypes)
+                    allArchetypes.Add(arch);
             }
 
             _visibleCount = 0;

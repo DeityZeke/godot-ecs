@@ -22,8 +22,6 @@ namespace Client.Terrain
     {
         private readonly TerrainMeshCache _meshCache = new();
         private int _meshesBuiltPerFrame = 2;
-        private new IEnumerable<Archetype>? _cachedQuery;
-
         private static readonly int TerrainChunkId = ComponentManager.GetTypeId<TerrainChunkComponent>();
 
         public override int SystemId => GetHashCode();
@@ -32,20 +30,15 @@ namespace Client.Terrain
         public override Type[] WriteSet => new[] { typeof(TerrainChunkComponent) }; // Modifies IsDirty flag
         public override TickRate Rate => TickRate.EveryFrame;
 
-        public override void OnInitialize(World world)
-        {
-            _cachedQuery = world.QueryArchetypes(typeof(TerrainChunkComponent));
-        }
+        public override void OnInitialize(World world) { }
 
         public override void Update(World world, double delta)
         {
-            if (_cachedQuery == null)
-                return;
-
             int meshesBuilt = 0;
 
-            // Process all archetypes that contain terrain chunks
-            foreach (var arch in _cachedQuery)
+            using var query = world.QueryArchetypes(typeof(TerrainChunkComponent));
+
+            foreach (var arch in query)
             {
                 if (arch.Count == 0) continue;
 
@@ -125,7 +118,6 @@ namespace Client.Terrain
         public void Cleanup(World world)
         {
             _meshCache.Clear();
-            _cachedQuery = null;
         }
 
         /// <summary>

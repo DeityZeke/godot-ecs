@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UltraSim;
 using UltraSim.Configuration;
 using UltraSim.IO;
@@ -58,6 +57,9 @@ namespace UltraSim.ECS.Systems
         public override Type[] WriteSet { get; } = Array.Empty<Type>();
 
         private const string DefaultSaveFile = "world.sav";
+
+        private const string StateFileName = "state";
+        private const int StateVersion = 1;
 
         private double _timer;
         private DateTimeOffset? _lastSaveTime;
@@ -136,14 +138,14 @@ namespace UltraSim.ECS.Systems
             SystemSettings.NextSaveDisplay.Value = $"{seconds}s";
         }
 
-        public override void Serialize()
+        public override void Serialize(SystemSaveContext context)
         {
             try
             {
-                var path = World.Paths.GetSystemStatePath(Name);
-                var config = new ConfigFile();
-                config.SetValue("SaveSystem", "LastSaveTime", _lastSaveTime?.ToString("o") ?? string.Empty);
-                config.Save(path);
+                using var writer = context.CreateWriter(StateFileName);
+                writer.Write(StateVersion);
+                writer.Write(_lastSaveTime.HasValue);
+                writer.Write(_lastSaveTime.HasValue ? _lastSaveTime.Value.ToUnixTimeSeconds() : 0L);
             }
             catch (Exception ex)
             {
@@ -151,24 +153,33 @@ namespace UltraSim.ECS.Systems
             }
         }
 
-        public override void Deserialize()
+        public override void Deserialize(SystemLoadContext context)
         {
             try
             {
-                var path = World.Paths.GetSystemStatePath(Name);
-                if (!File.Exists(path))
+                if (!context.TryOpenReader(StateFileName, out var reader))
                     return;
 
-                var config = new ConfigFile();
-                if (config.Load(path) != Error.Ok)
-                    return;
-
-                var stored = config.GetValue("SaveSystem", "LastSaveTime", string.Empty);
-                if (!string.IsNullOrEmpty(stored) && DateTimeOffset.TryParse(stored, out var parsed))
+                using (reader)
                 {
-                    _lastSaveTime = parsed;
-                    UpdateLastSaveDisplay();
+                    var version = reader.ReadInt32();
+                    switch (version)
+                    {
+                        case 1:
+                            var hasTime = reader.ReadBool();
+                            var timestamp = reader.ReadInt64();
+                            if (hasTime && timestamp > 0)
+                                _lastSaveTime = DateTimeOffset.FromUnixTimeSeconds(timestamp);
+                            else
+                                _lastSaveTime = null;
+                            break;
+                        default:
+                            _lastSaveTime = null;
+                            break;
+                    }
                 }
+
+                UpdateLastSaveDisplay();
             }
             catch (Exception ex)
             {

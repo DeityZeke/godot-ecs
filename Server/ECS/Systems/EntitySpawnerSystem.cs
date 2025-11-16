@@ -248,13 +248,13 @@ namespace UltraSim.ECS.Systems
             int destroyed = 0;
 
             // Only destroy entities spawned for rendering (RenderTag is added during Spawn)
-            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            using var archetypes = _world.QueryArchetypes(typeof(RenderTag));
             foreach (var archetype in archetypes)
             {
-                var entities = archetype.GetEntityArray();
-                foreach (var entity in entities)
+                var entities = archetype.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
                 {
-                    _world.EnqueueDestroyEntity(entity);
+                    _world.EnqueueDestroyEntity(entities[i]);
                     destroyed++;
                 }
             }
@@ -277,12 +277,12 @@ namespace UltraSim.ECS.Systems
             int remaining = count;
 
             // Only destroy entities spawned for rendering (RenderTag is added during Spawn)
-            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            using var archetypes = _world.QueryArchetypes(typeof(RenderTag));
             foreach (var archetype in archetypes)
             {
                 if (remaining <= 0) break;
 
-                var entities = archetype.GetEntityArray();
+                var entities = archetype.GetEntitySpan();
                 int toDestroy = System.Math.Min(remaining, entities.Length);
 
                 for (int i = 0; i < toDestroy; i++)
@@ -309,10 +309,12 @@ namespace UltraSim.ECS.Systems
 
             // Collect all entities
             var allEntities = new System.Collections.Generic.List<Entity>();
-            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            using var archetypes = _world.QueryArchetypes(typeof(RenderTag));
             foreach (var archetype in archetypes)
             {
-                allEntities.AddRange(archetype.GetEntityArray());
+                var entities = archetype.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
+                    allEntities.Add(entities[i]);
             }
 
             // Destroy random selection
@@ -343,10 +345,12 @@ namespace UltraSim.ECS.Systems
 
             // Collect all entities
             var allEntities = new System.Collections.Generic.List<Entity>();
-            var archetypes = _world.QueryArchetypes(typeof(RenderTag));
+            using var archetypes = _world.QueryArchetypes(typeof(RenderTag));
             foreach (var archetype in archetypes)
             {
-                allEntities.AddRange(archetype.GetEntityArray());
+                var entities = archetype.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
+                    allEntities.Add(entities[i]);
             }
 
             // Destroy half randomly (Fisher-Yates partial shuffle to avoid O(n^2) removes)

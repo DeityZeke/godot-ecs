@@ -254,7 +254,7 @@ namespace Client.ECS.Systems
 
             // Query by NearZoneTag - automatic archetype filtering!
             // Only gets chunks in Near zone (no manual enum check needed)
-            var archetypes = world.QueryArchetypes(typeof(NearZoneTag));
+            using var archetypes = world.QueryArchetypes(typeof(NearZoneTag));
 
             foreach (var archetype in archetypes)
             {

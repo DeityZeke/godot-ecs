@@ -91,7 +91,7 @@ namespace UltraSim.ECS.Systems
                 return;
 
             // Query archetypes dynamically each frame to avoid stale cached queries
-            var archetypes = world.QueryArchetypes(typeof(Position), typeof(Velocity));
+            using var archetypes = world.QueryArchetypes(typeof(Position), typeof(Velocity));
 
             foreach (var arch in archetypes)
             {
@@ -112,12 +112,12 @@ namespace UltraSim.ECS.Systems
 
                 var posList = posComponentList.GetList();
                 var velList = velComponentList.GetList();
-                var entities = arch.GetEntityArray();
+                var entities = arch.GetEntitySpan();
 
                 int count = Math.Min(posList.Count, velList.Count);
                 int numChunks = (count + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
-                Logging.Log($"[OptimizedMovementSystem] Processing archetype: arch.Count={arch.Count}, posList.Count={posList.Count}, velList.Count={velList.Count}, calculated count={count}");
+                //Logging.Log($"[OptimizedMovementSystem] Processing archetype: arch.Count={arch.Count}, posList.Count={posList.Count}, velList.Count={velList.Count}, calculated count={count}");
 
                 float adjustedDelta = (float)delta * speedMultiplier;
 

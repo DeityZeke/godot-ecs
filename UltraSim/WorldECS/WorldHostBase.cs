@@ -209,9 +209,10 @@ namespace UltraSim.WorldECS
 
             var profile = system.ResolveActiveProfile(out var profileName);
             var filename = system.DefaultSaveFileName;
-            var loadPath = profile.GetFullPath(Path.Combine("World", Path.GetFileNameWithoutExtension(filename)));
+            var relative = Path.Combine("World", Path.GetFileNameWithoutExtension(filename));
+            var loadPath = profile.GetFullPath(relative);
 
-            if (!File.Exists(loadPath))
+            if (!profile.FileExists(loadPath))
             {
                 Logging.Log($"[WorldHost] No save file found for profile '{profileName}' (expected at {loadPath})");
                 return;

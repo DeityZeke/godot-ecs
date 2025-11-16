@@ -180,11 +180,14 @@ namespace UltraSim.ECS
         public void EnqueueComponentAdd(Entity entity, int compId, object boxedValue) =>
             _components.EnqueueAdd(entity, compId, boxedValue);
 
+        public void EnqueueComponentAdd<T>(Entity entity, int compId, T value) =>
+            _components.EnqueueAdd(entity, compId, value);
+
         #endregion
 
         #region Archetype Queries (Delegates to ArchetypeManager)
 
-        public IEnumerable<Archetype> QueryArchetypes(params Type[] componentTypes) =>
+        public ArchetypeManager.QueryResult QueryArchetypes(params Type[] componentTypes) =>
             _archetypes.Query(componentTypes);
 
         public IReadOnlyList<Archetype> GetArchetypes() =>

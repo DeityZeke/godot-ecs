@@ -259,14 +259,14 @@ namespace Client.ECS.Systems
             var zoneTagTypes = new[] { typeof(NearZoneTag), typeof(MidZoneTag), typeof(FarZoneTag) };
             foreach (var zoneTagType in zoneTagTypes)
             {
-                var archetypes = world.QueryArchetypes(zoneTagType);
+                using var archetypes = world.QueryArchetypes(zoneTagType);
                 foreach (var archetype in archetypes)
                 {
                     if (archetype.Count == 0)
                         continue;
 
                     var renderChunks = archetype.GetComponentSpan<RenderChunk>(renderChunkTypeId);
-                    var entities = archetype.GetEntityArray();
+                    var entities = archetype.GetEntitySpan();
 
                     for (int i = 0; i < renderChunks.Length; i++)
                     {
@@ -278,14 +278,15 @@ namespace Client.ECS.Systems
 
             // Query POOLED render chunks (for reuse)
             var pooledEntities = new List<Entity>();
-            var pooledArchetypes = world.QueryArchetypes(typeof(RenderChunkPoolTag));
+            using var pooledArchetypes = world.QueryArchetypes(typeof(RenderChunkPoolTag));
             foreach (var archetype in pooledArchetypes)
             {
                 if (archetype.Count == 0)
                     continue;
 
-                var entities = archetype.GetEntityArray();
-                pooledEntities.AddRange(entities);
+                var entities = archetype.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
+                    pooledEntities.Add(entities[i]);
             }
 
             // Process existing chunks: Update or Pool

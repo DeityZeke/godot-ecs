@@ -147,7 +147,7 @@ namespace Client.ECS.Systems
 
             // Query by FarZoneTag - automatic archetype filtering!
             // Only gets chunks in Far zone (no manual enum check needed)
-            var archetypes = world.QueryArchetypes(typeof(FarZoneTag));
+            using var archetypes = world.QueryArchetypes(typeof(FarZoneTag));
 
             foreach (var archetype in archetypes)
             {

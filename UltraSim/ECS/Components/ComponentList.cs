@@ -17,6 +17,7 @@ namespace UltraSim.ECS
         void SwapLastIntoSlot(int slot, int last);
         object? GetValueBoxed(int slot);
         void SetValueBoxed(int slot, object value);
+        void CopyValueTo(int sourceIndex, IComponentList targetList, int targetIndex);
         void RemoveLast();
         int Count { get; }
     }
@@ -69,6 +70,20 @@ namespace UltraSim.ECS
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValueBoxed(int slot, object value) => _list[slot] = (T)value;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CopyValueTo(int sourceIndex, IComponentList targetList, int targetIndex)
+        {
+            var value = _list[sourceIndex];
+            if (targetList is ComponentList<T> typedTarget)
+            {
+                typedTarget.AddAtSlot(targetIndex, value);
+            }
+            else
+            {
+                targetList.SetValueBoxed(targetIndex, value!);
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SwapLastIntoSlot(int slot, int last)

@@ -463,7 +463,7 @@ namespace UltraSim.Server.ECS.Systems
 
             // OPTIMIZATION: Query only UNREGISTERED chunks (not all chunks)
             // This changes from O(all chunks) to O(new chunks) - massive speedup!
-            var archetypes = world.QueryArchetypes(typeof(UnregisteredChunkTag));
+            using var archetypes = world.QueryArchetypes(typeof(UnregisteredChunkTag));
 
             foreach (var arch in archetypes)
             {
@@ -474,7 +474,7 @@ namespace UltraSim.Server.ECS.Systems
                     continue;
 
                 var locations = arch.GetComponentSpan<ChunkLocation>(ChunkLocationTypeId);
-                var entities = arch.GetEntityArray();
+                var entities = arch.GetEntitySpan();
                 Span<ChunkState> states = arch.HasComponent(ChunkStateTypeId)
                     ? arch.GetComponentSpan<ChunkState>(ChunkStateTypeId)
                     : Span<ChunkState>.Empty;
@@ -743,7 +743,7 @@ namespace UltraSim.Server.ECS.Systems
             _chunkEntityTracker.Add(chunkEntity, entity);
 
             // Mark chunk as dirty so client knows to rebuild visual cache
-            _world!.EnqueueComponentAdd(chunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd<DirtyChunkTag>(chunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         /// <summary>
@@ -758,8 +758,8 @@ namespace UltraSim.Server.ECS.Systems
             _chunkEntityTracker.Move(entity, oldChunkEntity, newChunkEntity);
 
             // Mark both chunks as dirty so client knows to rebuild visual caches
-            _world!.EnqueueComponentAdd(oldChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
-            _world!.EnqueueComponentAdd(newChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd<DirtyChunkTag>(oldChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
+            _world!.EnqueueComponentAdd<DirtyChunkTag>(newChunkEntity, DirtyChunkTagTypeId, new DirtyChunkTag());
         }
 
         private void ProcessAssignment(World world, ChunkAssignmentRequest request)
@@ -827,7 +827,7 @@ namespace UltraSim.Server.ECS.Systems
 
             // Always use deferred queue - never modify archetypes directly during parallel processing
             // This prevents race conditions where slot indices become stale
-            _world!.EnqueueComponentAdd(request.Entity, ChunkOwnerTypeId, owner);
+            _world!.EnqueueComponentAdd<ChunkOwner>(request.Entity, ChunkOwnerTypeId, owner);
         }
 
         /// <summary>
@@ -912,15 +912,16 @@ namespace UltraSim.Server.ECS.Systems
         public List<Entity> GetDirtyChunks(World world)
         {
             var result = new List<Entity>();
-            var archetypes = world.QueryArchetypes(typeof(DirtyChunkTag));
+            using var archetypes = world.QueryArchetypes(typeof(DirtyChunkTag));
 
             foreach (var archetype in archetypes)
             {
                 if (archetype.Count == 0)
                     continue;
 
-                var entities = archetype.GetEntityArray();
-                result.AddRange(entities);
+                var entities = archetype.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
+                    result.Add(entities[i]);
             }
 
             return result;
