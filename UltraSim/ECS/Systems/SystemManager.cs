@@ -19,6 +19,7 @@ namespace UltraSim.ECS.Systems
         private readonly World _world;
         private readonly List<BaseSystem> _systems = new(32);
         private readonly Dictionary<Type, BaseSystem> _systemMap = new();
+        private readonly Dictionary<BaseSystem, SystemAccess> _systemAccess = new();
         private List<List<BaseSystem>> _cachedBatches = new();
         private static readonly ConcurrentDictionary<Type, RequireSystemAttribute[]> _requireCache = new();
 
@@ -109,6 +110,7 @@ namespace UltraSim.ECS.Systems
             RegisterSystemTickScheduling(sysInstance);
             LoadSystemSettings(sysInstance);
             sysInstance.OnInitialize(_world);
+            _systemAccess[sysInstance] = BuildSystemAccess(sysInstance);
             ComputeBatches();
 
             Logging.Log($"[SystemManager] Registered system: {type.Name}");
@@ -127,6 +129,7 @@ namespace UltraSim.ECS.Systems
 
                 UnregisterSystemTickScheduling(system);
 
+                _systemAccess.Remove(system);
                 _systems.Remove(system);
                 _systemMap.Remove(type);
                 ComputeBatches();
@@ -516,35 +519,23 @@ namespace UltraSim.ECS.Systems
             sorted.Add(system); // Add to sorted list AFTER dependencies
         }
 
-        private static bool ConflictsWithBatch(BaseSystem s, List<BaseSystem> batch)
+        private bool ConflictsWithBatch(BaseSystem s, List<BaseSystem> batch)
         {
             if (batch.Count == 0) return false;
 
-            Span<Type> readSpan = s.ReadSet.AsSpan();
-            Span<Type> writeSpan = s.WriteSet.AsSpan();
+            var access = _systemAccess[s];
             var batchSpan = CollectionsMarshal.AsSpan(batch);
 
             foreach (ref readonly var other in batchSpan)
             {
-                var oRead = other.ReadSet;
-                var oWrite = other.WriteSet;
+                var otherAccess = _systemAccess[other];
 
-                // Write/Write conflicts
-                foreach (var wt in writeSpan)
-                {
-                    foreach (var owt in oWrite)
-                        if (wt == owt) return true;
+                if (HasOverlap(access.WriteSet, otherAccess.WriteLookup) ||
+                    HasOverlap(access.WriteSet, otherAccess.ReadLookup))
+                    return true;
 
-                    foreach (var ort in oRead)
-                        if (wt == ort) return true;
-                }
-
-                // Read/Write conflicts (reversed)
-                foreach (var otw in oWrite)
-                {
-                    foreach (var srt in readSpan)
-                        if (srt == otw) return true;
-                }
+                if (HasOverlap(otherAccess.WriteSet, access.ReadLookup))
+                    return true;
             }
 
             return false;
@@ -589,6 +580,44 @@ namespace UltraSim.ECS.Systems
         #endregion
 
         private readonly record struct QueuedEnableRequest(Type Type, int Attempts);
+
+        private sealed class SystemAccess
+        {
+            public Type[] ReadSet = Array.Empty<Type>();
+            public Type[] WriteSet = Array.Empty<Type>();
+            public HashSet<Type> ReadLookup = new();
+            public HashSet<Type> WriteLookup = new();
+        }
+
+        private SystemAccess BuildSystemAccess(BaseSystem system)
+        {
+            var access = new SystemAccess
+            {
+                ReadSet = system.ReadSet ?? Array.Empty<Type>(),
+                WriteSet = system.WriteSet ?? Array.Empty<Type>()
+            };
+
+            foreach (var type in access.ReadSet)
+                access.ReadLookup.Add(type);
+            foreach (var type in access.WriteSet)
+                access.WriteLookup.Add(type);
+
+            return access;
+        }
+
+        private static bool HasOverlap(Type[] source, HashSet<Type> lookup)
+        {
+            if (source.Length == 0 || lookup.Count == 0)
+                return false;
+
+            foreach (var type in source)
+            {
+                if (lookup.Contains(type))
+                    return true;
+            }
+
+            return false;
+        }
 
         private HashSet<Type> RentTypeSet()
         {

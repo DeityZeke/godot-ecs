@@ -2,19 +2,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace UltraSim.ECS
 {
     internal readonly struct ComponentInit
     {
-        public readonly int TypeId;
-        public readonly object Value;
+        private readonly IComponentValueHolder _holder;
 
-        public ComponentInit(int typeId, object value)
+        public ComponentInit(IComponentValueHolder holder)
         {
-            TypeId = typeId;
-            Value = value;
+            _holder = holder ?? throw new ArgumentNullException(nameof(holder));
         }
+
+        public int TypeId => _holder.TypeId;
+        public IComponentValueHolder Holder => _holder;
     }
 
     /// <summary>
@@ -36,7 +38,9 @@ namespace UltraSim.ECS
         public EntityBuilder Add<T>(T component) where T : struct
         {
             int typeId = ComponentManager.GetTypeId<T>();
-            _components.Add(new ComponentInit(typeId, component));
+            var holder = ComponentValueHolder<T>.Rent();
+            holder.Initialize(typeId, component);
+            _components.Add(new ComponentInit(holder));
             return this;
         }
 
@@ -48,10 +52,54 @@ namespace UltraSim.ECS
         public EntityBuilder Add(int typeId, object value)
         {
             int canonicalId = ComponentManager.GetTypeId(value.GetType());
-            _components.Add(new ComponentInit(canonicalId, value));
+            var holder = ComponentValueHolder<object>.Rent();
+            holder.Initialize(canonicalId, value);
+            _components.Add(new ComponentInit(holder));
             return this;
         }
 
         internal List<ComponentInit> GetComponents() => _components;
+    }
+
+    internal interface IComponentValueHolder
+    {
+        int TypeId { get; }
+        void Apply(Archetype archetype, int slot);
+        void Release();
+    }
+
+    internal sealed class ComponentValueHolder<T> : IComponentValueHolder
+    {
+        private static readonly ConcurrentBag<ComponentValueHolder<T>> _pool = new();
+
+        private int _typeId;
+        private T _value = default!;
+
+        public int TypeId => _typeId;
+
+        public static ComponentValueHolder<T> Rent()
+        {
+            if (!_pool.TryTake(out var holder))
+                holder = new ComponentValueHolder<T>();
+            return holder;
+        }
+
+        public void Initialize(int typeId, T value)
+        {
+            _typeId = typeId;
+            _value = value;
+        }
+
+        public void Apply(Archetype archetype, int slot)
+        {
+            archetype.SetComponentValue(_typeId, slot, _value);
+        }
+
+        public void Release()
+        {
+            _typeId = 0;
+            _value = default!;
+            _pool.Add(this);
+        }
     }
 }

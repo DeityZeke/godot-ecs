@@ -21,6 +21,7 @@ namespace UltraSim.ECS
         private readonly List<Archetype> _archetypes = new();
         private readonly Dictionary<ComponentSignatureKey, Archetype> _signatureCache = new();
         private readonly Dictionary<Archetype, int> _archetypeIndexCache = new();
+        private readonly Dictionary<ComponentSetKey, List<Archetype>> _queryCache = new();
 
         public int ArchetypeCount => _archetypes.Count;
 
@@ -38,18 +39,21 @@ namespace UltraSim.ECS
         {
             private readonly ArchetypeManager _owner;
             private readonly List<Archetype> _list;
+            private readonly bool _pooled;
 
-            internal QueryResult(ArchetypeManager owner, List<Archetype> list)
+            internal QueryResult(ArchetypeManager owner, List<Archetype> list, bool pooled)
             {
                 _owner = owner;
                 _list = list;
+                _pooled = pooled;
             }
 
             public ReadOnlySpan<Archetype> AsSpan() => CollectionsMarshal.AsSpan(_list);
 
             public void Dispose()
             {
-                _owner.ReturnQueryList(_list);
+                if (_pooled)
+                    _owner.ReturnQueryList(_list);
             }
 
             public List<Archetype>.Enumerator GetEnumerator() => _list.GetEnumerator();
@@ -190,29 +194,102 @@ namespace UltraSim.ECS
             }
         }
 
+        private readonly struct ComponentSetKey : IEquatable<ComponentSetKey>
+        {
+            private readonly int[] _typeIds;
+            private readonly int _hash;
+
+            private ComponentSetKey(int[] typeIds, int hash)
+            {
+                _typeIds = typeIds;
+                _hash = hash;
+            }
+
+            public ReadOnlySpan<int> TypeIds => _typeIds;
+
+            public static ComponentSetKey FromTypes(Type[] componentTypes)
+            {
+                if (componentTypes == null || componentTypes.Length == 0)
+                    return new ComponentSetKey(Array.Empty<int>(), 0);
+
+                var ids = new int[componentTypes.Length];
+                for (int i = 0; i < componentTypes.Length; i++)
+                    ids[i] = ComponentManager.GetTypeId(componentTypes[i]);
+
+                Array.Sort(ids);
+                int write = 0;
+                int prev = int.MinValue;
+                for (int i = 0; i < ids.Length; i++)
+                {
+                    if (write == 0 || ids[i] != prev)
+                    {
+                        prev = ids[i];
+                        ids[write++] = ids[i];
+                    }
+                }
+
+                if (write != ids.Length)
+                {
+                    var deduped = new int[write];
+                    Array.Copy(ids, deduped, write);
+                    ids = deduped;
+                }
+
+                int hash = 17;
+                for (int i = 0; i < ids.Length; i++)
+                    hash = (hash * 31) ^ ids[i];
+
+                return new ComponentSetKey(ids, hash);
+            }
+
+            public bool Equals(ComponentSetKey other)
+            {
+                if (_hash != other._hash)
+                    return false;
+                if (_typeIds.Length != other._typeIds.Length)
+                    return false;
+                return _typeIds.AsSpan().SequenceEqual(other._typeIds);
+            }
+
+            public override bool Equals(object? obj) => obj is ComponentSetKey other && Equals(other);
+
+            public override int GetHashCode() => _hash;
+        }
+
         private void RegisterArchetype(Archetype archetype)
         {
             int index = _archetypes.Count;
             _archetypes.Add(archetype);
             _archetypeIndexCache[archetype] = index;
+
+            foreach (var entry in _queryCache)
+            {
+                if (archetype.Matches(entry.Key.TypeIds))
+                    entry.Value.Add(archetype);
+            }
         }
 
         #region Queries
 
         /// <summary>
         /// Queries for archetypes matching the given component types.
-        /// Returns a pooled result that must be disposed.
         /// </summary>
         public QueryResult Query(params Type[] componentTypes)
         {
-            var list = RentQueryList();
+            var key = ComponentSetKey.FromTypes(componentTypes);
+            if (_queryCache.TryGetValue(key, out var cached))
+                return new QueryResult(this, cached, pooled: false);
+
+            var list = new List<Archetype>();
+            var typeIds = key.TypeIds;
             foreach (ref var arch in CollectionsMarshal.AsSpan(_archetypes))
             {
-                if (arch.Matches(componentTypes))
+                if (arch.Matches(typeIds))
                     list.Add(arch);
             }
 
-            return new QueryResult(this, list);
+            _queryCache[key] = list;
+            return new QueryResult(this, list, pooled: false);
         }
 
         /// <summary>

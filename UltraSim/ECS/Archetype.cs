@@ -254,14 +254,27 @@ namespace UltraSim.ECS
             return false;
         }
 
-        public bool Matches(params Type[] componentTypes)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool Matches(ReadOnlySpan<int> componentTypeIds)
         {
-            for (int i = 0; i < componentTypes.Length; i++)
+            for (int i = 0; i < componentTypeIds.Length; i++)
             {
-                int id = ComponentManager.GetTypeId(componentTypes[i]);
-                if (FindIndex(id) < 0) return false;
+                if (!TryGetIndex(componentTypeIds[i], out _))
+                    return false;
             }
             return true;
+        }
+
+        public bool Matches(params Type[] componentTypes)
+        {
+            if (componentTypes == null || componentTypes.Length == 0)
+                return true;
+
+            Span<int> typeIds = componentTypes.Length <= 8 ? stackalloc int[componentTypes.Length] : new int[componentTypes.Length];
+            for (int i = 0; i < componentTypes.Length; i++)
+                typeIds[i] = ComponentManager.GetTypeId(componentTypes[i]);
+
+            return Matches(typeIds);
         }
 
         public ReadOnlySpan<Entity> GetEntitySpan() => CollectionsMarshal.AsSpan(_entities);

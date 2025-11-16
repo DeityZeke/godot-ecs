@@ -49,6 +49,7 @@ namespace UltraSim.ECS
 
         // Reusable list for batch entity destruction (V8 optimization, mirrors creation pattern)
         private readonly List<Entity> _destroyedEntitiesCache = new(1000);
+        private readonly List<int> _archetypeDestroyScratch = new(32);
 
         // Reusable list for draining EntityBuilder queue (zero-allocation)
         private readonly List<EntityBuilder> _builderBatchCache = new(1000);
@@ -275,6 +276,11 @@ namespace UltraSim.ECS
                 return;
 
             var flagBuffer = ArrayPool<byte>.Shared.Rent(queuedCount);
+            var archetypeCapacity = Math.Max(1, _archetypes.ArchetypeCount);
+            var archetypeCountsBuffer = ArrayPool<int>.Shared.Rent(archetypeCapacity);
+            var archetypeCounts = archetypeCountsBuffer.AsSpan(0, archetypeCapacity);
+            archetypeCounts.Clear();
+            _archetypeDestroyScratch.Clear();
 
             try
             {
@@ -290,8 +296,6 @@ namespace UltraSim.ECS
                 int destroyedCount = 0;
                 int passCount = 0;
                 int remainingToDestroy = queuedCount;
-                var archetypeCounts = new Dictionary<int, int>();
-
                 while (remainingToDestroy > 0 && passCount < 100)  // Safety limit to prevent infinite loop
                 {
                     passCount++;
@@ -346,11 +350,10 @@ namespace UltraSim.ECS
                         }
 
                         var archIndex = _archetypes.GetArchetypeIndex(archetype);
-                        if (archIndex >= 0)
+                        if ((uint)archIndex < (uint)archetypeCounts.Length)
                         {
-                            if (!archetypeCounts.ContainsKey(archIndex))
-                                archetypeCounts[archIndex] = 0;
-                            archetypeCounts[archIndex]++;
+                            if (archetypeCounts[archIndex]++ == 0)
+                                _archetypeDestroyScratch.Add(archIndex);
                         }
 
                         _freeHandles.Push(entity.Packed + VersionIncrement);
@@ -373,11 +376,11 @@ namespace UltraSim.ECS
                     }
                 }
 
-                if (archetypeCounts.Count > 0 && queuedCount > 1000)
+                if (_archetypeDestroyScratch.Count > 0 && queuedCount > 1000)
                 {
-                    foreach (var kvp in archetypeCounts)
+                    foreach (var archIndex in _archetypeDestroyScratch)
                     {
-                        Logging.Log($"[EntityManager] Destroyed {kvp.Value} entities from archetype {kvp.Key}", LogSeverity.Info);
+                        Logging.Log($"[EntityManager] Destroyed {archetypeCounts[archIndex]} entities from archetype {archIndex}", LogSeverity.Info);
                     }
                 }
 
@@ -400,6 +403,7 @@ namespace UltraSim.ECS
             }
             finally
             {
+                ArrayPool<int>.Shared.Return(archetypeCountsBuffer);
                 ArrayPool<byte>.Shared.Return(flagBuffer);
             }
         }
@@ -475,9 +479,9 @@ namespace UltraSim.ECS
 
                 foreach (var builder in builders)
                 {
+                    var components = builder.GetComponents();
                     try
                     {
-                        var components = builder.GetComponents();
                         var componentSpan = CollectionsMarshal.AsSpan(components);
 
                         var entity = CreateWithSignature(signature);
@@ -486,7 +490,7 @@ namespace UltraSim.ECS
                         {
                             foreach (ref readonly var comp in componentSpan)
                             {
-                                archetype.SetComponentValueBoxed(comp.TypeId, slot, comp.Value);
+                                comp.Holder.Apply(archetype, slot);
                             }
                         }
 
@@ -494,12 +498,14 @@ namespace UltraSim.ECS
                         {
                             _createdEntitiesCache.Add(entity);
                         }
-
-                        ReturnComponentList(components);
                     }
                     catch (Exception ex)
                     {
                         Logging.Log($"[EntityManager] EntityBuilder creation exception: {ex}", LogSeverity.Error);
+                    }
+                    finally
+                    {
+                        ReturnComponentList(components);
                     }
                 }
             }
@@ -736,6 +742,10 @@ namespace UltraSim.ECS
         {
             if (list != null)
             {
+                foreach (ref readonly var init in CollectionsMarshal.AsSpan(list))
+                {
+                    init.Holder.Release();
+                }
                 list.Clear();
                 _componentListPool.Add(list);
             }
